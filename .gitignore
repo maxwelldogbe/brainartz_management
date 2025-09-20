@@ -1,0 +1,119 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.python-version
+
+# Virtualenvs
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Pytest
+.pytest_cache/
+
+# Coverage
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Django stuff:
+*.log
+*.pot
+*.pyc
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/core/db.sqlite3
+
+# Django media/uploads
+media/
+staticfiles/
+
+# Migrations (keep migrations checked in) 
+# but ignore __pycache__ inside migrations
+**/migrations/__pycache__/
+
+# Node / frontend
+node_modules/
+frontend/node_modules/
+/frontend/node_modules/
+dist/
+/build/
+/public/dist/
+/*.tgz
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+.pnpm-debug.log
+
+# Vite
+.vite/
+
+# Environment
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor directories and files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# JetBrains
+*.iml
+
+# Mac
+.AppleDouble
+.LSOverride
+
+# Logs
+logs/
+*.log
+
+# Secrets
+secrets.json
+credentials/
+
+# Misc
+coverage/
+reports/
+.eggs/
+*.pem
+
+# Docker
+docker-compose.override.yml
+.env.docker
+
+# OS files
+Icon?
+
+# optional: local npm global modules
+.npm
+
+# local builds
+frontend/dist/
+frontend/.vite
+
+# keep migrations but ignore compiled python in them
+
