@@ -36,7 +36,9 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-i4h&d7!*55y(z20^ru(
 # Allow DEBUG override from environment
 DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('1', 'true', 'yes')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'brainartz-management-backend.onrender.com'
+]
 
 
 # Application definition
