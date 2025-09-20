@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const instance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000'
+  baseURL: import.meta.env.VITE_API_URL || 'https://brainartz-management-backend.onrender.com'
 });
 
 instance.interceptors.request.use(config => {
