@@ -191,7 +191,7 @@ DEFAULT_FROM_EMAIL = os.getenv('DJANGO_DEFAULT_FROM_EMAIL', 'admin@shopmanager.c
 
 # CORS_ALLOW_ALL_ORIGINS = False  # good practice for production
 CORS_ALLOWED_ORIGINS = [
-    os.getenv('FRONTEND_URL', 'http://localhost:5173'),
+    os.getenv('FRONTEND_URL', 'https://brainartz-management-frontend.onrender.com'),
 ]
 CORS_ALLOW_CREDENTIALS = True
 
