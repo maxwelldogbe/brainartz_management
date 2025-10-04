@@ -1,6 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Customer, Work, Payment, EmployeeProfile
+from .models import (
+    Customer, Work, Payment, EmployeeProfile, JobCategory, WorkFile,
+    DailySalesReport, DailySalesReportItem, SalesReportNote, DailyExpense,
+    Material, Procurement, JobMaterial, StockMovement, MaterialUsage
+)
 
 User = get_user_model()
 
@@ -13,17 +17,82 @@ class CustomerSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class JobCategorySerializer(serializers.ModelSerializer):
+    """Serializer for job categories"""
+    created_by = serializers.StringRelatedField(read_only=True)
+    works_count = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = JobCategory
+        fields = ['id', 'name', 'description', 'color', 'is_active', 'created_at', 'created_by', 'works_count']
+
+    def get_works_count(self, obj):
+        return obj.works.count()
+
+
+class WorkFileSerializer(serializers.ModelSerializer):
+    """Serializer for work file attachments"""
+    uploaded_by = serializers.StringRelatedField(read_only=True)
+    file_size_display = serializers.SerializerMethodField(read_only=True)
+    file_url = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = WorkFile
+        fields = [
+            'id', 'file', 'file_url', 'original_name', 'file_type', 'file_size', 
+            'file_size_display', 'description', 'uploaded_by', 'uploaded_at'
+        ]
+
+    def get_file_size_display(self, obj):
+        return obj.get_file_size_display()
+
+    def get_file_url(self, obj):
+        if obj.file:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
+        return None
+
+
 class WorkSerializer(serializers.ModelSerializer):
-    # allow writing customer by id, but expose a convenient customer_name for reads
+    """Enhanced work serializer with title, category, and file support"""
+    # Allow writing customer by id, but expose convenient customer_name for reads
     customer = serializers.PrimaryKeyRelatedField(queryset=Customer.objects.all())
     customer_name = serializers.SerializerMethodField(read_only=True)
-    worker = serializers.StringRelatedField()
+    
+    # Category handling
+    category = serializers.PrimaryKeyRelatedField(
+        queryset=JobCategory.objects.filter(is_active=True), 
+        required=False, 
+        allow_null=True
+    )
+    category_name = serializers.SerializerMethodField(read_only=True)
+    category_color = serializers.SerializerMethodField(read_only=True)
+    
+    # Worker details
+    worker = serializers.StringRelatedField(read_only=True)
+    worker_name = serializers.SerializerMethodField(read_only=True)
+    
+    # File attachments
+    files = WorkFileSerializer(many=True, read_only=True)
+    files_count = serializers.SerializerMethodField(read_only=True)
+    
+    # Payment information
+    total_payments = serializers.SerializerMethodField(read_only=True)
+    remaining_balance = serializers.SerializerMethodField(read_only=True)
+    is_fully_paid = serializers.SerializerMethodField(read_only=True)
+    
+    # Status information
+    status = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Work
         fields = [
-            'id', 'customer', 'customer_name', 'description', 'price', 'worker',
-            'created_at', 'completed', 'note'
+            'id', 'customer', 'customer_name', 'title', 'description', 'price', 
+            'category', 'category_name', 'category_color', 'worker', 'worker_name',
+            'created_at', 'completed', 'completed_at', 'note', 'files', 'files_count', 
+            'total_payments', 'remaining_balance', 'is_fully_paid', 'status'
         ]
 
     def get_customer_name(self, obj):
@@ -32,24 +101,112 @@ class WorkSerializer(serializers.ModelSerializer):
         except Exception:
             return None
 
+    def get_category_name(self, obj):
+        try:
+            return obj.category.name if obj.category else None
+        except Exception:
+            return None
+
+    def get_category_color(self, obj):
+        try:
+            return obj.category.color if obj.category else '#6B7280'  # Default gray
+        except Exception:
+            return '#6B7280'
+
+    def get_worker_name(self, obj):
+        try:
+            return obj.worker.get_full_name() or obj.worker.username if obj.worker else None
+        except Exception:
+            return None
+
+    def get_files_count(self, obj):
+        return obj.files.count()
+
+    def get_total_payments(self, obj):
+        return obj.get_total_payments()
+
+    def get_remaining_balance(self, obj):
+        return obj.get_remaining_balance()
+
+    def get_is_fully_paid(self, obj):
+        return obj.is_fully_paid()
+
+    def get_status(self, obj):
+        if obj.completed:
+            return 'completed'
+        elif obj.worker:
+            return 'in_progress'
+        else:
+            return 'pending'
+
+
+class WorkCreateSerializer(serializers.ModelSerializer):
+    """Simplified serializer for creating works"""
+    class Meta:
+        model = Work
+        fields = ['customer', 'title', 'description', 'price', 'category', 'note']
+
+    def validate_title(self, value):
+        if not value or len(value.strip()) < 3:
+            raise serializers.ValidationError("Title must be at least 3 characters long")
+        return value.strip()
+
+    def validate_price(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Price must be greater than 0")
+        return value
+
+
+class WorkFileUploadSerializer(serializers.ModelSerializer):
+    """Serializer for uploading files to work items"""
+    class Meta:
+        model = WorkFile
+        fields = ['file', 'description']
+
+    def validate_file(self, value):
+        # File size limit (10MB)
+        max_size = 10 * 1024 * 1024  # 10MB in bytes
+        if value.size > max_size:
+            raise serializers.ValidationError(f"File size cannot exceed 10MB. Current size: {value.size / (1024*1024):.1f}MB")
+
+        # Allowed file extensions
+        allowed_extensions = [
+            '.pdf', '.doc', '.docx', '.txt', '.jpg', '.jpeg', '.png', '.gif', 
+            '.zip', '.rar', '.xlsx', '.xls', '.ppt', '.pptx'
+        ]
+        
+        import os
+        _, ext = os.path.splitext(value.name.lower())
+        if ext not in allowed_extensions:
+            raise serializers.ValidationError(f"File type '{ext}' not allowed. Allowed types: {', '.join(allowed_extensions)}")
+
+        return value
+
 
 class PaymentSerializer(serializers.ModelSerializer):
     # allow write via work id, but provide work details for read
     work = serializers.PrimaryKeyRelatedField(queryset=Work.objects.all())
     work_description = serializers.SerializerMethodField(read_only=True)
+    work_title = serializers.SerializerMethodField(read_only=True)
     processed_by = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = Payment
         # processed_by will be set from request.user in the view; note is allowed
         fields = [
-            'id', 'work', 'work_description', 'amount', 'paid_at', 'method', 'tracking_number',
-            'processed_by', 'note'
+            'id', 'work', 'work_description', 'work_title', 'amount', 'paid_at', 'method', 
+            'tracking_number', 'processed_by', 'note'
         ]
 
     def get_work_description(self, obj):
         try:
             return obj.work.description
+        except Exception:
+            return None
+
+    def get_work_title(self, obj):
+        try:
+            return obj.work.title
         except Exception:
             return None
 
@@ -73,6 +230,312 @@ class UserActivitySerializer(serializers.ModelSerializer):
 
 
 class WorkerSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
-        fields = ["id", "username", "email"]
+        fields = ["id", "username", "email", "full_name"]
+        
+    def get_full_name(self, obj):
+        return obj.get_full_name() or obj.username
+
+
+# Simplified serializers for dropdowns/selections
+class JobCategorySelectSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for category dropdowns"""
+    class Meta:
+        model = JobCategory
+        fields = ['id', 'name', 'color']
+
+
+class CustomerSelectSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for customer dropdowns"""
+    class Meta:
+        model = Customer
+        fields = ['id', 'name']
+
+
+class WorkSelectSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for work dropdowns"""
+    customer_name = serializers.CharField(source='customer.name', read_only=True)
+    total_payments = serializers.SerializerMethodField(read_only=True)
+    remaining_balance = serializers.SerializerMethodField(read_only=True)
+    is_fully_paid = serializers.SerializerMethodField(read_only=True)
+    
+    class Meta:
+        model = Work
+        fields = ['id', 'title', 'customer_name', 'price', 'completed', 
+                 'total_payments', 'remaining_balance', 'is_fully_paid']
+
+    def get_total_payments(self, obj):
+        return obj.get_total_payments()
+
+    def get_remaining_balance(self, obj):
+        return obj.get_remaining_balance()
+
+    def get_is_fully_paid(self, obj):
+        return obj.is_fully_paid()
+
+
+# Sales Report Serializers
+class DailyExpenseSerializer(serializers.ModelSerializer):
+    """Serializer for daily expenses"""
+    recorded_by = serializers.StringRelatedField(read_only=True)
+    
+    class Meta:
+        model = DailyExpense
+        fields = [
+            'id', 'description', 'amount', 'category', 'receipt_number',
+            'recorded_by', 'recorded_at'
+        ]
+
+
+class DailySalesReportItemSerializer(serializers.ModelSerializer):
+    """Serializer for sales report items (category breakdowns)"""
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    category_color = serializers.CharField(source='category.color', read_only=True)
+    
+    class Meta:
+        model = DailySalesReportItem
+        fields = [
+            'id', 'category', 'category_name', 'category_color',
+            'total_works', 'total_amount', 'payments_received', 'outstanding_amount'
+        ]
+
+
+class SalesReportNoteSerializer(serializers.ModelSerializer):
+    """Serializer for sales report notes"""
+    added_by = serializers.StringRelatedField(read_only=True)
+    added_by_name = serializers.SerializerMethodField(read_only=True)
+    
+    class Meta:
+        model = SalesReportNote
+        fields = ['id', 'note', 'added_by', 'added_by_name', 'created_at']
+    
+    def get_added_by_name(self, obj):
+        return obj.added_by.get_full_name() or obj.added_by.username
+
+
+class DailySalesReportSerializer(serializers.ModelSerializer):
+    """Serializer for daily sales reports"""
+    generated_by = serializers.StringRelatedField(read_only=True)
+    generated_by_name = serializers.SerializerMethodField(read_only=True)
+    report_items = DailySalesReportItemSerializer(many=True, read_only=True)
+    expenses = DailyExpenseSerializer(many=True, read_only=True)
+    notes = SalesReportNoteSerializer(many=True, read_only=True)
+    can_edit = serializers.SerializerMethodField(read_only=True)
+    
+    class Meta:
+        model = DailySalesReport
+        fields = [
+            'id', 'date', 'generated_by', 'generated_by_name', 'is_submitted', 'submitted_at',
+            'total_sales_amount', 'total_payments_received', 'total_outstanding',
+            'total_expenses', 'net_total', 'created_at', 'updated_at',
+            'report_items', 'expenses', 'notes', 'can_edit'
+        ]
+    
+    def get_generated_by_name(self, obj):
+        return obj.generated_by.get_full_name() or obj.generated_by.username
+    
+    def get_can_edit(self, obj):
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            return obj.can_be_edited_by(request.user)
+        return False
+
+
+class DailySalesReportCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating daily sales reports"""
+    
+    class Meta:
+        model = DailySalesReport
+        fields = ['date']
+    
+    def validate_date(self, value):
+        from django.utils import timezone
+        today = timezone.localdate()
+        
+        if value > today:
+            raise serializers.ValidationError("Cannot create reports for future dates")
+        
+        # Check if report already exists for this date and user
+        user = self.context['request'].user
+        if DailySalesReport.objects.filter(date=value, generated_by=user).exists():
+            raise serializers.ValidationError("A report for this date already exists")
+        
+        return value
+
+
+# ============ PROCUREMENT & INVENTORY SERIALIZERS ============
+
+class MaterialUsageSerializer(serializers.ModelSerializer):
+    """Serializer for MaterialUsage model"""
+    material_name = serializers.CharField(source='material.name', read_only=True)
+    material_unit = serializers.CharField(source='material.unit', read_only=True)
+    taken_by_name = serializers.CharField(source='taken_by.get_full_name', read_only=True)
+    
+    class Meta:
+        model = MaterialUsage
+        fields = [
+            'id', 'material', 'material_name', 'material_unit',
+            'quantity_taken', 'taken_by', 'taken_by_name', 'taken_at',
+            'note', 'stock_before', 'stock_after'
+        ]
+        read_only_fields = ['taken_by', 'taken_at', 'stock_before', 'stock_after']
+
+
+class MaterialSerializer(serializers.ModelSerializer):
+    """Serializer for Material model"""
+    is_low_stock = serializers.ReadOnlyField()
+    suggested_reorder_quantity = serializers.ReadOnlyField(source='get_suggested_reorder_quantity')
+    recent_movements = serializers.SerializerMethodField(read_only=True)
+    
+    class Meta:
+        model = Material
+        fields = [
+            'id', 'name', 'category', 'unit', 'current_stock', 'reorder_level',
+            'archived', 'created_at', 'updated_at', 'is_low_stock',
+            'suggested_reorder_quantity', 'recent_movements'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+    
+    def get_recent_movements(self, obj):
+        """Get recent stock movements for this material"""
+        if not self.context.get('include_movements'):
+            return None
+        
+        movements = obj.stock_movements.all()[:5]
+        return StockMovementSerializer(movements, many=True).data
+    
+    def validate_current_stock(self, value):
+        """Validate current stock value"""
+        if value < 0:
+            raise serializers.ValidationError("Current stock cannot be negative")
+        return value
+    
+    def validate_reorder_level(self, value):
+        """Validate reorder level"""
+        if value < 0:
+            raise serializers.ValidationError("Reorder level cannot be negative")
+        return value
+
+
+class ProcurementSerializer(serializers.ModelSerializer):
+    """Serializer for Procurement model"""
+    material_name = serializers.CharField(source='material.name', read_only=True)
+    material_unit = serializers.CharField(source='material.unit', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    total_cost = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    
+    class Meta:
+        model = Procurement
+        fields = [
+            'id', 'material', 'material_name', 'material_unit',
+            'supplier_name', 'supplier_contact', 'supplier_email', 'supplier_phone',
+            'quantity_ordered', 'unit_cost', 'total_cost',
+            'order_date', 'delivery_date', 'status',
+            'created_by', 'created_by_name', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['total_cost', 'created_at', 'updated_at', 'created_by']
+    
+    def validate_quantity_ordered(self, value):
+        """Validate quantity ordered"""
+        if value <= 0:
+            raise serializers.ValidationError("Quantity ordered must be positive")
+        return value
+    
+    def validate_unit_cost(self, value):
+        """Validate unit cost"""
+        if value < 0:
+            raise serializers.ValidationError("Unit cost cannot be negative")
+        return value
+
+
+class ProcurementDeliverySerializer(serializers.Serializer):
+    """Serializer for marking procurement as delivered"""
+    delivery_date = serializers.DateTimeField(required=False)
+    
+    def validate_delivery_date(self, value):
+        """Validate delivery date is not in future"""
+        from django.utils import timezone
+        if value and value > timezone.now():
+            raise serializers.ValidationError("Delivery date cannot be in the future")
+        return value
+
+
+class JobMaterialSerializer(serializers.ModelSerializer):
+    """Serializer for JobMaterial model"""
+    job_title = serializers.CharField(source='job.title', read_only=True)
+    job_customer = serializers.CharField(source='job.customer.name', read_only=True)
+    material_name = serializers.CharField(source='material.name', read_only=True)
+    material_unit = serializers.CharField(source='material.unit', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    
+    class Meta:
+        model = JobMaterial
+        fields = [
+            'id', 'job', 'job_title', 'job_customer',
+            'material', 'material_name', 'material_unit',
+            'quantity_used', 'created_by', 'created_by_name', 'created_at'
+        ]
+        read_only_fields = ['created_at', 'created_by']
+    
+    def validate_quantity_used(self, value):
+        """Validate quantity used"""
+        if value <= 0:
+            raise serializers.ValidationError("Quantity used must be positive")
+        return value
+
+
+class JobMaterialCreateSerializer(serializers.Serializer):
+    """Serializer for creating JobMaterial entries"""
+    material = serializers.IntegerField()
+    quantity_used = serializers.DecimalField(max_digits=12, decimal_places=4)
+    
+    def validate_material(self, value):
+        """Validate material exists and is not archived"""
+        try:
+            material = Material.objects.get(id=value, archived=False)
+            return material
+        except Material.DoesNotExist:
+            raise serializers.ValidationError("Material not found or archived")
+    
+    def validate_quantity_used(self, value):
+        """Validate quantity used"""
+        if value <= 0:
+            raise serializers.ValidationError("Quantity used must be positive")
+        return value
+
+
+class StockMovementSerializer(serializers.ModelSerializer):
+    """Serializer for StockMovement model"""
+    material_name = serializers.CharField(source='material.name', read_only=True)
+    
+    class Meta:
+        model = StockMovement
+        fields = [
+            'id', 'material', 'material_name', 'movement_type', 'quantity',
+            'reference_type', 'reference_id', 'note', 'created_at'
+        ]
+        read_only_fields = ['created_at']
+
+
+class StockAdjustmentSerializer(serializers.Serializer):
+    """Serializer for manual stock adjustments"""
+    adjustment_quantity = serializers.DecimalField(max_digits=12, decimal_places=4)
+    note = serializers.CharField(max_length=500, required=False, allow_blank=True)
+    
+    def validate_adjustment_quantity(self, value):
+        """Validate adjustment quantity is not zero"""
+        if value == 0:
+            raise serializers.ValidationError("Adjustment quantity cannot be zero")
+        return value
+
+
+class MaterialStatsSerializer(serializers.Serializer):
+    """Serializer for material statistics and summaries"""
+    total_materials = serializers.IntegerField()
+    low_stock_count = serializers.IntegerField()
+    total_stock_value = serializers.DecimalField(max_digits=15, decimal_places=2)
+    recent_movements_count = serializers.IntegerField()
+    pending_procurements_count = serializers.IntegerField()

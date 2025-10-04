@@ -25,3 +25,13 @@ whitenoise
 gunicorn
 django-cors-headers
 
+# WebSocket and Real-time Support
+channels>=4.0.0
+channels-redis>=4.1.0
+redis>=4.5.0
+
+# Optional SMS provider dependencies (uncomment as needed):
+# twilio>=7.0.0  # For Twilio SMS
+# vonage>=2.5.0  # For Vonage (Nexmo) SMS  
+# africastalking>=1.2.0  # For Africa's Talking SMS
+

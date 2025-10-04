@@ -17,6 +17,7 @@ env/
 ENV/
 env.bak/
 venv.bak/
+brain/
 
 # Pytest
 .pytest_cache/
@@ -34,7 +35,7 @@ coverage.xml
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
-/core/db.sqlite3
+./core/db.sqlite3
 
 # Django media/uploads
 media/
@@ -47,10 +48,10 @@ staticfiles/
 # Node / frontend
 node_modules/
 frontend/node_modules/
-/frontend/node_modules/
+./frontend/node_modules/
 dist/
-/build/
-/public/dist/
+./build/
+./public/dist/
 /*.tgz
 npm-debug.log*
 yarn-debug.log*
@@ -62,13 +63,85 @@ yarn.lock
 # Vite
 .vite/
 
-# Environment
+# Environment Variables and Configuration Files
 .env
 .env.*
 .env.local
+.env.development
 .env.development.local
+.env.test
 .env.test.local
+.env.production
 .env.production.local
+.env.staging
+.env.staging.local
+.env.docker
+.env.example
+*.env
+*.env.*
+environment.js
+environment.ts
+config.json
+config.local.json
+config.development.json
+config.production.json
+config.staging.json
+
+# Secret Files
+secrets.json
+secrets/
+credentials/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+private.json
+service-account.json
+service-account-key.json
+firebase-adminsdk-*.json
+google-services.json
+GoogleService-Info.plist
+.secrets
+secret.yaml
+secret.yml
+secrets.yaml
+secrets.yml
+
+# API Keys and Tokens
+api-keys.json
+tokens.json
+.api-key
+.token
+.auth-token
+.access-token
+.refresh-token
+oauth.json
+auth.json
+
+# Database Configuration
+database.json
+database.yml
+database.yaml
+db-config.json
+connection-string.txt
+
+# SSL/TLS Certificates
+ssl/
+certificates/
+*.csr
+*.der
+*.p7b
+*.p7s
+
+# Cloud Provider Credentials
+.aws/
+.azure/
+.gcp/
+gcloud/
+aws-credentials
+azure-credentials
+gcp-credentials
 
 # Editor directories and files
 .vscode/
@@ -91,19 +164,15 @@ Thumbs.db
 logs/
 *.log
 
-# Secrets
-secrets.json
-credentials/
-
 # Misc
 coverage/
 reports/
 .eggs/
-*.pem
 
 # Docker
 docker-compose.override.yml
-.env.docker
+docker-compose.local.yml
+docker-compose.secrets.yml
 
 # OS files
 Icon?
@@ -115,5 +184,28 @@ Icon?
 frontend/dist/
 frontend/.vite
 
-# keep migrations but ignore compiled python in them
+# Application-specific secrets
+twilio.json
+sendgrid.json
+stripe.json
+paypal.json
+sms-config.json
+email-config.json
+payment-config.json
 
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+*.tmp
+
+# IDE and editor config (if containing sensitive info)
+.vscode/settings.json
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dataSources/
+.idea/dataSources.ids
+.idea/dataSources.local.xml
+.idea/sqlDataSources.xml
+.idea/dynamic.xml

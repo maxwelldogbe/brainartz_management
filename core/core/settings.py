@@ -37,7 +37,9 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-i4h&d7!*55y(z20^ru(
 DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('1', 'true', 'yes')
 
 ALLOWED_HOSTS = [
-    'brainartz-management-backend.onrender.com'
+    'brainartz-management-backend.onrender.com',
+    'localhost',
+    '127.0.0.1',
 ]
 
 
@@ -56,12 +58,13 @@ INSTALLED_APPS = [
     'services',
     'rest_framework.authtoken',
     'django.contrib.sites',
-    'corsheaders',
+    'corsheaders',  # Enable CORS for frontend
+    # 'channels',     # Temporarily commented out
 ]
 SITE_ID = 1
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # Enable CORS middleware
     'django.middleware.security.SecurityMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -90,6 +93,21 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'core.wsgi.application'
+
+# Channels (WebSocket) Configuration - Temporarily commented out
+# ASGI_APPLICATION = 'core.asgi.application'
+
+# Channel Layer Configuration (Redis) - Temporarily commented out
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             "hosts": [(os.getenv('REDIS_HOST', 'localhost'), int(os.getenv('REDIS_PORT', 6379)))],
+#             "capacity": 300,  # Maximum messages in queue
+#             "expiry": 60,     # Message expiry time in seconds
+#         },
+#     },
+# }
 
 
 # Database
@@ -140,6 +158,14 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# Media files (uploaded files)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# File upload settings
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -189,9 +215,15 @@ DEFAULT_FROM_EMAIL = os.getenv('DJANGO_DEFAULT_FROM_EMAIL', 'admin@shopmanager.c
 
 
 
-# CORS_ALLOW_ALL_ORIGINS = False  # good practice for production
+# CORS Settings - Enable for development
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins only in DEBUG mode
 CORS_ALLOWED_ORIGINS = [
     os.getenv('FRONTEND_URL', 'https://brainartz-management-frontend.onrender.com'),
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
 ]
 CORS_ALLOW_CREDENTIALS = True
 

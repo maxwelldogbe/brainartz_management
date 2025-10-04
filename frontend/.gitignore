@@ -12,6 +12,64 @@ dist
 dist-ssr
 *.local
 
+# Environment Variables and Configuration Files
+.env
+.env.*
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.staging
+.env.staging.local
+*.env
+*.env.*
+environment.js
+environment.ts
+config.json
+config.local.json
+config.development.json
+config.production.json
+config.staging.json
+
+# Secret Files
+secrets.json
+secrets/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+private.json
+service-account.json
+service-account-key.json
+firebase-adminsdk-*.json
+google-services.json
+GoogleService-Info.plist
+.secrets
+
+# API Keys and Tokens
+api-keys.json
+tokens.json
+.api-key
+.token
+.auth-token
+.access-token
+.refresh-token
+oauth.json
+auth.json
+
+# Build and Cache
+.vite/
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.vercel/
+.netlify/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +80,25 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnpm-debug.log
+
+# Application-specific secrets
+twilio.json
+sendgrid.json
+stripe.json
+paypal.json
+sms-config.json
+email-config.json
+payment-config.json
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+*.tmp

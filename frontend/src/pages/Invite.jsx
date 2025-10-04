@@ -1,37 +1,138 @@
 import { useState } from 'react';
-import { sendInvite } from '../utils/services';
-import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import EmployeeInviteForm from '../components/EmployeeInviteForm';
+import ManualEmployeeForm from '../components/ManualEmployeeForm';
+import CredentialsModal from '../components/CredentialsModal';
+import Alert from '../components/Alert';
 
 export default function Invite() {
-  const { user } = useAuth();
-  const [form, setForm] = useState({ email: '', phone: '' });
-  const [msg, setMsg] = useState(null);
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('invite');
+  const [notification, setNotification] = useState(null);
+  const [credentialsModal, setCredentialsModal] = useState({
+    isOpen: false,
+    credentials: null
+  });
 
-  if (!user || !user.is_admin) return <div>You must be an admin to send invites.</div>;
+  // No need for admin check here since RoleGuard handles it
 
-  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 5000);
+  };
 
-  const handleSend = async e => {
-    e.preventDefault();
-    setMsg(null);
-    try {
-      const res = await sendInvite(form);
-      setMsg('Invite sent. Link: ' + (res.invite_link || 'sent'));
-    } catch (err) {
-      console.error(err);
-      setMsg('Failed to send invite');
-    }
+  const handleInviteSuccess = (message) => {
+    showNotification(message, 'success');
+  };
+
+  const handleInviteError = (message, type = 'error') => {
+    showNotification(message, type);
+  };
+
+  const handleFallbackSuggested = () => {
+    showNotification('SMS failed. You can create the account manually below.', 'warning');
+    setActiveTab('manual');
+  };
+
+  const handleCredentialsGenerated = (credentials) => {
+    setCredentialsModal({
+      isOpen: true,
+      credentials
+    });
+  };
+
+  const handleCloseCredentials = () => {
+    setCredentialsModal({
+      isOpen: false,
+      credentials: null
+    });
   };
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Send Invite</h1>
-      {msg && <div className="mb-4">{msg}</div>}
-      <form onSubmit={handleSend} className="p-4 bg-white rounded shadow">
-        <input name="email" value={form.email} onChange={handleChange} placeholder="Email (optional)" className="border p-2 mr-2 rounded w-full mb-2" />
-        <input name="phone" value={form.phone} onChange={handleChange} placeholder="Phone (optional)" className="border p-2 mr-2 rounded w-full mb-2" />
-        <button className="bg-blue-600 text-white px-3 py-1 rounded">Send Invite</button>
-      </form>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Employee Management</h1>
+        <p className="text-gray-600">
+          Invite new employees via SMS or create accounts manually as a fallback option.
+        </p>
+      </div>
+
+      {/* Notifications */}
+      {notification && (
+        <Alert 
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        >
+          {notification.message}
+        </Alert>
+      )}
+
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('invite')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'invite'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            📱 SMS Invitation
+          </button>
+          <button
+            onClick={() => setActiveTab('manual')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'manual'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            👤 Manual Creation
+          </button>
+        </nav>
+      </div>
+
+      {/* Tab Content */}
+      <div className="mt-6">
+        {activeTab === 'invite' && (
+          <EmployeeInviteForm
+            onSuccess={handleInviteSuccess}
+            onError={handleInviteError}
+            onFallbackSuggested={handleFallbackSuggested}
+          />
+        )}
+
+        {activeTab === 'manual' && (
+          <ManualEmployeeForm
+            onSuccess={handleInviteSuccess}
+            onError={handleInviteError}
+            onCredentialsGenerated={handleCredentialsGenerated}
+          />
+        )}
+      </div>
+
+      {/* Quick Action Buttons */}
+      <div className="flex justify-between items-center pt-6 border-t border-gray-200">
+        <div>
+          <button
+            onClick={() => navigate('/workers')}
+            className="text-blue-600 hover:text-blue-800 font-medium"
+          >
+            👥 View All Employees →
+          </button>
+        </div>
+        <div className="text-sm text-gray-500">
+          Need help? Check the instructions in each form section.
+        </div>
+      </div>
+
+      {/* Credentials Modal */}
+      <CredentialsModal
+        isOpen={credentialsModal.isOpen}
+        credentials={credentialsModal.credentials}
+        onClose={handleCloseCredentials}
+      />
     </div>
   );
 }

@@ -3,13 +3,20 @@ import axios from "../utils/axios";
 
 export default function AdminDashboard() {
   const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const load = async () => {
     try {
+      setLoading(true);
       const res = await axios.get("/api/services/admin-dashboard/");
       setData(res.data);
+      setError(null);
     } catch (err) {
       console.error("Failed to load admin dashboard", err);
+      setError("Failed to load admin dashboard data");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -17,66 +24,139 @@ export default function AdminDashboard() {
     load();
   }, []);
 
-  if (!data) return <div>Loading admin dashboard...</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-gray-600">Loading admin data...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-6xl mb-4">⚠️</div>
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">Error Loading Admin Dashboard</h3>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <button 
+          onClick={load}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="text-center py-8">
+        {/* <div className="text-6xl mb-4">📊</div> */}
+        <h3 className="text-lg font-semibold text-gray-800">No Data Available</h3>
+        <p className="text-gray-600">Admin dashboard data is not available at the moment.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Page title */}
-      <h1 className="text-2xl font-bold text-gray-800">Admin Dashboard</h1>
+      <div>
+        <h2 className="text-2xl font-bold text-gray-800">System Overview</h2>
+        <p className="text-gray-600 mt-1">Key metrics and employee performance</p>
+      </div>
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="p-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl shadow-lg">
-          <h2 className="text-lg font-semibold">Total Customers</h2>
-          <p className="text-3xl font-bold mt-2">{data.total_customers}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Total Customers</h3>
+              <p className="text-3xl font-bold mt-2">{data.total_customers}</p>
+            </div>
+            {/* <div className="text-4xl opacity-80">👥</div> */}
+          </div>
         </div>
+        
         <div className="p-6 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg">
-          <h2 className="text-lg font-semibold">Total Works</h2>
-          <p className="text-3xl font-bold mt-2">{data.total_works}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Total Works</h3>
+              <p className="text-3xl font-bold mt-2">{data.total_works}</p>
+            </div>
+            {/* <div className="text-4xl opacity-80">🔨</div> */}
+          </div>
         </div>
+        
         <div className="p-6 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl shadow-lg">
-          <h2 className="text-lg font-semibold">Total Payments</h2>
-          <p className="text-3xl font-bold mt-2">${data.total_payments}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Total Revenue</h3>
+              <p className="text-3xl font-bold mt-2">${data.total_revenue}</p>
+            </div>
+            {/* <div className="text-4xl opacity-80">💰</div> */}
+          </div>
         </div>
       </div>
 
       {/* Payments by employee */}
-      <div className="bg-white p-6 rounded-xl shadow-md">
-        <h2 className="text-lg font-semibold mb-4 text-gray-800">
-          Payments by Employee
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-gray-100 text-gray-700">
-              <tr>
-                <th className="p-3">Employee</th>
-                <th className="p-3">Count</th>
-                <th className="p-3">Total</th>
-              </tr>
-            </thead>
-            <tbody className="text-gray-600">
-              {data.payments_by_employee.map((emp, idx) => (
-                <tr
-                  key={emp.id}
-                  className={`${
-                    idx % 2 === 0 ? "bg-white" : "bg-gray-50"
-                  } hover:bg-gray-100 transition`}
-                >
-                  <td className="p-3">{emp.email}</td>
-                  <td className="p-3">{emp.payments_count}</td>
-                  <td className="p-3 font-semibold">
-                    ${emp.payments_total}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100">
+        <div className="p-6 border-b border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-800">Employee Performance</h3>
+          <p className="text-gray-600 text-sm mt-1">Revenue generated by each team member</p>
         </div>
-        {data.payments_by_employee.length === 0 && (
-          <div className="text-center text-gray-500 py-4">
-            No payment data available.
-          </div>
-        )}
+        
+        <div className="p-6">
+          {data.payments_by_employee && data.payments_by_employee.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-700">Employee</th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-700">Transactions</th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-700">Total Revenue</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {data.payments_by_employee.map((emp) => (
+                    <tr
+                      key={emp.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="p-3">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span className="text-blue-600 font-semibold text-sm">
+                              {emp.email.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <span className="font-medium text-gray-800">{emp.email}</span>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {emp.payments_count}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <span className="font-bold text-green-600">
+                          ${emp.payments_total}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              {/* <div className="text-4xl mb-4">📈</div> */}
+              <h4 className="text-lg font-semibold text-gray-800 mb-2">No Performance Data</h4>
+              <p className="text-gray-600">Employee payment data will appear here once transactions are processed.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

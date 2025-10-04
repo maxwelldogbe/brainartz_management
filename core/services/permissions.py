@@ -58,3 +58,69 @@ class IsOwnerOrAdminForUnsafeMethods(permissions.BasePermission):
 
         # Fallback: only admins can modify
         return user.is_staff
+
+
+# ============ PROCUREMENT & INVENTORY PERMISSIONS ============
+
+class IsManagerOrStaffReadOnly(permissions.BasePermission):
+    """
+    Managers can perform all operations.
+    Staff can only read and record job material usage.
+    """
+    
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        
+        # Managers (admins) can do everything
+        if request.user.is_staff:
+            return True
+        
+        # Staff can read and create job materials only
+        if request.method in permissions.SAFE_METHODS:
+            return True
+            
+        # Allow staff to create job material usage records
+        if (hasattr(view, 'action') and 
+            view.action in ['create', 'record_material_usage']):
+            return True
+            
+        return False
+
+
+class IsProcurementManager(permissions.BasePermission):
+    """
+    Only managers can mark procurements as delivered and adjust stock manually.
+    """
+    
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+            
+        # Safe methods allowed for all authenticated users
+        if request.method in permissions.SAFE_METHODS:
+            return True
+            
+        # Only managers can create, update procurements and mark as delivered
+        return request.user.is_staff
+    
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+            
+        # Only managers can modify procurements
+        return request.user and request.user.is_staff
+
+
+class IsStockManager(permissions.BasePermission):
+    """
+    Permission for stock management operations (manual adjustments).
+    Only managers can perform direct stock adjustments.
+    """
+    
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+            
+        # Only managers can adjust stock manually
+        return request.user.is_staff

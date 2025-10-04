@@ -1,0 +1,116 @@
+# Django specific
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Environment Variables and Configuration Files
+.env
+.env.*
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.staging
+.env.staging.local
+.env.docker
+*.env
+*.env.*
+
+# Secret Files
+secrets.json
+secrets/
+credentials/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+private.json
+service-account.json
+service-account-key.json
+firebase-adminsdk-*.json
+.secrets
+secret.yaml
+secret.yml
+secrets.yaml
+secrets.yml
+
+# API Keys and Tokens
+api-keys.json
+tokens.json
+.api-key
+.token
+.auth-token
+.access-token
+.refresh-token
+oauth.json
+auth.json
+
+# Database Configuration
+database.json
+database.yml
+database.yaml
+db-config.json
+connection-string.txt
+
+# SSL/TLS Certificates
+ssl/
+certificates/
+*.csr
+*.der
+*.p7b
+*.p7s
+
+# Cloud Provider Credentials
+.aws/
+.azure/
+.gcp/
+gcloud/
+aws-credentials
+azure-credentials
+gcp-credentials
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+brain/
+
+# Static files
+staticfiles/
+static/
+media/
+
+# Application-specific secrets
+twilio.json
+sendgrid.json
+stripe.json
+paypal.json
+sms-config.json
+email-config.json
+payment-config.json
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+*.tmp
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*~

@@ -4,4 +4,19 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    port: 5173, // Force use of port 5173
+    proxy: {
+      '/auth': {
+        target: 'http://localhost:8000', // Updated to match Django server
+        changeOrigin: true,
+        secure: false,
+      },
+      '/api': {
+        target: 'http://localhost:8000', // Updated to match Django server
+        changeOrigin: true,
+        secure: false,
+      }
+    }
+  }
 })

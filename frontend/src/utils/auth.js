@@ -1,21 +1,115 @@
-// src/api/auth.js
+// src/utils/auth.js - Enhanced for Djoser integration
 import axios from '../utils/axios';
 
+// =============== DJOSER AUTHENTICATION ENDPOINTS ===============
+
 export const loginUser = async (email, password) => {
-  const res = await axios.post('/auth/jwt/create/', { email, password });
-  return res.data;
+  try {
+    console.log('Making login request to:', '/auth/jwt/create/');
+    const res = await axios.post('/auth/jwt/create/', { email, password });
+    console.log('Login response received:', { 
+      status: res.status, 
+      hasAccess: !!res.data.access, 
+      hasRefresh: !!res.data.refresh 
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Login request failed:', {
+      status: error.response?.status,
+      message: error.message,
+      data: error.response?.data
+    });
+    throw error;
+  }
 };
 
 export const refreshToken = async refresh => {
-  const res = await axios.post('/auth/jwt/refresh/', { refresh });
-  return res.data;
+  try {
+    const res = await axios.post('/auth/jwt/refresh/', { refresh });
+    return res.data;
+  } catch (error) {
+    console.error('Token refresh failed:', error.response?.data);
+    throw error;
+  }
 };
 
+export const verifyToken = async (token) => {
+  try {
+    const res = await axios.post('/auth/jwt/verify/', { token });
+    return res.data;
+  } catch (error) {
+    console.error('Token verification failed:', error.response?.data);
+    throw error;
+  }
+};
+
+// =============== DJOSER USER MANAGEMENT ===============
+
+export const getCurrentUser = async () => {
+  try {
+    const res = await axios.get('/auth/users/me/');
+    return res.data;
+  } catch (error) {
+    console.error('Failed to get current user:', error.response?.data);
+    throw error;
+  }
+};
+
+export const updateCurrentUser = async (userData) => {
+  try {
+    const res = await axios.patch('/auth/users/me/', userData);
+    return res.data;
+  } catch (error) {
+    console.error('Failed to update user:', error.response?.data);
+    throw error;
+  }
+};
+
+export const changePassword = async (current_password, new_password, re_new_password) => {
+  try {
+    const res = await axios.post('/auth/users/set_password/', {
+      current_password,
+      new_password,
+      re_new_password
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Password change failed:', error.response?.data);
+    throw error;
+  }
+};
+
+export const resetPassword = async (email) => {
+  try {
+    const res = await axios.post('/auth/users/reset_password/', { email });
+    return res.data;
+  } catch (error) {
+    console.error('Password reset failed:', error.response?.data);
+    throw error;
+  }
+};
+
+export const confirmPasswordReset = async (uid, token, new_password, re_new_password) => {
+  try {
+    const res = await axios.post('/auth/users/reset_password_confirm/', {
+      uid,
+      token, 
+      new_password,
+      re_new_password
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Password reset confirmation failed:', error.response?.data);
+    throw error;
+  }
+};
+
+// =============== CUSTOM REGISTRATION (Via your authentication app) ===============
 
 export const registerUserFromToken = async (token, username, password, re_password) => {
-  console.log("Making request with token:", token); // Debug token value
+  console.log("Making request with token:", token);
   try {
-    const res = await axios.post(`/api/auth/register/${token}/`, { 
+    const res = await axios.post(`/api/authentication/register/${token}/`, { 
       username,
       password,
       re_password,
@@ -23,18 +117,93 @@ export const registerUserFromToken = async (token, username, password, re_passwo
     return res.data;
   } catch (error) {
     console.error("Registration error:", error.response);
-    throw error.response.data;
+    throw error;
   }
 };
 
-// // Optional - activation
-// export const activateUser = async (uid, token) => {
-//   const res = await axios.post('/auth/users/activation/', { uid, token });
-//   return res.data;
-// };
+// =============== DJOSER USER ACTIVATION (if needed) ===============
 
-// export function logout() {
-//   localStorage.removeItem("access_token");
-//   localStorage.removeItem("refresh_token");
-//   window.location.href = "/login"; // or use navigate() if inside a component
-// }
+export const activateUser = async (uid, token) => {
+  try {
+    const res = await axios.post('/auth/users/activation/', { uid, token });
+    return res.data;
+  } catch (error) {
+    console.error('User activation failed:', error.response?.data);
+    throw error;
+  }
+};
+
+export const resendActivation = async (email) => {
+  try {
+    const res = await axios.post('/auth/users/resend_activation/', { email });
+    return res.data;
+  } catch (error) {
+    console.error('Resend activation failed:', error.response?.data);
+    throw error;
+  }
+};
+
+// =============== UTILITY FUNCTIONS ===============
+
+export const logout = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('refreshToken');
+  // Could also call a logout endpoint if needed
+  // axios.post('/auth/token/logout/'); // If using token auth instead of JWT
+};
+
+export const isTokenExpired = (token) => {
+  if (!token) return true;
+  
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const currentTime = Date.now() / 1000;
+    return payload.exp < currentTime;
+  } catch (error) {
+    console.error('Error parsing token:', error);
+    return true;
+  }
+};
+
+// =============== DJOSER ADMIN USER MANAGEMENT ===============
+// These functions use Djoser's user endpoints for admin operations
+
+export const listAllUsers = async () => {
+  try {
+    const res = await axios.get('/auth/users/');
+    return res.data;
+  } catch (error) {
+    console.error('Failed to list users:', error.response?.data);
+    throw error;
+  }
+};
+
+export const getUserById = async (id) => {
+  try {
+    const res = await axios.get(`/auth/users/${id}/`);
+    return res.data;
+  } catch (error) {
+    console.error('Failed to get user:', error.response?.data);
+    throw error;
+  }
+};
+
+export const updateUser = async (id, userData) => {
+  try {
+    const res = await axios.patch(`/auth/users/${id}/`, userData);
+    return res.data;
+  } catch (error) {
+    console.error('Failed to update user:', error.response?.data);
+    throw error;
+  }
+};
+
+export const deleteUser = async (id) => {
+  try {
+    const res = await axios.delete(`/auth/users/${id}/`);
+    return res.data;
+  } catch (error) {
+    console.error('Failed to delete user:', error.response?.data);
+    throw error;
+  }
+};

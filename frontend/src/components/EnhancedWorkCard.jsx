@@ -1,0 +1,247 @@
+import React from 'react';
+import { Pencil, CheckCircle, RotateCcw, FolderOpen, User, Calendar, DollarSign } from 'lucide-react';
+
+export default function EnhancedWorkCard({ 
+  work, 
+  onEdit, 
+  onToggleComplete, 
+  onViewFiles,
+  isUpdating = false
+}) {
+  const getStatusColor = (status) => {
+    const colors = {
+      'completed': '#10B981',
+      'in_progress': '#F59E0B', 
+      'pending': '#6B7280'
+    };
+    return colors[status] || colors.pending;
+  };
+
+  const getStatusIcon = (status) => {
+    const icons = {
+      'completed': '✅',
+      'in_progress': '⏳',
+      'pending': '📋'
+    };
+    return icons[status] || icons.pending;
+  };
+
+  const getStatusText = (work) => {
+    if (work.completed) return 'completed';
+    if (work.worker) return 'in_progress';
+    return 'pending';
+  };
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(price);
+  };
+
+  const status = getStatusText(work);
+  
+  return (
+    <div className="work-card bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200">
+      <div className="p-6">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-semibold text-gray-900 truncate">
+              {work.title || 'Untitled Work'}
+            </h3>
+            <div className="flex items-center gap-2 mt-1">
+              <User className="h-4 w-4 text-gray-400" />
+              <p className="text-sm text-gray-600 truncate">
+                {work.customer_name}
+              </p>
+            </div>
+          </div>
+          
+          <div className="ml-4">
+            <span 
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium text-white"
+              style={{ backgroundColor: getStatusColor(status) }}
+            >
+              {getStatusIcon(status)} 
+              {status.replace('_', ' ').toUpperCase()}
+            </span>
+          </div>
+        </div>
+
+        {/* Category */}
+        {work.category_name && (
+          <div className="mb-3">
+            <span 
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border"
+              style={{ 
+                backgroundColor: `${work.category_color}20`,
+                borderColor: work.category_color,
+                color: work.category_color
+              }}
+            >
+              <span style={{ color: work.category_color }}>●</span>
+              {work.category_name}
+            </span>
+          </div>
+        )}
+
+        {/* Description */}
+        <div className="mb-4">
+          <p className="text-gray-700 text-sm line-clamp-3">
+            {work.description}
+          </p>
+        </div>
+
+        {/* Worker Assignment */}
+        {work.worker_name && (
+          <div className="mb-3">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="text-blue-600">👷</span>
+              <span>Assigned to: <strong>{work.worker_name}</strong></span>
+            </div>
+          </div>
+        )}
+
+        {/* Meta Information */}
+        <div className="grid grid-cols-2 gap-4 mb-4 text-sm text-gray-600">
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            <span className="font-semibold text-gray-900">
+              {formatPrice(work.price)}
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            <span>
+              {new Date(work.created_at).toLocaleDateString()}
+            </span>
+          </div>
+        </div>
+
+        {/* Files Info */}
+        {work.files_count > 0 && (
+          <div className="mb-4">
+            <button 
+              className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+              onClick={() => onViewFiles(work)}
+            >
+              <FolderOpen className="h-4 w-4" />
+              {work.files_count} file{work.files_count !== 1 ? 's' : ''}
+            </button>
+          </div>
+        )}
+
+        {/* Internal Notes */}
+        {work.note && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+            <div className="flex items-start gap-2">
+              <span className="text-yellow-600 text-sm font-medium">📝 Note:</span>
+              <p className="text-sm text-yellow-800">{work.note}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => onEdit(work)}
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+            >
+              <Pencil className="h-3 w-3" />
+              Edit
+            </button>
+            
+            {work.files_count === 0 && (
+              <button 
+                onClick={() => onViewFiles(work)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+              >
+                <FolderOpen className="h-3 w-3" />
+                Add Files
+              </button>
+            )}
+          </div>
+          
+          <button 
+            onClick={() => onToggleComplete(work)}
+            disabled={isUpdating}
+            className={`inline-flex items-center gap-1 px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              isUpdating
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : work.completed 
+                ? 'text-orange-700 bg-orange-50 hover:bg-orange-100' 
+                : 'text-green-700 bg-green-50 hover:bg-green-100'
+            }`}
+          >
+            {isUpdating ? (
+              <>
+                <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                Updating...
+              </>
+            ) : work.completed ? (
+              <>
+                <RotateCcw className="h-3 w-3" />
+                Reopen
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-3 w-3" />
+                Complete
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Work List component for grid display
+export function WorkList({ 
+  works, 
+  onEdit, 
+  onToggleComplete, 
+  onViewFiles,
+  loading = false,
+  updatingWorks = new Set()
+}) {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[...Array(6)].map((_, index) => (
+          <div key={index} className="animate-pulse">
+            <div className="bg-gray-200 rounded-lg h-64"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (works.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-6xl mb-4">📋</div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No works found</h3>
+        <p className="text-gray-500">Create your first work or adjust your filters</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {works.map(work => (
+        <EnhancedWorkCard
+          key={work.id}
+          work={work}
+          onEdit={onEdit}
+          onToggleComplete={onToggleComplete}
+          onViewFiles={onViewFiles}
+          isUpdating={updatingWorks.has(work.id)}
+        />
+      ))}
+    </div>
+  );
+}

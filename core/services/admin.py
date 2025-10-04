@@ -1,15 +1,258 @@
 from django.contrib import admin
-from .models import *
-# Register your models here.
+from .models import (
+    Customer, Work, Payment, EmployeeProfile, JobCategory, WorkFile,
+    DailySalesReport, DailySalesReportItem, SalesReportNote, DailyExpense,
+    Material, Procurement, JobMaterial, StockMovement
+)
 
-admin.site.register(Customer)
-admin.site.register(Work)
+
+@admin.register(Customer)
+class CustomerAdmin(admin.ModelAdmin):
+    list_display = ('name', 'email', 'phone', 'creator', 'created_at')
+    list_filter = ('created_at', 'creator')
+    search_fields = ('name', 'email', 'phone')
+    readonly_fields = ('created_at',)
+
+
+@admin.register(JobCategory)
+class JobCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description', 'color', 'is_active', 'works_count', 'created_by', 'created_at')
+    list_filter = ('is_active', 'created_at', 'created_by')
+    search_fields = ('name', 'description')
+    readonly_fields = ('created_at', 'works_count')
+    
+    def works_count(self, obj):
+        return obj.works.count()
+    works_count.short_description = 'Number of Works'
+
+
+@admin.register(Work)
+class WorkAdmin(admin.ModelAdmin):
+    list_display = ('title', 'customer', 'category', 'price', 'worker', 'completed', 'created_at')
+    list_filter = ('completed', 'category', 'created_at', 'worker')
+    search_fields = ('title', 'description', 'customer__name')
+    readonly_fields = ('created_at', 'completed_at')
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('customer', 'title', 'description', 'category')
+        }),
+        ('Assignment & Pricing', {
+            'fields': ('worker', 'price')
+        }),
+        ('Status', {
+            'fields': ('completed', 'completed_at', 'note')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        })
+    )
+
+
+@admin.register(WorkFile)
+class WorkFileAdmin(admin.ModelAdmin):
+    list_display = ('original_name', 'work', 'file_type', 'file_size_display', 'uploaded_by', 'uploaded_at')
+    list_filter = ('file_type', 'uploaded_at', 'uploaded_by')
+    search_fields = ('original_name', 'work__title', 'work__customer__name')
+    readonly_fields = ('uploaded_at', 'file_size_display', 'original_name', 'file_type', 'file_size')
+    
+    def file_size_display(self, obj):
+        return obj.get_file_size_display()
+    file_size_display.short_description = 'File Size'
+
+
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-	list_display = ('id', 'work', 'amount', 'paid_at', 'processed_by')
-	readonly_fields = ('paid_at',)
+    list_display = ('id', 'work', 'amount', 'method', 'paid_at', 'processed_by')
+    list_filter = ('method', 'paid_at', 'processed_by')
+    search_fields = ('work__title', 'work__customer__name', 'tracking_number')
+    readonly_fields = ('paid_at',)
 
 
 @admin.register(EmployeeProfile)
 class EmployeeProfileAdmin(admin.ModelAdmin):
-	list_display = ('user', 'position', 'joined_at')
+    list_display = ('user', 'position', 'joined_at')
+    list_filter = ('position', 'joined_at')
+    search_fields = ('user__username', 'user__email', 'position')
+    readonly_fields = ('joined_at',)
+
+
+class DailySalesReportItemInline(admin.TabularInline):
+    model = DailySalesReportItem
+    extra = 0
+    readonly_fields = ('outstanding_amount',)
+
+
+class DailyExpenseInline(admin.TabularInline):
+    model = DailyExpense
+    extra = 0
+    readonly_fields = ('recorded_by', 'recorded_at')
+
+
+class SalesReportNoteInline(admin.TabularInline):
+    model = SalesReportNote
+    extra = 0
+    readonly_fields = ('added_by', 'created_at')
+
+
+@admin.register(DailySalesReport)
+class DailySalesReportAdmin(admin.ModelAdmin):
+    list_display = ('date', 'generated_by', 'is_submitted', 'total_sales_amount', 'total_payments_received', 'net_total', 'created_at')
+    list_filter = ('is_submitted', 'date', 'generated_by', 'created_at')
+    search_fields = ('generated_by__username', 'generated_by__email')
+    readonly_fields = ('created_at', 'updated_at', 'submitted_at', 'total_sales_amount', 'total_payments_received', 'total_outstanding', 'total_expenses', 'net_total')
+    inlines = [DailySalesReportItemInline, DailyExpenseInline, SalesReportNoteInline]
+    
+    fieldsets = (
+        ('Report Information', {
+            'fields': ('date', 'generated_by', 'is_submitted', 'submitted_at')
+        }),
+        ('Calculated Totals', {
+            'fields': ('total_sales_amount', 'total_payments_received', 'total_outstanding', 'total_expenses', 'net_total'),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Creating new object
+            obj.generated_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(DailySalesReportItem)
+class DailySalesReportItemAdmin(admin.ModelAdmin):
+    list_display = ('report', 'category', 'total_works', 'total_amount', 'payments_received', 'outstanding_amount')
+    list_filter = ('category', 'report__date', 'report__generated_by')
+    search_fields = ('category__name', 'report__generated_by__username')
+    readonly_fields = ('outstanding_amount',)
+
+
+@admin.register(SalesReportNote)
+class SalesReportNoteAdmin(admin.ModelAdmin):
+    list_display = ('report', 'added_by', 'note_preview', 'created_at')
+    list_filter = ('created_at', 'added_by', 'report__date')
+    search_fields = ('note', 'added_by__username', 'report__generated_by__username')
+    readonly_fields = ('created_at',)
+    
+    def note_preview(self, obj):
+        return obj.note[:50] + '...' if len(obj.note) > 50 else obj.note
+    note_preview.short_description = 'Note Preview'
+
+
+@admin.register(DailyExpense)
+class DailyExpenseAdmin(admin.ModelAdmin):
+    list_display = ('description', 'amount', 'category', 'report', 'recorded_by', 'recorded_at')
+    list_filter = ('category', 'recorded_at', 'recorded_by', 'report__date')
+    search_fields = ('description', 'receipt_number', 'recorded_by__username')
+    readonly_fields = ('recorded_at',)
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Creating new object
+            obj.recorded_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+# ============ PROCUREMENT & INVENTORY ADMIN ============
+
+class StockMovementInline(admin.TabularInline):
+    model = StockMovement
+    extra = 0
+    readonly_fields = ('movement_type', 'quantity', 'reference_type', 'reference_id', 'note', 'created_at')
+    can_delete = False
+    
+    def has_add_permission(self, request, obj=None):
+        return False  # Stock movements should only be created programmatically
+
+
+@admin.register(Material)
+class MaterialAdmin(admin.ModelAdmin):
+    list_display = ('name', 'category', 'unit', 'current_stock', 'reorder_level', 'is_low_stock', 'archived', 'created_at')
+    list_filter = ('category', 'archived', 'created_at')
+    search_fields = ('name', 'unit')
+    readonly_fields = ('created_at', 'updated_at', 'is_low_stock')
+    inlines = [StockMovementInline]
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('name', 'category', 'unit')
+        }),
+        ('Stock Information', {
+            'fields': ('current_stock', 'reorder_level', 'is_low_stock')
+        }),
+        ('Status', {
+            'fields': ('archived',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def is_low_stock(self, obj):
+        return obj.is_low_stock()
+    is_low_stock.boolean = True
+    is_low_stock.short_description = 'Low Stock'
+
+
+@admin.register(Procurement)
+class ProcurementAdmin(admin.ModelAdmin):
+    list_display = ('id', 'material', 'supplier_name', 'quantity_ordered', 'unit_cost', 'total_cost', 'status', 'order_date', 'delivery_date')
+    list_filter = ('status', 'order_date', 'delivery_date', 'material__category', 'created_by')
+    search_fields = ('supplier_name', 'material__name', 'supplier_email')
+    readonly_fields = ('total_cost', 'created_at', 'updated_at')
+    
+    fieldsets = (
+        ('Material & Supplier', {
+            'fields': ('material', 'supplier_name', 'supplier_contact', 'supplier_email', 'supplier_phone')
+        }),
+        ('Order Details', {
+            'fields': ('quantity_ordered', 'unit_cost', 'total_cost', 'status')
+        }),
+        ('Dates', {
+            'fields': ('order_date', 'delivery_date')
+        }),
+        ('Tracking', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Creating new object
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(JobMaterial)
+class JobMaterialAdmin(admin.ModelAdmin):
+    list_display = ('job', 'material', 'quantity_used', 'created_by', 'created_at')
+    list_filter = ('material__category', 'created_at', 'created_by')
+    search_fields = ('job__title', 'job__customer__name', 'material__name')
+    readonly_fields = ('created_at',)
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Creating new object
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(StockMovement)
+class StockMovementAdmin(admin.ModelAdmin):
+    list_display = ('material', 'movement_type', 'quantity', 'reference_type', 'reference_id', 'created_at')
+    list_filter = ('movement_type', 'reference_type', 'created_at', 'material__category')
+    search_fields = ('material__name', 'note')
+    readonly_fields = ('created_at',)
+    
+    def has_add_permission(self, request):
+        return False  # Stock movements should only be created programmatically
+    
+    def has_change_permission(self, request, obj=None):
+        return False  # Stock movements are immutable
+    
+    def has_delete_permission(self, request, obj=None):
+        return False  # Stock movements should not be deleted

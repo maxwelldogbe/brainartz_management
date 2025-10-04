@@ -1,26 +1,21 @@
-import { useEffect, useState } from 'react';
-import { fetchWorkers, deleteUser, toggleUserActive } from '../utils/services';
-import { useAuth } from '../context/AuthContext';
+import { useEffect, useState, useCallback } from 'react';
+import { fetchWorkers, deleteUser, toggleUserActive, resendCredentials } from '../utils/services';
 import { useNavigate } from 'react-router-dom';
+import CredentialsModal from '../components/CredentialsModal';
+import Alert from '../components/Alert';
 
 export default function Workers() {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [workers, setWorkers] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [notification, setNotification] = useState(null);
+  const [credentialsModal, setCredentialsModal] = useState({
+    isOpen: false,
+    credentials: null
+  });
+  const [actionLoading, setActionLoading] = useState({});
 
-  useEffect(() => {
-  if (!user) return; // wait for user info
-  if (!user.is_admin) {
-      // Not an admin - redirect to appropriate dashboard
-      navigate('/', { replace: true });
-      return;
-    }
-
-    load();
-  }, [user, navigate]);
-
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const data = await fetchWorkers();
@@ -28,71 +23,263 @@ export default function Workers() {
     } catch (err) {
       console.error('Failed to load workers', err);
       setWorkers([]);
+      showNotification('Failed to load employees', 'error');
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    // No need to check admin status here since RoleGuard already handles it
+    load();
+  }, [load]);
+
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 5000);
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Delete this user? This cannot be undone.')) return;
+  const setWorkerActionLoading = (workerId, loading) => {
+    setActionLoading(prev => ({
+      ...prev,
+      [workerId]: loading
+    }));
+  };
+
+  const handleDelete = async (id, name) => {
+    if (!confirm(`Delete ${name}? This cannot be undone.`)) return;
+    
+    setWorkerActionLoading(id, true);
     try {
       await deleteUser(id);
       setWorkers(workers.filter(w => w.id !== id));
+      showNotification(`${name} has been deleted`, 'success');
     } catch (err) {
       console.error('Failed to delete user', err);
-      alert('Failed to delete user');
+      showNotification('Failed to delete user', 'error');
+    } finally {
+      setWorkerActionLoading(id, false);
     }
   };
 
-  const handleToggle = async (id, active) => {
+  const handleToggle = async (id, active, name) => {
+    setWorkerActionLoading(id, true);
     try {
       await toggleUserActive(id, !active);
       setWorkers(workers.map(w => w.id === id ? { ...w, is_active: !active } : w));
+      showNotification(`${name} has been ${!active ? 'enabled' : 'disabled'}`, 'success');
     } catch (err) {
       console.error('Failed to update user active state', err);
-      alert('Failed to update user state');
+      showNotification('Failed to update user state', 'error');
+    } finally {
+      setWorkerActionLoading(id, false);
     }
   };
 
-  if (loading) return <div>Loading workers...</div>;
+  const handleResendCredentials = async (userId, name, resetPassword = false) => {
+    setWorkerActionLoading(userId, true);
+    try {
+      const result = await resendCredentials(userId, resetPassword);
+      
+      if (result.sms_sent) {
+        showNotification(`Credentials sent to ${name} via SMS`, 'success');
+      } else {
+        // Show credentials modal for manual sharing
+        setCredentialsModal({
+          isOpen: true,
+          credentials: result
+        });
+        showNotification(`SMS failed. Credentials ready for manual sharing to ${name}`, 'warning');
+      }
+    } catch (err) {
+      console.error('Failed to resend credentials', err);
+      showNotification('Failed to resend credentials', 'error');
+    } finally {
+      setWorkerActionLoading(userId, false);
+    }
+  };
+
+  const handleResetPassword = (userId, name) => {
+    if (!confirm(`Reset password for ${name}? They will need new login credentials.`)) return;
+    handleResendCredentials(userId, name, true);
+  };
+
+  const handleCloseCredentials = () => {
+    setCredentialsModal({
+      isOpen: false,
+      credentials: null
+    });
+  };
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-8">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <span className="ml-2 text-gray-600">Loading employees...</span>
+    </div>
+  );
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Employees</h1>
-      <div className="p-4 bg-white rounded shadow">
-        <table className="w-full text-left">
-          <thead>
-            <tr>
-              <th className="pb-2">Name</th>
-              <th className="pb-2">Email</th>
-              <th className="pb-2">Phone</th>
-              <th className="pb-2">Role</th>
-              <th className="pb-2">Status</th>
-              <th className="pb-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {workers && workers.length === 0 && (
-              <tr><td colSpan={6}>No employees found.</td></tr>
-            )}
-            {workers && workers.map(w => (
-              <tr key={w.id} className="border-t">
-                <td className="py-2">{w.first_name} {w.last_name}</td>
-                <td className="py-2">{w.email}</td>
-                <td className="py-2">{w.profile?.phone || '—'}</td>
-                <td className="py-2">{w.is_admin ? 'Admin' : (w.is_worker ? 'Employee' : 'User')}</td>
-                <td className="py-2">{w.is_active ? 'Active' : 'Disabled'}</td>
-                <td className="py-2 space-x-2">
-                  <button onClick={() => handleToggle(w.id, w.is_active)} className="bg-yellow-500 text-white px-2 py-1 rounded">
-                    {w.is_active ? 'Hold' : 'Enable'}
-                  </button>
-                  <button onClick={() => handleDelete(w.id)} className="bg-red-600 text-white px-2 py-1 rounded">Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Employees</h1>
+          <p className="text-gray-600 mt-1">Manage employee accounts and credentials</p>
+        </div>
+        <div className="flex space-x-3">
+          <button
+            onClick={() => navigate('/invite')}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+          >
+            <span>➕</span>
+            <span>Add Employee</span>
+          </button>
+        </div>
       </div>
+
+      {/* Notifications */}
+      {notification && (
+        <Alert 
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        >
+          {notification.message}
+        </Alert>
+      )}
+
+      {/* Employees Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        {workers && workers.length === 0 ? (
+          <div className="p-8 text-center">
+            <div className="text-6xl mb-4">👥</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No employees found</h3>
+            <p className="text-gray-600 mb-4">Get started by inviting your first employee.</p>
+            <button
+              onClick={() => navigate('/invite')}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Invite Employee
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Employee
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Contact
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Role
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {workers && workers.map(w => (
+                  <tr key={w.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {w.first_name} {w.last_name}
+                        </div>
+                        <div className="text-sm text-gray-500">@{w.username}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{w.email}</div>
+                      <div className="text-sm text-gray-500">
+                        {w.profile?.phone || 'No phone'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        w.is_admin 
+                          ? 'bg-purple-100 text-purple-800' 
+                          : w.is_worker 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {w.is_admin ? 'Admin' : w.is_worker ? 'Employee' : 'User'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        w.is_active 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {w.is_active ? 'Active' : 'Disabled'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end space-x-2">
+                        {/* Resend Credentials */}
+                        <button
+                          onClick={() => handleResendCredentials(w.id, `${w.first_name} ${w.last_name}`)}
+                          disabled={actionLoading[w.id]}
+                          className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Resend Login Credentials"
+                        >
+                          {actionLoading[w.id] ? '⏳' : '📤'}
+                        </button>
+
+                        {/* Reset Password */}
+                        <button
+                          onClick={() => handleResetPassword(w.id, `${w.first_name} ${w.last_name}`)}
+                          disabled={actionLoading[w.id]}
+                          className="text-amber-600 hover:text-amber-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Reset Password"
+                        >
+                          🔑
+                        </button>
+
+                        {/* Toggle Active Status */}
+                        <button
+                          onClick={() => handleToggle(w.id, w.is_active, `${w.first_name} ${w.last_name}`)}
+                          disabled={actionLoading[w.id]}
+                          className={`${
+                            w.is_active 
+                              ? 'text-yellow-600 hover:text-yellow-900' 
+                              : 'text-green-600 hover:text-green-900'
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          title={w.is_active ? 'Disable Account' : 'Enable Account'}
+                        >
+                          {w.is_active ? '⏸️' : '▶️'}
+                        </button>
+
+                        {/* Delete */}
+                        <button
+                          onClick={() => handleDelete(w.id, `${w.first_name} ${w.last_name}`)}
+                          disabled={actionLoading[w.id]}
+                          className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Delete Account"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Credentials Modal */}
+      <CredentialsModal
+        isOpen={credentialsModal.isOpen}
+        credentials={credentialsModal.credentials}
+        onClose={handleCloseCredentials}
+      />
     </div>
   );
 }

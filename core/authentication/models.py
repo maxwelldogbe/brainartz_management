@@ -55,7 +55,7 @@ class User(AbstractUser):
 class InvitationToken(models.Model):
     token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     email = models.EmailField(blank=True, null=True)
-    phone = models.CharField(max_length=30, blank=True, null=True)
+    phone = models.CharField(max_length=30, blank=False, null=False, help_text="Phone number is required for SMS invitations")
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     used = models.BooleanField(default=False)
@@ -71,7 +71,7 @@ class InvitationToken(models.Model):
 # Profile for all users (created automatically)
 class Profile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
-    phone = models.CharField(max_length=30, blank=True, null=True)
+    phone = models.CharField(max_length=30, blank=False, null=False, help_text="Phone number for contact and SMS notifications")
     bio = models.TextField(blank=True, null=True)
     avatar = models.URLField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

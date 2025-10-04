@@ -30,11 +30,21 @@ def work_post_save(sender, instance: Work, created, update_fields=None, **kwargs
 
     if instance.completed and instance.customer and instance.customer.phone:
         phone = instance.customer.phone
+        
+        # Use title if available, fallback to description
+        work_identifier = instance.title if hasattr(instance, 'title') and instance.title else instance.description[:60]
+        
+        # Format completion date
+        completion_date = instance.completed_at or timezone.now()
+        formatted_date = timezone.localtime(completion_date).strftime('%Y-%m-%d')
+        
         message = (
-            f"Hello {instance.customer.name},\n"
-            f"Your work '{instance.description[:60]}' has been completed on {timezone.localtime(instance.created_at).strftime('%Y-%m-%d')}."
-            f"\nPlease contact us if you have any questions."
+            f"Hello {instance.customer.name},\n\n"
+            f"Great news! Your work '{work_identifier}' has been completed on {formatted_date}. ✅\n\n"
+            f"Thank you for choosing our services. Please contact us if you have any questions.\n\n"
+            f"Best regards,\nThe Team"
         )
+        
         # send_sms returns True/False; ignore failures for now but log if needed
         try:
             send_sms(phone, message)
