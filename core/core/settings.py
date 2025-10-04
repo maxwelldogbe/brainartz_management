@@ -219,11 +219,7 @@ DEFAULT_FROM_EMAIL = os.getenv('DJANGO_DEFAULT_FROM_EMAIL', 'admin@shopmanager.c
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins only in DEBUG mode
 CORS_ALLOWED_ORIGINS = [
     os.getenv('FRONTEND_URL', 'https://brainartz-management-frontend.onrender.com'),
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:3000',
     'http://127.0.0.1:5173',
-    'http://127.0.0.1:5174',
 ]
 CORS_ALLOW_CREDENTIALS = True
 

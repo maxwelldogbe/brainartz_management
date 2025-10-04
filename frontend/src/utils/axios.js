@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Force proxy usage in development by checking if we're on localhost
 const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const baseURL = isDev ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:8000');
+const baseURL = isDev ? '' : (import.meta.env.VITE_API_URL || 'https://brainartz-management-backend.onrender.com');
 
 console.log('Environment check:', {
   isDev,
