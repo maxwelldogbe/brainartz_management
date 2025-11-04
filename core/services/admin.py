@@ -1,17 +1,9 @@
 from django.contrib import admin
 from .models import (
-    Customer, Work, Payment, EmployeeProfile, JobCategory, WorkFile,
+    Work, Payment, EmployeeProfile, JobCategory, WorkFile,
     DailySalesReport, DailySalesReportItem, SalesReportNote, DailyExpense,
     Material, Procurement, JobMaterial, StockMovement
 )
-
-
-@admin.register(Customer)
-class CustomerAdmin(admin.ModelAdmin):
-    list_display = ('name', 'email', 'phone', 'creator', 'created_at')
-    list_filter = ('created_at', 'creator')
-    search_fields = ('name', 'email', 'phone')
-    readonly_fields = ('created_at',)
 
 
 @admin.register(JobCategory)
@@ -28,14 +20,14 @@ class JobCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Work)
 class WorkAdmin(admin.ModelAdmin):
-    list_display = ('title', 'customer', 'category', 'price', 'worker', 'completed', 'created_at')
+    list_display = ('title', 'customer_name', 'customer_phone', 'category', 'price', 'worker', 'completed', 'created_at')
     list_filter = ('completed', 'category', 'created_at', 'worker')
-    search_fields = ('title', 'description', 'customer__name')
+    search_fields = ('title', 'description', 'customer_name', 'customer_phone')
     readonly_fields = ('created_at', 'completed_at')
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('customer', 'title', 'description', 'category')
+            'fields': ('customer_name', 'customer_phone', 'title', 'description', 'category')
         }),
         ('Assignment & Pricing', {
             'fields': ('worker', 'price')
@@ -54,7 +46,7 @@ class WorkAdmin(admin.ModelAdmin):
 class WorkFileAdmin(admin.ModelAdmin):
     list_display = ('original_name', 'work', 'file_type', 'file_size_display', 'uploaded_by', 'uploaded_at')
     list_filter = ('file_type', 'uploaded_at', 'uploaded_by')
-    search_fields = ('original_name', 'work__title', 'work__customer__name')
+    search_fields = ('original_name', 'work__title', 'work__customer_name')
     readonly_fields = ('uploaded_at', 'file_size_display', 'original_name', 'file_type', 'file_size')
     
     def file_size_display(self, obj):
@@ -66,7 +58,7 @@ class WorkFileAdmin(admin.ModelAdmin):
 class PaymentAdmin(admin.ModelAdmin):
     list_display = ('id', 'work', 'amount', 'method', 'paid_at', 'processed_by')
     list_filter = ('method', 'paid_at', 'processed_by')
-    search_fields = ('work__title', 'work__customer__name', 'tracking_number')
+    search_fields = ('work__title', 'work__customer_name', 'tracking_number')
     readonly_fields = ('paid_at',)
 
 
@@ -201,14 +193,14 @@ class MaterialAdmin(admin.ModelAdmin):
 
 @admin.register(Procurement)
 class ProcurementAdmin(admin.ModelAdmin):
-    list_display = ('id', 'material', 'supplier_name', 'quantity_ordered', 'unit_cost', 'total_cost', 'status', 'order_date', 'delivery_date')
+    list_display = ('id', 'material', 'quantity_ordered', 'unit_cost', 'total_cost', 'status', 'order_date', 'delivery_date')
     list_filter = ('status', 'order_date', 'delivery_date', 'material__category', 'created_by')
-    search_fields = ('supplier_name', 'material__name', 'supplier_email')
+    search_fields = ('material__name',)
     readonly_fields = ('total_cost', 'created_at', 'updated_at')
     
     fieldsets = (
-        ('Material & Supplier', {
-            'fields': ('material', 'supplier_name', 'supplier_contact', 'supplier_email', 'supplier_phone')
+        ('Material', {
+            'fields': ('material',)
         }),
         ('Order Details', {
             'fields': ('quantity_ordered', 'unit_cost', 'total_cost', 'status')
@@ -232,7 +224,7 @@ class ProcurementAdmin(admin.ModelAdmin):
 class JobMaterialAdmin(admin.ModelAdmin):
     list_display = ('job', 'material', 'quantity_used', 'created_by', 'created_at')
     list_filter = ('material__category', 'created_at', 'created_by')
-    search_fields = ('job__title', 'job__customer__name', 'material__name')
+    search_fields = ('job__title', 'job__customer_name', 'material__name')
     readonly_fields = ('created_at',)
     
     def save_model(self, request, obj, form, change):

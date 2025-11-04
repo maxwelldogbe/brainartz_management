@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { salesReportsAPI, jobCategoriesAPI } from '../utils/services';
 import { formatCurrency, formatDateTime, EXPENSE_CATEGORIES } from '../types/salesReports';

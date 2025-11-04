@@ -378,7 +378,7 @@ const ProcurementForm = ({
               type="date"
               id="expectedDelivery"
               value={formData.expectedDelivery}
-              onChange={(e) => handleChange('expectedDelivery', e.target.value)}
+              onChange={(e) => setFormData(prev => ({ ...prev, expectedDelivery: e.target.value }))}
               onBlur={() => handleBlur('expectedDelivery')}
               className={`pl-10 ${inputClasses('expectedDelivery')}`}
               min={new Date().toISOString().split('T')[0]}
@@ -399,7 +399,7 @@ const ProcurementForm = ({
             <select
               id="urgency"
               value={formData.urgency}
-              onChange={(e) => handleChange('urgency', e.target.value)}
+              onChange={(e) => setFormData(prev => ({ ...prev, urgency: e.target.value }))}
               onBlur={() => handleBlur('urgency')}
               className={`pl-10 ${inputClasses('urgency')}`}
             >
@@ -425,7 +425,7 @@ const ProcurementForm = ({
           <textarea
             id="notes"
             value={formData.notes}
-            onChange={(e) => handleChange('notes', e.target.value)}
+            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
             onBlur={() => handleBlur('notes')}
             className={`pl-10 pt-3 ${inputClasses('notes')}`}
             placeholder="Additional notes about this procurement..."

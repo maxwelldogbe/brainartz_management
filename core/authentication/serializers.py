@@ -6,16 +6,29 @@ from .models import *
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    phone = serializers.CharField(max_length=30, required=True, help_text="Phone number is required for contact and SMS notifications")
+    phone = serializers.CharField(max_length=30, required=False, allow_blank=True, help_text="Phone number for contact and SMS notifications")
+    avatar = serializers.ImageField(required=False, allow_null=True, use_url=False)
     
     class Meta:
         model = Profile
         fields = ['phone', 'bio', 'avatar']
         
+    def to_representation(self, instance):
+        """Return avatar as URL for reading, but accept file for writing"""
+        representation = super().to_representation(instance)
+        if instance.avatar:
+            request = self.context.get('request')
+            if request:
+                representation['avatar'] = request.build_absolute_uri(instance.avatar.url)
+            else:
+                representation['avatar'] = instance.avatar.url
+        return representation
+        
     def validate_phone(self, value):
-        """Validate phone number format"""
+        """Validate phone number format if provided"""
+        # Allow empty phone for updates
         if not value or not value.strip():
-            raise serializers.ValidationError('Phone number is required')
+            return value
         
         # Basic phone number validation
         clean_phone = value.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')

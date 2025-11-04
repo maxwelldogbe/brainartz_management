@@ -1,5 +1,6 @@
 # Create your views here.
 from rest_framework import generics, permissions, status
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .models import *
 from .serializers import *
 from rest_framework.response import Response
@@ -260,6 +261,7 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     """Get or update the logged-in user's profile."""
     serializer_class = ProfileSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_object(self):
         # profile should exist due to signal
@@ -269,3 +271,9 @@ class ProfileView(generics.RetrieveUpdateAPIView):
         if profile is None:
             profile = Profile.objects.create(user=self.request.user)
         return profile
+    
+    def get_serializer_context(self):
+        """Add request to serializer context for URL generation"""
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context

@@ -1,16 +1,15 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    CustomerViewSet, WorkViewSet, PaymentViewSet, JobCategoryViewSet, WorkFileViewSet,
+    WorkViewSet, PaymentViewSet, JobCategoryViewSet, WorkFileViewSet,
     EmployeeProfileViewSet, UserViewSet, WorkerViewSet,
     DailySalesReportViewSet, DailySalesReportItemViewSet, SalesReportNoteViewSet, DailyExpenseViewSet,
     MaterialViewSet, ProcurementViewSet, JobMaterialViewSet, StockMovementViewSet, MaterialUsageViewSet,
-    daily_summary, customer_summary, work_statistics, sales_report_summary
+    daily_summary, work_statistics, sales_report_summary
 )
 from .views import AdminDashboardView
 
 router = DefaultRouter()
-router.register(r'customers', CustomerViewSet)
 router.register(r'works', WorkViewSet)
 router.register(r'payments', PaymentViewSet)
 router.register(r'job-categories', JobCategoryViewSet)
@@ -34,7 +33,6 @@ urlpatterns = [
     path('', include(router.urls)),
     path('admin-dashboard/', AdminDashboardView.as_view(), name='admin-dashboard'),
     path('summary/daily/', daily_summary, name='daily-summary'),
-    path('summary/customers/', customer_summary, name='customer-summary'),
     path('summary/sales-reports/', sales_report_summary, name='sales-report-summary'),
     path('statistics/works/', work_statistics, name='work-statistics'),
 ]

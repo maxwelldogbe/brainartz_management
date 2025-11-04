@@ -223,11 +223,10 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CORS_ALLOW_CREDENTIALS = True
 
-# SMS provider configuration (used by authentication.sms_backends)
-SMS_PROVIDER = os.getenv('SMS_PROVIDER')
-TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
-TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
-TWILIO_FROM = os.getenv('TWILIO_FROM')
+# SMS Configuration - Teleconic
+TELECONIC_API_KEY = os.getenv('TELECONIC_API_KEY')
+TELECONIC_SENDER_ID = os.getenv('TELECONIC_SENDER_ID', 'BrainArtz')
+TELECONIC_API_URL = os.getenv('TELECONIC_API_URL', 'https://sms.teleconic.com/api/v1/send')
 
 # Hosts
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost').split(',')

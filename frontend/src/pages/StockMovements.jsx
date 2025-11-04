@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
 import { Package, TrendingUp, TrendingDown, RotateCcw, Calendar, Search } from 'lucide-react';
 import { stockMovementsAPI } from '../utils/services';
 
@@ -47,7 +48,9 @@ const StockMovements = () => {
   const getMovementIcon = (type) => {
     const icons = {
       'in': <TrendingUp className="w-5 h-5 text-green-600" />,
+      'inflow': <TrendingUp className="w-5 h-5 text-green-600" />,
       'out': <TrendingDown className="w-5 h-5 text-red-600" />,
+      'outflow': <TrendingDown className="w-5 h-5 text-red-600" />,
       'adjustment': <RotateCcw className="w-5 h-5 text-blue-600" />
     };
     return icons[type] || <Package className="w-5 h-5 text-gray-600" />;
@@ -56,10 +59,23 @@ const StockMovements = () => {
   const getMovementColor = (type) => {
     const colors = {
       'in': 'bg-green-50 text-green-800 border-green-200',
+      'inflow': 'bg-green-50 text-green-800 border-green-200',
       'out': 'bg-red-50 text-red-800 border-red-200',
+      'outflow': 'bg-red-50 text-red-800 border-red-200',
       'adjustment': 'bg-blue-50 text-blue-800 border-blue-200'
     };
     return colors[type] || 'bg-gray-50 text-gray-800 border-gray-200';
+  };
+  
+  const getMovementLabel = (type) => {
+    const labels = {
+      'in': 'Stock In',
+      'inflow': 'Stock In',
+      'out': 'Stock Out',
+      'outflow': 'Stock Out',
+      'adjustment': 'Adjustment'
+    };
+    return labels[type] || type;
   };
 
   return (
@@ -208,15 +224,13 @@ const StockMovements = () => {
                       <div className="flex items-center gap-2">
                         {getMovementIcon(movement.movement_type)}
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getMovementColor(movement.movement_type)}`}>
-                          {movement.movement_type === 'in' ? 'Stock In' : 
-                           movement.movement_type === 'out' ? 'Stock Out' : 
-                           'Adjustment'}
+                          {getMovementLabel(movement.movement_type)}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {movement.movement_type === 'out' ? '-' : '+'}{Math.abs(movement.quantity_changed || 0)}
+                        {(movement.movement_type === 'out' || movement.movement_type === 'outflow') ? '-' : '+'}{Math.abs(movement.quantity_changed || movement.quantity || 0)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -226,7 +240,7 @@ const StockMovements = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500">
-                        {movement.reference || movement.notes || '-'}
+                        {movement.reference || movement.note || movement.notes || '-'}
                       </div>
                     </td>
                   </tr>

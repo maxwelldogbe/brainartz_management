@@ -4,7 +4,7 @@ import {
   createPayment,
   updatePayment,
   deletePayment,
-  fetchWorks,
+  fetchUnpaidWorks,
 } from "../utils/services";
 import { useAuth } from "../context/AuthContext";
 import Modal from "../components/Modal";
@@ -40,9 +40,10 @@ export default function Payments() {
 
   const loadWorks = async () => {
     try {
-      setWorks(await fetchWorks());
+      // Fetch only unpaid or partially paid works
+      setWorks(await fetchUnpaidWorks());
     } catch (err) {
-      console.error("Failed to fetch works:", err);
+      console.error("Failed to fetch unpaid works:", err);
     }
   };
 
@@ -99,6 +100,7 @@ export default function Payments() {
         await updatePayment(editing.id, form);
       } else await createPayment(form);
       await loadPayments();
+      await loadWorks(); // Reload works to update unpaid list
       handleCancel();
     } catch (err) {
       console.error("Failed to save payment:", err);

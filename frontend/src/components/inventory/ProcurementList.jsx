@@ -62,7 +62,7 @@ const ProcurementList = () => {
   };
 
   // Handle date range filter
-  const handleDateRangeFilter = (range) => {
+  const _handleDateRangeFilter = (range) => {
     updateProcurementsFilters({ dateRange: range });
   };
 

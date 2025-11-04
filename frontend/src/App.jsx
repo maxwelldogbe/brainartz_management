@@ -6,7 +6,6 @@ import './App.css'
 import Customer from './pages/Customer'
 import Works from './pages/Works'
 import Payments from './pages/Payments'
-import Summary from './pages/Summary'
 import AdminDashboard from './pages/AdminDashboard'
 import Invite from './pages/Invite'
 import Dashboard from './pages/Dashboard'
@@ -79,11 +78,6 @@ function App() {
         <Route path='payments' element={
           <RoleGuard requireWorker={true}>
             <Payments />
-          </RoleGuard>
-        } />
-        <Route path='summary' element={
-          <RoleGuard requireWorker={true}>
-            <Summary />
           </RoleGuard>
         } />
         <Route path='work-analytics' element={

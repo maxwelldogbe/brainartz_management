@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
 import {
   fetchWorks,
   markWorkCompleted,
@@ -281,7 +282,7 @@ export default function Works() {
           <div>
             <div className="mb-4 p-4 bg-gray-50 rounded-lg">
               <h3 className="font-medium text-gray-900">{selectedWork.title}</h3>
-              <p className="text-sm text-gray-600">Customer: {selectedWork.customer_name}</p>
+              <p className="text-sm text-gray-600">Customer: {selectedWork.customer_name || 'No Customer'}</p>
               {selectedWork.category_name && (
                 <div className="mt-2">
                   <span 

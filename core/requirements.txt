@@ -35,3 +35,4 @@ redis>=4.5.0
 # vonage>=2.5.0  # For Vonage (Nexmo) SMS  
 # africastalking>=1.2.0  # For Africa's Talking SMS
 
+Pillow==12.0.0

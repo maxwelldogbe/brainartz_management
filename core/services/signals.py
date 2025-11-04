@@ -28,8 +28,14 @@ def work_post_save(sender, instance: Work, created, update_fields=None, **kwargs
     except Exception:
         pass
 
-    if instance.completed and instance.customer and instance.customer.phone:
-        phone = instance.customer.phone
+    # Check if category has notifications enabled and customer info is available
+    if (instance.completed and 
+        instance.customer_phone and 
+        instance.customer_phone != 'N/A' and
+        instance.category and 
+        instance.category.send_completion_notification):
+        
+        phone = instance.customer_phone
         
         # Use title if available, fallback to description
         work_identifier = instance.title if hasattr(instance, 'title') and instance.title else instance.description[:60]
@@ -39,7 +45,7 @@ def work_post_save(sender, instance: Work, created, update_fields=None, **kwargs
         formatted_date = timezone.localtime(completion_date).strftime('%Y-%m-%d')
         
         message = (
-            f"Hello {instance.customer.name},\n\n"
+            f"Hello {instance.customer_name},\n\n"
             f"Great news! Your work '{work_identifier}' has been completed on {formatted_date}. ✅\n\n"
             f"Thank you for choosing our services. Please contact us if you have any questions.\n\n"
             f"Best regards,\nThe Team"

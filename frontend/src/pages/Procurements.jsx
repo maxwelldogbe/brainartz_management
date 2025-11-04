@@ -1,23 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Package, Clock, CheckCircle, AlertCircle, ShoppingCart, User } from 'lucide-react';
+/* eslint-disable react-hooks/exhaustive-deps */
+import { Plus, Package, Clock, CheckCircle } from 'lucide-react';
 import SimpleProcurementForm from '../components/inventory/SimpleProcurementForm';
-import MaterialPickingModal from '../components/inventory/MaterialPickingModal';
-import { procurementsAPI, materialsAPI, jobMaterialsAPI } from '../utils/services';
+import { procurementsAPI } from '../utils/services';
+import { useRoleAccess } from '../hooks/useRoleAccess';
 
 const Procurements = () => {
+  const { canAccessAdminFeatures } = useRoleAccess();
   const [procurements, setProcurements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [showPickingModal, setShowPickingModal] = useState(false);
   const [editingProcurement, setEditingProcurement] = useState(null);
-  const [activeTab, setActiveTab] = useState('procurement'); // 'procurement' or 'picking'
   const [statusFilter, setStatusFilter] = useState('');
   const [stats, setStats] = useState({
     pending: 0,
     delivered: 0,
-    total: 0,
-    requests: 0
+    total: 0
   });
 
   useEffect(() => {
@@ -105,20 +104,11 @@ const Procurements = () => {
     setShowForm(true);
   };
 
-  const handlePickMaterials = () => {
-    setShowPickingModal(true);
-  };
-
   const handleFormClose = () => {
     setShowForm(false);
     setEditingProcurement(null);
     loadProcurements();
     loadStats();
-  };
-
-  const handlePickingModalClose = () => {
-    setShowPickingModal(false);
-    loadStats(); // Refresh stats after material picking
   };
 
   const handleMarkDelivered = async (id, deliveryData) => {
@@ -134,70 +124,23 @@ const Procurements = () => {
 
   return (
     <div className="p-6">
-      {/* Enhanced Header with Tabs */}
+      {/* Enhanced Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Procurement & Material Usage</h1>
-          <p className="text-gray-600">Manage procurement orders and track material usage</p>
+          <h1 className="text-2xl font-bold text-gray-900">Procurement Orders</h1>
+          <p className="text-gray-600">Manage procurement orders</p>
         </div>
-        <div className="flex space-x-2">
-          {activeTab === 'procurement' && (
-            <button
-              onClick={handleAddProcurement}
-              className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
-            >
-              <Plus size={20} />
-              New Procurement
-            </button>
-          )}
-          {activeTab === 'picking' && (
-            <button
-              onClick={handlePickMaterials}
-              className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
-            >
-              <Package size={20} />
-              Pick Materials
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="bg-white rounded-lg shadow-sm mb-6">
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6" aria-label="Tabs">
-            <button
-              onClick={() => setActiveTab('procurement')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'procurement'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <div className="flex items-center space-x-2">
-                <ShoppingCart size={20} />
-                <span>Procurement Orders</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab('picking')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'picking'
-                  ? 'border-green-500 text-green-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <div className="flex items-center space-x-2">
-                <User size={20} />
-                <span>Material Usage</span>
-              </div>
-            </button>
-          </nav>
-        </div>
+        <button
+          onClick={handleAddProcurement}
+          className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+        >
+          <Plus size={20} />
+          New Procurement
+        </button>
       </div>
 
       {/* Enhanced Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="flex items-center justify-between">
             <div>
@@ -227,21 +170,9 @@ const Procurements = () => {
             <CheckCircle className="text-green-500" size={24} />
           </div>
         </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Material Requests</p>
-              <p className="text-2xl font-bold text-purple-600">{stats.requests}</p>
-            </div>
-            <AlertCircle className="text-purple-500" size={24} />
-          </div>
-        </div>
       </div>
 
-      {/* Tab Content */}
-      {activeTab === 'procurement' && (
-        <>
+      {/* Procurement Content */}
           {/* Procurement Filters */}
           <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
             <div className="flex gap-4">
@@ -305,10 +236,10 @@ const Procurements = () => {
                           Material
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Supplier
+                          Quantity
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Quantity
+                          Unit Cost
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Total Cost
@@ -331,10 +262,8 @@ const Procurements = () => {
                             <div className="text-sm font-medium text-gray-900">
                               {procurement.material?.name || procurement.material_name || 'N/A'}
                             </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">
-                              {procurement.supplier_name || 'N/A'}
+                            <div className="text-xs text-gray-500">
+                              {procurement.material?.unit || procurement.material_unit || ''}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -344,7 +273,12 @@ const Procurements = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              ₵{procurement.total_cost || 0}
+                              ₵{parseFloat(procurement.unit_cost || 0).toFixed(2)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-semibold text-gray-900">
+                              ₵{parseFloat(procurement.total_cost || 0).toFixed(2)}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -362,19 +296,26 @@ const Procurements = () => {
                             {procurement.order_date ? new Date(procurement.order_date).toLocaleDateString() : 'N/A'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button
-                              onClick={() => handleEditProcurement(procurement)}
-                              className="text-indigo-600 hover:text-indigo-900 mr-4"
-                            >
-                              Edit
-                            </button>
-                            {procurement.status === 'pending' && (
-                              <button
-                                onClick={() => handleMarkDelivered(procurement.id, {})}
-                                className="text-green-600 hover:text-green-900"
-                              >
-                                Mark Delivered
-                              </button>
+                            {canAccessAdminFeatures && (
+                              <>
+                                <button
+                                  onClick={() => handleEditProcurement(procurement)}
+                                  className="text-indigo-600 hover:text-indigo-900 mr-4"
+                                >
+                                  Edit
+                                </button>
+                                {procurement.status === 'pending' && (
+                                  <button
+                                    onClick={() => handleMarkDelivered(procurement.id, {})}
+                                    className="text-green-600 hover:text-green-900"
+                                  >
+                                    Mark Delivered
+                                  </button>
+                                )}
+                              </>
+                            )}
+                            {!canAccessAdminFeatures && (
+                              <span className="text-gray-400 text-sm">View Only</span>
                             )}
                           </td>
                         </tr>
@@ -385,36 +326,6 @@ const Procurements = () => {
               </div>
             )}
           </div>
-        </>
-      )}
-
-      {activeTab === 'picking' && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="text-center py-12">
-            <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Material Usage Tracking</h3>
-            <p className="text-gray-600 mb-6">
-              Track materials used in jobs and notify admin about inventory needs.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
-              <button
-                onClick={handlePickMaterials}
-                className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 flex items-center justify-center space-x-2"
-              >
-                <Package size={20} />
-                <span>Record Material Usage</span>
-              </button>
-              <button
-                onClick={handleAddProcurement}
-                className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 flex items-center justify-center space-x-2"
-              >
-                <AlertCircle size={20} />
-                <span>Request Materials</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Procurement Form Modal */}
       {showForm && (
@@ -422,14 +333,6 @@ const Procurements = () => {
           procurement={editingProcurement}
           onClose={handleFormClose}
           onSave={handleFormClose}
-        />
-      )}
-
-      {/* Material Picking Modal */}
-      {showPickingModal && (
-        <MaterialPickingModal
-          onClose={handlePickingModalClose}
-          onSave={handlePickingModalClose}
         />
       )}
     </div>

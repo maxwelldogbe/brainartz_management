@@ -1,20 +1,12 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import (
-    Customer, Work, Payment, EmployeeProfile, JobCategory, WorkFile,
+    Work, Payment, EmployeeProfile, JobCategory, WorkFile,
     DailySalesReport, DailySalesReportItem, SalesReportNote, DailyExpense,
     Material, Procurement, JobMaterial, StockMovement, MaterialUsage
 )
 
 User = get_user_model()
-
-
-class CustomerSerializer(serializers.ModelSerializer):
-    creator = serializers.StringRelatedField(read_only=True)
-
-    class Meta:
-        model = Customer
-        fields = "__all__"
 
 
 class JobCategorySerializer(serializers.ModelSerializer):
@@ -24,7 +16,7 @@ class JobCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = JobCategory
-        fields = ['id', 'name', 'description', 'color', 'is_active', 'created_at', 'created_by', 'works_count']
+        fields = ['id', 'name', 'description', 'color', 'is_active', 'send_completion_notification', 'created_at', 'created_by', 'works_count']
 
     def get_works_count(self, obj):
         return obj.works.count()
@@ -57,9 +49,9 @@ class WorkFileSerializer(serializers.ModelSerializer):
 
 class WorkSerializer(serializers.ModelSerializer):
     """Enhanced work serializer with title, category, and file support"""
-    # Allow writing customer by id, but expose convenient customer_name for reads
-    customer = serializers.PrimaryKeyRelatedField(queryset=Customer.objects.all())
-    customer_name = serializers.SerializerMethodField(read_only=True)
+    # Customer info is now directly on the Work model
+    customer_name = serializers.CharField(max_length=255)
+    customer_phone = serializers.CharField(max_length=20)
     
     # Category handling
     category = serializers.PrimaryKeyRelatedField(
@@ -69,6 +61,7 @@ class WorkSerializer(serializers.ModelSerializer):
     )
     category_name = serializers.SerializerMethodField(read_only=True)
     category_color = serializers.SerializerMethodField(read_only=True)
+    category_send_notification = serializers.SerializerMethodField(read_only=True)
     
     # Worker details
     worker = serializers.StringRelatedField(read_only=True)
@@ -89,17 +82,13 @@ class WorkSerializer(serializers.ModelSerializer):
     class Meta:
         model = Work
         fields = [
-            'id', 'customer', 'customer_name', 'title', 'description', 'price', 
-            'category', 'category_name', 'category_color', 'worker', 'worker_name',
+            'id', 'customer_name', 'customer_phone',
+            'title', 'description', 'price', 
+            'category', 'category_name', 'category_color', 'category_send_notification',
+            'worker', 'worker_name',
             'created_at', 'completed', 'completed_at', 'note', 'files', 'files_count', 
             'total_payments', 'remaining_balance', 'is_fully_paid', 'status'
         ]
-
-    def get_customer_name(self, obj):
-        try:
-            return obj.customer.name
-        except Exception:
-            return None
 
     def get_category_name(self, obj):
         try:
@@ -112,6 +101,12 @@ class WorkSerializer(serializers.ModelSerializer):
             return obj.category.color if obj.category else '#6B7280'  # Default gray
         except Exception:
             return '#6B7280'
+    
+    def get_category_send_notification(self, obj):
+        try:
+            return obj.category.send_completion_notification if obj.category else False
+        except Exception:
+            return False
 
     def get_worker_name(self, obj):
         try:
@@ -141,10 +136,11 @@ class WorkSerializer(serializers.ModelSerializer):
 
 
 class WorkCreateSerializer(serializers.ModelSerializer):
-    """Simplified serializer for creating works"""
+    """Serializer for creating works - customer info is directly on Work model"""
+    
     class Meta:
         model = Work
-        fields = ['customer', 'title', 'description', 'price', 'category', 'note']
+        fields = ['customer_name', 'customer_phone', 'title', 'description', 'price', 'category', 'note', 'worker']
 
     def validate_title(self, value):
         if not value or len(value.strip()) < 3:
@@ -155,6 +151,18 @@ class WorkCreateSerializer(serializers.ModelSerializer):
         if value <= 0:
             raise serializers.ValidationError("Price must be greater than 0")
         return value
+    
+    def validate_customer_name(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("Customer name is required")
+        return value.strip()
+    
+    def validate_customer_phone(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("Customer phone is required")
+        if len(value.strip()) < 10:
+            raise serializers.ValidationError("Phone number must be at least 10 digits")
+        return value.strip()
 
 
 class WorkFileUploadSerializer(serializers.ModelSerializer):
@@ -248,16 +256,9 @@ class JobCategorySelectSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'color']
 
 
-class CustomerSelectSerializer(serializers.ModelSerializer):
-    """Lightweight serializer for customer dropdowns"""
-    class Meta:
-        model = Customer
-        fields = ['id', 'name']
-
-
 class WorkSelectSerializer(serializers.ModelSerializer):
     """Lightweight serializer for work dropdowns"""
-    customer_name = serializers.CharField(source='customer.name', read_only=True)
+    customer_name = serializers.CharField(read_only=True)
     total_payments = serializers.SerializerMethodField(read_only=True)
     remaining_balance = serializers.SerializerMethodField(read_only=True)
     is_fully_paid = serializers.SerializerMethodField(read_only=True)
@@ -431,7 +432,6 @@ class ProcurementSerializer(serializers.ModelSerializer):
         model = Procurement
         fields = [
             'id', 'material', 'material_name', 'material_unit',
-            'supplier_name', 'supplier_contact', 'supplier_email', 'supplier_phone',
             'quantity_ordered', 'unit_cost', 'total_cost',
             'order_date', 'delivery_date', 'status',
             'created_by', 'created_by_name', 'created_at', 'updated_at'
@@ -466,7 +466,7 @@ class ProcurementDeliverySerializer(serializers.Serializer):
 class JobMaterialSerializer(serializers.ModelSerializer):
     """Serializer for JobMaterial model"""
     job_title = serializers.CharField(source='job.title', read_only=True)
-    job_customer = serializers.CharField(source='job.customer.name', read_only=True)
+    job_customer = serializers.CharField(source='job.customer_name', read_only=True)
     material_name = serializers.CharField(source='material.name', read_only=True)
     material_unit = serializers.CharField(source='material.unit', read_only=True)
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
@@ -510,14 +510,34 @@ class JobMaterialCreateSerializer(serializers.Serializer):
 class StockMovementSerializer(serializers.ModelSerializer):
     """Serializer for StockMovement model"""
     material_name = serializers.CharField(source='material.name', read_only=True)
+    quantity_changed = serializers.DecimalField(source='quantity', max_digits=12, decimal_places=4, read_only=True)
+    balance_after = serializers.SerializerMethodField(read_only=True)
+    reference = serializers.SerializerMethodField(read_only=True)
+    notes = serializers.CharField(source='note', read_only=True)
     
     class Meta:
         model = StockMovement
         fields = [
-            'id', 'material', 'material_name', 'movement_type', 'quantity',
-            'reference_type', 'reference_id', 'note', 'created_at'
+            'id', 'material', 'material_name', 'movement_type', 'quantity', 'quantity_changed',
+            'balance_after', 'reference_type', 'reference_id', 'reference', 'note', 'notes', 'created_at'
         ]
         read_only_fields = ['created_at']
+    
+    def get_balance_after(self, obj):
+        """Get the material's current stock as balance after"""
+        return float(obj.material.current_stock) if obj.material else 0
+    
+    def get_reference(self, obj):
+        """Get a human-readable reference for the movement"""
+        if obj.reference_type == 'procurement':
+            return f"Procurement #{obj.reference_id}"
+        elif obj.reference_type == 'job':
+            return f"Job #{obj.reference_id}"
+        elif obj.reference_type == 'adjustment':
+            return "Manual Adjustment"
+        elif obj.reference_type == 'material_usage':
+            return f"Material Pickup #{obj.reference_id}"
+        return obj.note or f"{obj.reference_type.title()} #{obj.reference_id}"
 
 
 class StockAdjustmentSerializer(serializers.Serializer):

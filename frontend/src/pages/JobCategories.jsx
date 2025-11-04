@@ -219,6 +219,11 @@ function CategoryCard({ category, onEdit, onToggleActive, onDelete }) {
             category.is_active ? 'text-gray-600' : 'text-gray-400'
           }`}>
             <span>📋 {category.works_count || 0} works</span>
+            {category.send_completion_notification && (
+              <span className="text-green-600" title="Sends completion notifications">
+                📲 Notifications
+              </span>
+            )}
           </div>
         </div>
 

@@ -10,23 +10,9 @@ User = settings.AUTH_USER_MODEL
 
 def work_file_upload_path(instance, filename):
     """Generate upload path for work files"""
-    # Create path like: work_files/customer_id/work_id/filename
-    customer_name = instance.work.customer.name.replace(' ', '_')
+    # Create path like: work_files/customer_name/work_id/filename
+    customer_name = instance.work.customer_name.replace(' ', '_')
     return f'work_files/{customer_name}/{instance.work.id}/{filename}'
-
-
-class Customer(models.Model):
-    name = models.CharField(max_length=255)
-    phone = models.CharField(max_length=20, blank=True, null=True)
-    email = models.EmailField(blank=True, null=True)
-    # track which employee created the customer record
-    creator = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='customers_created'
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.name
 
 
 class JobCategory(models.Model):
@@ -35,6 +21,10 @@ class JobCategory(models.Model):
     description = models.TextField(blank=True, null=True)
     color = models.CharField(max_length=7, default='#3B82F6', help_text='Hex color code for UI display')
     is_active = models.BooleanField(default=True)
+    send_completion_notification = models.BooleanField(
+        default=False, 
+        help_text='Send SMS notification to customer when work in this category is completed'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='job_categories_created'
@@ -49,7 +39,10 @@ class JobCategory(models.Model):
 
 
 class Work(models.Model):
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='works')
+    # Customer information stored directly on work
+    customer_name = models.CharField(max_length=255, default='Unknown Customer', help_text='Customer name')
+    customer_phone = models.CharField(max_length=20, default='N/A', help_text='Customer phone number for SMS notifications')
+    
     title = models.CharField(max_length=200, help_text='Brief title for this work/job')
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -69,7 +62,7 @@ class Work(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.title} - {self.customer.name}"
+        return f"{self.title} - {self.customer_name}"
 
     def save(self, *args, **kwargs):
         # Auto-set completed_at when work is marked as completed
@@ -336,12 +329,12 @@ class Material(models.Model):
     name = models.CharField(max_length=255, help_text='Human-readable name for the material')
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
     unit = models.CharField(max_length=50, help_text='Unit of measure (reams, liters, sheets, etc.)')
-    current_stock = models.DecimalField(
-        max_digits=12, decimal_places=4, default=0,
+    current_stock = models.IntegerField(
+        default=0,
         help_text='Current stock quantity'
     )
-    reorder_level = models.DecimalField(
-        max_digits=12, decimal_places=4, default=0,
+    reorder_level = models.IntegerField(
+        default=0,
         help_text='Minimum stock level before reorder alert'
     )
     archived = models.BooleanField(default=False, help_text='Soft delete flag')
@@ -367,14 +360,14 @@ class MaterialUsage(models.Model):
     """Track when employees pick materials from inventory"""
     
     material = models.ForeignKey(Material, on_delete=models.CASCADE, related_name='usage_records')
-    quantity_taken = models.DecimalField(max_digits=12, decimal_places=4)
+    quantity_taken = models.IntegerField()
     taken_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='materials_taken')
     taken_at = models.DateTimeField(auto_now_add=True)
     note = models.TextField(blank=True, null=True, help_text='Optional note about the material usage')
     
     # Track stock levels at the time of usage for audit purposes
-    stock_before = models.DecimalField(max_digits=12, decimal_places=4, help_text='Stock level before taking materials')
-    stock_after = models.DecimalField(max_digits=12, decimal_places=4, help_text='Stock level after taking materials')
+    stock_before = models.IntegerField(help_text='Stock level before taking materials')
+    stock_after = models.IntegerField(help_text='Stock level after taking materials')
     
     class Meta:
         ordering = ['-taken_at']
@@ -393,12 +386,8 @@ class Procurement(models.Model):
     ]
     
     material = models.ForeignKey(Material, on_delete=models.CASCADE, related_name='procurements')
-    supplier_name = models.CharField(max_length=255)
-    supplier_contact = models.CharField(max_length=255, blank=True, null=True)
-    supplier_email = models.EmailField(blank=True, null=True)
-    supplier_phone = models.CharField(max_length=50, blank=True, null=True)
     
-    quantity_ordered = models.DecimalField(max_digits=12, decimal_places=4)
+    quantity_ordered = models.IntegerField()
     unit_cost = models.DecimalField(max_digits=10, decimal_places=2)
     total_cost = models.DecimalField(max_digits=12, decimal_places=2)  # computed and stored
     
@@ -427,7 +416,7 @@ class JobMaterial(models.Model):
     
     job = models.ForeignKey('Work', on_delete=models.CASCADE, related_name='job_materials')
     material = models.ForeignKey(Material, on_delete=models.CASCADE, related_name='job_usages')
-    quantity_used = models.DecimalField(max_digits=12, decimal_places=4)
+    quantity_used = models.IntegerField()
     
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='job_materials_recorded')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -456,7 +445,7 @@ class StockMovement(models.Model):
     
     material = models.ForeignKey(Material, on_delete=models.CASCADE, related_name='stock_movements')
     movement_type = models.CharField(max_length=10, choices=MOVEMENT_TYPE_CHOICES)
-    quantity = models.DecimalField(max_digits=12, decimal_places=4)
+    quantity = models.IntegerField()
     reference_type = models.CharField(max_length=20, choices=REFERENCE_TYPE_CHOICES)
     reference_id = models.PositiveIntegerField(help_text='ID of procurement, job, adjustment, or material usage record')
     note = models.TextField(blank=True, null=True)

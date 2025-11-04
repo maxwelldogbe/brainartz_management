@@ -53,7 +53,7 @@ export default function EnhancedWorkCard({
             <div className="flex items-center gap-2 mt-1">
               <User className="h-4 w-4 text-gray-400" />
               <p className="text-sm text-gray-600 truncate">
-                {work.customer_name}
+                {work.customer_name || 'No Customer'}
               </p>
             </div>
           </div>

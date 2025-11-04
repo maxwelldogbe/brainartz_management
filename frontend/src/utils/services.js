@@ -16,6 +16,8 @@ export const fetchWorks = (filters = {}) => {
   });
   return axios.get(`/api/services/works/?${params}`).then(res => res.data);
 };
+export const fetchUnpaidWorks = () => axios.get('/api/services/works/unpaid_works/').then(res => res.data);
+export const fetchWorksForSelect = (includeFullyPaid = false) => axios.get(`/api/services/works/select_options/?include_fully_paid=${includeFullyPaid}`).then(res => res.data);
 export const createWork = (data) => axios.post("/api/services/works/", data).then(res => res.data);
 export const updateWork = (id, data) => axios.put(`/api/services/works/${id}/`, data).then(res => res.data);
 export const deleteWork = (id) => axios.delete(`/api/services/works/${id}/`).then(res => res.data);

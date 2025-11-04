@@ -7,7 +7,8 @@ export default function JobCategoryForm({ isOpen, onClose, onSave, editingCatego
     name: '',
     description: '',
     color: '#3B82F6',
-    is_active: true
+    is_active: true,
+    send_completion_notification: false
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -18,14 +19,16 @@ export default function JobCategoryForm({ isOpen, onClose, onSave, editingCatego
         name: editingCategory.name || '',
         description: editingCategory.description || '',
         color: editingCategory.color || '#3B82F6',
-        is_active: editingCategory.is_active !== false
+        is_active: editingCategory.is_active !== false,
+        send_completion_notification: editingCategory.send_completion_notification || false
       });
     } else {
       setFormData({
         name: '',
         description: '',
         color: '#3B82F6',
-        is_active: true
+        is_active: true,
+        send_completion_notification: false
       });
     }
     setErrors({});
@@ -168,6 +171,25 @@ export default function JobCategoryForm({ isOpen, onClose, onSave, editingCatego
           </label>
           <p className="mt-1 text-xs text-gray-500">
             Inactive categories won't appear in dropdowns
+          </p>
+        </div>
+
+        <div className="form-field">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="send_completion_notification"
+              checked={formData.send_completion_notification}
+              onChange={handleChange}
+              className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+              disabled={loading}
+            />
+            <span className="text-sm font-medium text-gray-700">
+              Send Completion Notification
+            </span>
+          </label>
+          <p className="mt-1 text-xs text-gray-500">
+            Send SMS notification to customer when work in this category is completed. <strong>Note:</strong> Customer name and phone number are required for notifications.
           </p>
         </div>
 

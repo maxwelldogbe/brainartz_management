@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
 import { Link, useNavigate } from 'react-router-dom';
 import { salesReportsAPI } from '../utils/services';
 import { formatCurrency, formatDate } from '../types/salesReports';
 import { useAuth } from '../context/AuthContext';
 
 export default function SalesReports() {
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const { user } = useAuth();
   const [reports, setReports] = useState([]);
   const [summary, setSummary] = useState(null);

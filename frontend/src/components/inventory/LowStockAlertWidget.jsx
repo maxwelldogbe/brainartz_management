@@ -20,7 +20,7 @@ const LowStockAlertWidget = () => {
     lowStockAlerts, 
     loading, 
     fetchLowStockAlerts,
-    materials 
+    _materials 
   } = useInventory();
 
   const [dismissed, setDismissed] = useState(new Set());

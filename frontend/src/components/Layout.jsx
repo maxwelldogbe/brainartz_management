@@ -120,20 +120,6 @@ export default function Layout() {
               </NavLink>
               
               <NavLink
-                to="/summary"
-                className={({ isActive }) =>
-                  `block px-3 py-2 rounded ${
-                    isActive
-                      ? "bg-gray-800 text-blue-400"
-                      : "hover:bg-gray-800 hover:text-blue-300"
-                  }`
-                }
-                onClick={() => setIsOpen(false)}
-              >
-               Summary
-              </NavLink>
-              
-              <NavLink
                 to="/work-analytics"
                 className={({ isActive }) =>
                   `block px-3 py-2 rounded ${

@@ -58,7 +58,7 @@ class ProcurementService:
                     quantity=procurement.quantity_ordered,
                     reference_type='procurement',
                     reference_id=procurement.id,
-                    note=f"Procurement delivery from {procurement.supplier_name}"
+                    note=f"Procurement delivery - Procurement #{procurement.id}"
                 )
                 
                 # Update procurement status
@@ -73,7 +73,6 @@ class ProcurementService:
                         'material_id': material.id,
                         'material_name': material.name,
                         'quantity_added': procurement.quantity_ordered,
-                        'supplier_name': procurement.supplier_name,
                         'delivery_date': procurement.delivery_date,
                     },
                     'material': {

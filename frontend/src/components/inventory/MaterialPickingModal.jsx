@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
 import { X, Package, Search, Plus, User, FileText, Clock } from 'lucide-react';
 import { materialsAPI, materialUsageAPI } from '../../utils/services';
 
