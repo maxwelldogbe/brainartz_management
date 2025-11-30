@@ -49,7 +49,7 @@ class User(AbstractUser):
         self.is_admin = bool(value)
 
     def __str__(self):
-        return self.email
+        return self.username
 
 
 class InvitationToken(models.Model):

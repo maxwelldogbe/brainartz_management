@@ -56,8 +56,8 @@ def test_sms_invitation():
             expires_at=timezone.now() + timedelta(hours=24)
         )
         
-        print(f"✓ Invitation token created: {invite.token}")
-        print(f"✓ Expires at: {invite.expires_at}")
+        print(f"[+] Invitation token created: {invite.token}")
+        print(f"[+] Expires at: {invite.expires_at}")
         
         # Test SMS sending (will use console output in development)
         message = (
@@ -71,18 +71,18 @@ def test_sms_invitation():
         sms_success = send_sms(test_phone, message)
         
         if sms_success:
-            print("✓ SMS sent successfully!")
+            print("[+] SMS sent successfully!")
         else:
-            print("✗ SMS sending failed")
+            print("[X] SMS sending failed")
             
         # Verify invitation status
-        print(f"✓ Invitation used: {invite.used}")
-        print(f"✓ Invitation expired: {invite.is_expired()}")
+        print(f"[+] Invitation used: {invite.used}")
+        print(f"[+] Invitation expired: {invite.is_expired()}")
         
         return invite
         
     except Exception as e:
-        print(f"✗ Error creating invitation: {e}")
+        print(f"[X] Error creating invitation: {e}")
         return None
 
 def test_user_registration_from_invite(invite_token):
@@ -90,7 +90,7 @@ def test_user_registration_from_invite(invite_token):
     print("\n=== Testing User Registration from Invitation ===")
     
     if not invite_token:
-        print("✗ No invitation token provided")
+        print("[X] No invitation token provided")
         return
     
     try:
@@ -106,7 +106,7 @@ def test_user_registration_from_invite(invite_token):
         
         # Check if invitation is valid
         if invite.is_expired() or invite.used:
-            print("✗ Invitation token is expired or already used")
+            print("[X] Invitation token is expired or already used")
             return
         
         # Create user (simulating the registration API)
@@ -119,25 +119,25 @@ def test_user_registration_from_invite(invite_token):
             is_worker=True
         )
         
-        print(f"✓ User created: {user.email}")
+        print(f"[+] User created: {user.email}")
         
         # Update user profile with phone number from invitation
         if hasattr(user, 'profile'):
             user.profile.phone = invite.phone
             user.profile.save()
-            print(f"✓ Phone number saved to profile: {invite.phone}")
+            print(f"[+] Phone number saved to profile: {invite.phone}")
         
         # Mark invitation as used
         invite.used = True
         invite.save()
-        print("✓ Invitation marked as used")
+        print("[+] Invitation marked as used")
         
-        print(f"✓ Employee account setup complete for: {user.get_full_name()}")
+        print(f"[+] Employee account setup complete for: {user.get_full_name()}")
         
         return user
         
     except Exception as e:
-        print(f"✗ Error during registration: {e}")
+        print(f"[X] Error during registration: {e}")
         return None
 
 def cleanup_test_data():
@@ -149,7 +149,7 @@ def cleanup_test_data():
         test_users = User.objects.filter(username__startswith='testemployee')
         count = test_users.count()
         test_users.delete()
-        print(f"✓ Deleted {count} test users")
+        print(f"[+] Deleted {count} test users")
         
         # Delete test invitation tokens (unused ones)
         test_invites = InvitationToken.objects.filter(
@@ -157,10 +157,10 @@ def cleanup_test_data():
         )
         count = test_invites.count()
         test_invites.delete()
-        print(f"✓ Deleted {count} test invitations")
+        print(f"[+] Deleted {count} test invitations")
         
     except Exception as e:
-        print(f"✗ Error during cleanup: {e}")
+        print(f"[X] Error during cleanup: {e}")
 
 def main():
     """Run all tests."""
@@ -178,7 +178,7 @@ def main():
         user = test_user_registration_from_invite(invite.token)
         
         if user:
-            print(f"\n🎉 Success! Employee {user.get_full_name()} has been invited and registered!")
+            print(f"\n[SUCCESS] Success! Employee {user.get_full_name()} has been invited and registered!")
     
     # Clean up test data
     cleanup_test_data()

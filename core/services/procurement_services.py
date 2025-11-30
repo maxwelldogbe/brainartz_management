@@ -240,7 +240,7 @@ class ProcurementService:
                     quantity=abs(adjustment_quantity),
                     reference_type='adjustment',
                     reference_id=0,  # No specific reference for manual adjustments
-                    note=note or f"Manual adjustment by {user.email if user else 'system'}"
+                    note=note or f"Manual adjustment by {user.username if user else 'system'}"
                 )
                 
                 result = {

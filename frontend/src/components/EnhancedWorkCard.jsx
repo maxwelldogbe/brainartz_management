@@ -97,7 +97,7 @@ export default function EnhancedWorkCard({
         {work.worker_name && (
           <div className="mb-3">
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span className="text-blue-600">👷</span>
+              {/* <span className="text-blue-600">👷</span> */}
               <span>Assigned to: <strong>{work.worker_name}</strong></span>
             </div>
           </div>
@@ -137,7 +137,7 @@ export default function EnhancedWorkCard({
         {work.note && (
           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
             <div className="flex items-start gap-2">
-              <span className="text-yellow-600 text-sm font-medium">📝 Note:</span>
+              <span className="text-yellow-600 text-sm font-medium">Note:</span>
               <p className="text-sm text-yellow-800">{work.note}</p>
             </div>
           </div>
@@ -241,6 +241,63 @@ export function WorkList({
           onViewFiles={onViewFiles}
           isUpdating={updatingWorks.has(work.id)}
         />
+      ))}
+    </div>
+  );
+}
+
+// Work table / list view for compact rows
+export function WorkTable({
+  works,
+  onEdit,
+  onToggleComplete,
+  onViewFiles,
+  loading = false,
+  updatingWorks = new Set()
+}) {
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="animate-pulse bg-white rounded-lg p-4 border border-gray-200"></div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!works || works.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No works found</h3>
+        <p className="text-gray-500">Create your first work or adjust your filters</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {works.map(work => (
+        <div key={work.id} className="bg-white rounded-lg border border-gray-200 p-4 flex items-center justify-between">
+          <div className="min-w-0">
+            <div className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-semibold text-gray-900 truncate">{work.title || 'Untitled Work'}</h4>
+                <div className="text-xs text-gray-500 truncate">{work.customer_name || 'No Customer'} • {work.category_name || 'Uncategorized'}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-gray-700 font-medium">{new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(work.price)}</div>
+            <div className="text-xs text-gray-500">{new Date(work.created_at).toLocaleDateString()}</div>
+            <div>
+              <button onClick={() => onEdit(work)} className="px-2 py-1 text-xs bg-gray-100 rounded">Edit</button>
+            </div>
+            <div>
+              <button onClick={() => onToggleComplete(work)} disabled={updatingWorks.has(work.id)} className="px-2 py-1 text-xs rounded bg-green-50 text-green-700">{updatingWorks.has(work.id) ? 'Updating...' : (work.completed ? 'Reopen' : 'Complete')}</button>
+            </div>
+          </div>
+        </div>
       ))}
     </div>
   );

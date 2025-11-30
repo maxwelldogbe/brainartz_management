@@ -29,12 +29,12 @@ def test_teleconic_configuration():
     sender_id = getattr(settings, 'TELECONIC_SENDER_ID', 'BrainArtz')
     api_url = getattr(settings, 'TELECONIC_API_URL', 'https://sms.teleconic.com/api/v1/send')
     
-    print(f"API Key: {'✓ Configured' if api_key else '✗ Not configured'}")
+    print(f"API Key: {'[+] Configured' if api_key else '[X] Not configured'}")
     print(f"Sender ID: {sender_id}")
     print(f"API URL: {api_url}")
     
     if not api_key:
-        print("\n⚠️  Warning: TELECONIC_API_KEY is not set in environment variables.")
+        print("\n[!]  Warning: TELECONIC_API_KEY is not set in environment variables.")
         print("   Please add it to your .env file.")
         return False
     
@@ -85,10 +85,10 @@ def test_send_sms(phone_number: str, test_mode: bool = True):
     success = send_sms(normalized_phone, message)
     
     if success:
-        print("✓ SMS sent successfully!")
+        print("[+] SMS sent successfully!")
         return True
     else:
-        print("✗ Failed to send SMS")
+        print("[X] Failed to send SMS")
         return False
 
 
@@ -107,10 +107,10 @@ def test_teleconic_direct(phone_number: str, test_mode: bool = True):
     success = send_teleconic_sms(normalized_phone, message)
     
     if success:
-        print("✓ Direct Teleconic SMS sent successfully!")
+        print("[+] Direct Teleconic SMS sent successfully!")
         return True
     else:
-        print("✗ Failed to send direct Teleconic SMS")
+        print("[X] Failed to send direct Teleconic SMS")
         return False
 
 
@@ -162,7 +162,7 @@ def main():
         print("test_send_sms('+233241234567', test_mode=False)")
         print("=" * 60)
     
-    print("\n✓ Test suite completed!")
+    print("\n[+] Test suite completed!")
     print("\nNext steps:")
     print("1. Add TELECONIC_API_KEY to your .env file")
     print("2. Add TELECONIC_SENDER_ID to your .env file (optional, defaults to 'BrainArtz')")

@@ -83,17 +83,41 @@ export default function Workers() {
       
       if (result.sms_sent) {
         showNotification(`Credentials sent to ${name} via SMS`, 'success');
+        
+        // If password was reset and SMS succeeded, still show modal with new password for admin records
+        if (resetPassword && result.login_credentials) {
+          setCredentialsModal({
+            isOpen: true,
+            credentials: {
+              ...result.login_credentials,
+              smsStatus: true
+            }
+          });
+        }
       } else {
         // Show credentials modal for manual sharing
-        setCredentialsModal({
-          isOpen: true,
-          credentials: result
-        });
-        showNotification(`SMS failed. Credentials ready for manual sharing to ${name}`, 'warning');
+        if (result.login_credentials) {
+          setCredentialsModal({
+            isOpen: true,
+            credentials: {
+              ...result.login_credentials,
+              smsStatus: false
+            }
+          });
+          showNotification(
+            resetPassword 
+              ? `Password reset for ${name}. Share new credentials manually.` 
+              : `Credentials ready for manual sharing to ${name}`, 
+            'warning'
+          );
+        } else {
+          showNotification(`Could not retrieve credentials for ${name}`, 'error');
+        }
       }
     } catch (err) {
       console.error('Failed to resend credentials', err);
-      showNotification('Failed to resend credentials', 'error');
+      const errorMsg = err.response?.data?.error || 'Failed to process request';
+      showNotification(errorMsg, 'error');
     } finally {
       setWorkerActionLoading(userId, false);
     }
@@ -127,10 +151,9 @@ export default function Workers() {
         </div>
         <div className="flex space-x-3">
           <button
-            onClick={() => navigate('/invite')}
+            onClick={() => navigate('/portal/invite')}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
           >
-            <span>➕</span>
             <span>Add Employee</span>
           </button>
         </div>
@@ -149,12 +172,12 @@ export default function Workers() {
       {/* Employees Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {workers && workers.length === 0 ? (
-          <div className="p-8 text-center">
-            <div className="text-6xl mb-4">👥</div>
+            <div className="p-8 text-center">
+            
             <h3 className="text-lg font-medium text-gray-900 mb-2">No employees found</h3>
             <p className="text-gray-600 mb-4">Get started by inviting your first employee.</p>
             <button
-              onClick={() => navigate('/invite')}
+              onClick={() => navigate('/portal/invite')}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
               Invite Employee
@@ -169,7 +192,7 @@ export default function Workers() {
                     Employee
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contact
+                    Username / Phone
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Role
@@ -194,7 +217,7 @@ export default function Workers() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{w.email}</div>
+                      <div className="text-sm font-medium text-gray-900">@{w.username}</div>
                       <div className="text-sm text-gray-500">
                         {w.profile?.phone || 'No phone'}
                       </div>
@@ -225,44 +248,44 @@ export default function Workers() {
                         <button
                           onClick={() => handleResendCredentials(w.id, `${w.first_name} ${w.last_name}`)}
                           disabled={actionLoading[w.id]}
-                          className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Resend Login Credentials"
+                          className="px-2 py-1 text-xs text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          title="Resend current login credentials"
                         >
-                          {actionLoading[w.id] ? '⏳' : '📤'}
+                          {actionLoading[w.id] ? 'Loading...' : 'Resend'}
                         </button>
 
                         {/* Reset Password */}
                         <button
                           onClick={() => handleResetPassword(w.id, `${w.first_name} ${w.last_name}`)}
                           disabled={actionLoading[w.id]}
-                          className="text-amber-600 hover:text-amber-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Reset Password"
+                          className="px-2 py-1 text-xs text-amber-600 hover:text-amber-900 hover:bg-amber-50 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          title="Generate new password and send credentials"
                         >
-                          🔑
+                          {actionLoading[w.id] ? 'Loading...' : 'Reset'}
                         </button>
 
                         {/* Toggle Active Status */}
                         <button
                           onClick={() => handleToggle(w.id, w.is_active, `${w.first_name} ${w.last_name}`)}
                           disabled={actionLoading[w.id]}
-                          className={`${
+                          className={`px-2 py-1 text-xs rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
                             w.is_active 
-                              ? 'text-yellow-600 hover:text-yellow-900' 
-                              : 'text-green-600 hover:text-green-900'
-                          } disabled:opacity-50 disabled:cursor-not-allowed`}
-                          title={w.is_active ? 'Disable Account' : 'Enable Account'}
+                              ? 'text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50' 
+                              : 'text-green-600 hover:text-green-900 hover:bg-green-50'
+                          }`}
+                          title={w.is_active ? 'Disable this account' : 'Enable this account'}
                         >
-                          {w.is_active ? '⏸️' : '▶️'}
+                          {actionLoading[w.id] ? 'Loading...' : (w.is_active ? 'Disable' : 'Enable')}
                         </button>
 
                         {/* Delete */}
                         <button
                           onClick={() => handleDelete(w.id, `${w.first_name} ${w.last_name}`)}
                           disabled={actionLoading[w.id]}
-                          className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Delete Account"
+                          className="px-2 py-1 text-xs text-red-600 hover:text-red-900 hover:bg-red-50 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          title="Permanently delete this account"
                         >
-                          🗑️
+                          {actionLoading[w.id] ? 'Loading...' : 'Delete'}
                         </button>
                       </div>
                     </td>

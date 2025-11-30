@@ -99,10 +99,10 @@ export default function SalesReportForm() {
       }
 
       if (submit) {
-        navigate('/sales-reports');
+        navigate('/portal/sales-reports');
       } else {
         if (!isEdit) {
-          navigate(`/sales-reports/${reportData.id}/edit`);
+          navigate(`/portal/sales-reports/${reportData.id}/edit`);
         } else {
           await loadData(); // Reload to get updated data
         }
@@ -307,7 +307,7 @@ export default function SalesReportForm() {
           )}
         </div>
         <Link
-          to="/sales-reports"
+          to="/portal/sales-reports"
           className="text-gray-600 hover:text-gray-900 font-medium"
         >
           ← Back to Reports

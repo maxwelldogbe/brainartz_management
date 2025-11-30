@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Plus, Search, Package, Edit, Minus } from 'lucide-react';
+import { Plus, Search, Package, Edit, Minus, ClipboardList } from 'lucide-react';
 import SimpleMaterialForm from '../components/inventory/SimpleMaterialForm';
 import StockAdjustmentModal from '../components/inventory/StockAdjustmentModal';
+import MaterialPickingModal from '../components/inventory/MaterialPickingModal';
 import { materialsAPI } from '../utils/services';
 import { useRoleAccess } from '../hooks/useRoleAccess';
 
@@ -13,6 +14,7 @@ const Materials = () => {
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showStockModal, setShowStockModal] = useState(false);
+  const [showPickingModal, setShowPickingModal] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
   const [adjustingMaterial, setAdjustingMaterial] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -114,6 +116,11 @@ const Materials = () => {
     loadMaterials();
   };
 
+  const handlePickingModalClose = () => {
+    setShowPickingModal(false);
+    loadMaterials();
+  };
+
   const handleDeleteMaterial = async (id) => {
     if (window.confirm('Are you sure you want to delete this material?')) {
       try {
@@ -151,18 +158,27 @@ const Materials = () => {
           <p className="text-gray-600">
             {canAccessAdminFeatures 
               ? 'Manage inventory materials and stock levels' 
-              : 'View inventory materials (Admin can manage)'}
+              : 'View inventory materials and record material pickups'}
           </p>
         </div>
-        {canAccessAdminFeatures && (
+        <div className="flex gap-3">
           <button
-            onClick={handleAddMaterial}
-            className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+            onClick={() => setShowPickingModal(true)}
+            className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
           >
-            <Plus size={20} />
-            Add Material
+            <ClipboardList size={20} />
+            Record Material Pickup
           </button>
-        )}
+          {canAccessAdminFeatures && (
+            <button
+              onClick={handleAddMaterial}
+              className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+            >
+              <Plus size={20} />
+              Add Material
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -396,6 +412,14 @@ const Materials = () => {
           material={adjustingMaterial}
           onClose={handleStockModalClose}
           onSave={handleStockModalClose}
+        />
+      )}
+
+      {/* Material Picking Modal */}
+      {showPickingModal && (
+        <MaterialPickingModal
+          onClose={handlePickingModalClose}
+          onSave={handlePickingModalClose}
         />
       )}
     </div>

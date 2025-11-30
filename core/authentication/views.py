@@ -40,13 +40,13 @@ class ManualEmployeeCreateView(generics.CreateAPIView):
         send_sms_success = False
         if hasattr(user, 'profile') and user.profile.phone:
             sms_message = (
-                f"Welcome to the team, {user.get_full_name()}! 🎉\n\n"
+                f"Welcome to the team, {user.get_full_name()}!\n\n"
                 f"Your account has been created:\n"
-                f"👤 Username: {user.username}\n"
-                f"📧 Email: {user.email}\n"
-                f"🔒 Password: {password}\n\n"
+                f"Username: {user.username}\n"
+                f"Email: {user.email}\n"
+                f"Password: {password}\n\n"
                 f"Please log in and change your password.\n"
-                f"Welcome aboard! 🚀"
+                f"Welcome aboard!"
             )
             
             try:
@@ -82,9 +82,9 @@ class ResendLoginCredentialsView(generics.GenericAPIView):
     
     def post(self, request, user_id):
         try:
-            user = User.objects.get(id=user_id, is_worker=True)
+            user = User.objects.get(id=user_id)
         except User.DoesNotExist:
-            return Response({'error': 'Employee not found'}, status=404)
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
         
         # Generate new password if requested
         reset_password = request.data.get('reset_password', False)
@@ -95,58 +95,74 @@ class ResendLoginCredentialsView(generics.GenericAPIView):
             new_password = get_random_string(12)
             user.set_password(new_password)
             user.save()
+            logger.info(f"Password reset for user {user.username} by admin {request.user.username}")
         
         # Get phone number from profile
         phone = None
         if hasattr(user, 'profile') and user.profile.phone:
             phone = user.profile.phone
-        else:
-            return Response({'error': 'Employee phone number not found'}, status=400)
         
         # Prepare message
         if new_password:
             message = (
-                f"Hi {user.get_full_name()}! 👋\n\n"
+                f"Hi {user.get_full_name() or user.username}!\n\n"
                 f"Your password has been reset:\n"
-                f"👤 Username: {user.username}\n"
-                f"📧 Email: {user.email}\n"
-                f"🔒 New Password: {new_password}\n\n"
+                f"Username: {user.username}\n"
+                f"Email: {user.email}\n"
+                f"New Password: {new_password}\n\n"
                 f"Please log in and change your password.\n"
             )
         else:
             message = (
-                f"Hi {user.get_full_name()}! 👋\n\n"
+                f"Hi {user.get_full_name() or user.username}!\n\n"
                 f"Your login details:\n"
-                f"👤 Username: {user.username}\n"
-                f"📧 Email: {user.email}\n\n"
+                f"Username: {user.username}\n"
+                f"Email: {user.email}\n\n"
                 f"Contact admin if you need password reset.\n"
             )
         
-        # Send SMS
-        try:
-            sms_success = send_sms(phone, message)
-            
-            response_data = {
-                'message': 'Login credentials sent successfully',
-                'employee': {
-                    'id': user.id,
-                    'username': user.username,
-                    'email': user.email,
-                    'full_name': user.get_full_name(),
-                    'phone': phone
-                },
-                'sms_sent': sms_success
+        # Try to send SMS if phone is available
+        sms_success = False
+        if phone:
+            try:
+                sms_success = send_sms(phone, message)
+                if sms_success:
+                    logger.info(f"Credentials sent via SMS to {phone}")
+                else:
+                    logger.warning(f"SMS sending failed for {phone}")
+            except Exception as e:
+                logger.error(f"Failed to send credentials SMS to {phone}: {e}")
+        
+        # Prepare response data
+        response_data = {
+            'message': 'Credentials processed successfully',
+            'employee': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'full_name': user.get_full_name() or user.username,
+                'phone': phone or 'N/A'
+            },
+            'sms_sent': sms_success
+        }
+        
+        # Include credentials in response for manual sharing if SMS fails or no phone
+        if new_password:
+            response_data['login_credentials'] = {
+                'username': user.username,
+                'email': user.email,
+                'password': new_password
             }
-            
-            if new_password:
-                response_data['new_password'] = new_password
-                response_data['message'] = 'Password reset and credentials sent successfully'
-            
-            return Response(response_data, status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            logger.error(f"Failed to send credentials SMS to {phone}: {e}")
-            return Response({'error': 'Failed to send SMS'}, status=500)
+            response_data['message'] = 'Password reset successfully' + (' and sent via SMS' if sms_success else ' - Share credentials manually')
+        else:
+            if not sms_success and not phone:
+                response_data['login_credentials'] = {
+                    'username': user.username,
+                    'email': user.email
+                }
+            response_data['message'] = 'Credentials sent successfully' if sms_success else 'SMS not available - Share credentials manually'
+        
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class GenerateInviteTokenView(generics.CreateAPIView):
@@ -277,3 +293,21 @@ class ProfileView(generics.RetrieveUpdateAPIView):
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
+
+
+class PasswordChangeView(generics.GenericAPIView):
+    """Allow authenticated users to change their password"""
+    serializer_class = PasswordChangeSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        logger.info(f"Password changed successfully for user {request.user.username}")
+        
+        return Response({
+            'message': 'Password changed successfully',
+            'detail': 'You can now login with your new password'
+        }, status=status.HTTP_200_OK)

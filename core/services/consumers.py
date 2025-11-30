@@ -42,7 +42,7 @@ class InventoryConsumer(AsyncWebsocketConsumer):
         
         await self.accept()
         
-        logger.info(f"User {self.user.email} connected to inventory updates")
+        logger.info(f"User {self.user.username} connected to inventory updates")
     
     async def disconnect(self, close_code):
         """Handle WebSocket disconnection"""

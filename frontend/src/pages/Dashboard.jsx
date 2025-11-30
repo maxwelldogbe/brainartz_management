@@ -35,8 +35,8 @@ export default function Dashboard() {
         // Load user profile
         try {
           const profileRes = await axios.get('/api/authentication/profile/');
-          console.log('📸 Profile data received:', profileRes.data);
-          console.log('📸 Avatar value:', profileRes.data.avatar);
+          console.log('Profile data received:', profileRes.data);
+          console.log('Avatar value:', profileRes.data.avatar);
           
           // Store profile data (avatar will be URL string when reading)
           const profileData = {
@@ -46,7 +46,7 @@ export default function Dashboard() {
           };
           setProfile(profileData);
           setAvatarPreview(profileRes.data.avatar); // URL for preview
-          console.log('📸 Avatar preview set to:', profileRes.data.avatar);
+          console.log('Avatar preview set to:', profileRes.data.avatar);
         } catch (err) {
           console.warn('Could not load profile data:', err);
           setProfile({ phone: '', bio: '', avatar: null });
@@ -121,11 +121,11 @@ export default function Dashboard() {
         /* ignore */ 
       }
       
-      alert('✅ Profile updated successfully');
+      alert('Profile updated successfully');
     } catch (err) {
       console.error('Failed to save profile', err);
       console.error('Error details:', err.response?.data);
-      alert('❌ Failed to save profile changes');
+      alert('Failed to save profile changes');
     }
   };
 
@@ -141,7 +141,7 @@ export default function Dashboard() {
   if (error) {
     return (
       <div className="text-center py-8">
-        <div className="text-6xl mb-4">⚠️</div>
+        
         <h2 className="text-2xl font-bold text-gray-800 mb-2">Dashboard Error</h2>
         <p className="text-gray-600">{error}</p>
       </div>
@@ -151,15 +151,15 @@ export default function Dashboard() {
   // If admin, show combined dashboard
   if (canAccessAdminFeatures) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-1">Complete system overview and management</p>
-        </div>
-        
+      <div className="space-y-6 min-w-0">
+      {/* //   <div>
+      //     <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+      //     <p className="text-gray-600 mt-1">Complete system overview and management</p>
+      //   </div>
+         */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Personal Summary */}
-          <div className="xl:col-span-1 space-y-6">
+          <div className="xl:col-span-1 space-y-6 min-w-0">
             <UserProfileSection 
               profile={profile}
               setProfile={setProfile}
@@ -180,7 +180,7 @@ export default function Dashboard() {
           </div>
 
           {/* Admin Dashboard */}
-          <div className="xl:col-span-2">
+          <div className="xl:col-span-2 min-w-0">
             <AdminDashboard />
           </div>
         </div>
@@ -190,7 +190,7 @@ export default function Dashboard() {
 
   // Regular user dashboard
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600 mt-1">Welcome back, {user?.first_name}!</p>
@@ -221,9 +221,9 @@ export default function Dashboard() {
 
         {/* Welcome message for non-workers */}
         {!canAccessWorkerFeatures && (
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6 min-w-0">
             <div className="text-center">
-              <div className="text-6xl mb-4">👋</div>
+              
               <h2 className="text-xl font-bold text-gray-800 mb-2">Welcome to Brainartz!</h2>
               <p className="text-gray-600">
                 Your account has been set up successfully. Contact your administrator if you need additional access permissions.
@@ -239,10 +239,10 @@ export default function Dashboard() {
 // User Profile Section Component
 function UserProfileSection({ profile, setProfile, avatarPreview, handleAvatarChange, editing, setEditing, saveProfile, getUserRoleString }) {
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white rounded-lg shadow p-6 min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
         <h2 className="text-xl font-bold text-gray-800">Your Profile</h2>
-        <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+        <span className="mt-2 sm:mt-0 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
           {getUserRoleString()}
         </span>
       </div>
@@ -288,13 +288,13 @@ function UserProfileSection({ profile, setProfile, avatarPreview, handleAvatarCh
           <div className="flex space-x-3">
             <button 
               onClick={saveProfile} 
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Save Changes
             </button>
             <button 
               onClick={() => setEditing(false)} 
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+              className="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
             >
               Cancel
             </button>
@@ -302,19 +302,17 @@ function UserProfileSection({ profile, setProfile, avatarPreview, handleAvatarCh
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 flex-wrap">
             {avatarPreview ? (
-              <img src={avatarPreview} alt="Avatar" className="w-16 h-16 rounded-full object-cover" />
+              <img src={avatarPreview} alt="Avatar" className="w-16 h-16 rounded-full object-cover flex-shrink-0" />
             ) : (
-              <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center">
-                <span className="text-2xl">👤</span>
-              </div>
+              <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0" />
             )}
-            <div>
-              <div className="text-lg font-semibold text-gray-800">
+            <div className="min-w-0">
+              <div className="text-lg font-semibold text-gray-800 truncate">
                 {profile.name || 'Update your profile'}
               </div>
-              <div className="text-gray-600">{profile.bio || 'No bio added yet'}</div>
+              <div className="text-gray-600 truncate">{profile.bio || 'No bio added yet'}</div>
             </div>
           </div>
           

@@ -3,7 +3,8 @@ from django.contrib.auth import get_user_model
 from .models import (
     Work, Payment, EmployeeProfile, JobCategory, WorkFile,
     DailySalesReport, DailySalesReportItem, SalesReportNote, DailyExpense,
-    Material, Procurement, JobMaterial, StockMovement, MaterialUsage
+    Material, Procurement, JobMaterial, StockMovement, MaterialUsage,
+    CustomerContact, MarketingMessage
 )
 
 User = get_user_model()
@@ -49,9 +50,9 @@ class WorkFileSerializer(serializers.ModelSerializer):
 
 class WorkSerializer(serializers.ModelSerializer):
     """Enhanced work serializer with title, category, and file support"""
-    # Customer info is now directly on the Work model
-    customer_name = serializers.CharField(max_length=255)
-    customer_phone = serializers.CharField(max_length=20)
+    # Customer info is now directly on the Work model (optional)
+    customer_name = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    customer_phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
     
     # Category handling
     category = serializers.PrimaryKeyRelatedField(
@@ -136,7 +137,7 @@ class WorkSerializer(serializers.ModelSerializer):
 
 
 class WorkCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating works - customer info is directly on Work model"""
+    """Serializer for creating works - customer info is optional (only needed for notifications)"""
     
     class Meta:
         model = Work
@@ -153,16 +154,18 @@ class WorkCreateSerializer(serializers.ModelSerializer):
         return value
     
     def validate_customer_name(self, value):
-        if not value or not value.strip():
-            raise serializers.ValidationError("Customer name is required")
-        return value.strip()
+        # Customer name is optional, just clean it if provided
+        if value:
+            return value.strip()
+        return value
     
     def validate_customer_phone(self, value):
-        if not value or not value.strip():
-            raise serializers.ValidationError("Customer phone is required")
-        if len(value.strip()) < 10:
-            raise serializers.ValidationError("Phone number must be at least 10 digits")
-        return value.strip()
+        # Customer phone is optional, validate only if provided
+        if value and value.strip():
+            if len(value.strip()) < 10:
+                raise serializers.ValidationError("Phone number must be at least 10 digits")
+            return value.strip()
+        return value
 
 
 class WorkFileUploadSerializer(serializers.ModelSerializer):
@@ -559,3 +562,44 @@ class MaterialStatsSerializer(serializers.Serializer):
     total_stock_value = serializers.DecimalField(max_digits=15, decimal_places=2)
     recent_movements_count = serializers.IntegerField()
     pending_procurements_count = serializers.IntegerField()
+
+
+class CustomerContactSerializer(serializers.ModelSerializer):
+    """Serializer for customer contact information (marketing database)"""
+    can_receive_marketing = serializers.SerializerMethodField(read_only=True)
+    
+    class Meta:
+        model = CustomerContact
+        fields = [
+            'id', 'name', 'phone', 'opted_out', 'can_receive_marketing',
+            'first_work_date', 'last_work_date', 'total_works', 'total_spent',
+            'notes', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'first_work_date', 'last_work_date', 'total_works', 'total_spent', 'created_at', 'updated_at']
+    
+    def get_can_receive_marketing(self, obj):
+        return obj.can_receive_marketing()
+
+
+class MarketingMessageSerializer(serializers.ModelSerializer):
+    """Serializer for marketing message templates"""
+    created_by_name = serializers.SerializerMethodField(read_only=True)
+    full_message = serializers.SerializerMethodField(read_only=True)
+    
+    class Meta:
+        model = MarketingMessage
+        fields = [
+            'id', 'title', 'message', 'link_url', 'link_text',
+            'is_active', 'created_by', 'created_by_name',
+            'created_at', 'updated_at', 'times_used', 'last_used',
+            'full_message'
+        ]
+        read_only_fields = ['created_by', 'created_at', 'updated_at', 'times_used', 'last_used']
+    
+    def get_created_by_name(self, obj):
+        if obj.created_by:
+            return f"{obj.created_by.first_name} {obj.created_by.last_name}".strip() or obj.created_by.username
+        return None
+    
+    def get_full_message(self, obj):
+        return obj.get_full_message()

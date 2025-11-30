@@ -60,7 +60,7 @@ class Command(BaseCommand):
                 )
                 
                 self.stdout.write(
-                    self.style.SUCCESS(f'✓ Created category: {category.name}')
+                    self.style.SUCCESS(f'[+] Created category: {category.name}')
                 )
                 
         except KeyboardInterrupt:
@@ -132,7 +132,7 @@ class Command(BaseCommand):
             
             if JobCategory.objects.filter(name=name).exists():
                 self.stdout.write(
-                    self.style.WARNING(f'⚠️  Category "{name}" already exists, skipping...')
+                    self.style.WARNING(f'[!] Category "{name}" already exists, skipping...')
                 )
                 skipped_count += 1
                 continue
@@ -140,21 +140,21 @@ class Command(BaseCommand):
             try:
                 category = JobCategory.objects.create(**category_data)
                 self.stdout.write(
-                    self.style.SUCCESS(f'✓ Created: {category.name}')
+                    self.style.SUCCESS(f'[+] Created: {category.name}')
                 )
                 created_count += 1
             except Exception as e:
                 self.stdout.write(
-                    self.style.ERROR(f'✗ Failed to create "{name}": {str(e)}')
+                    self.style.ERROR(f'[X] Failed to create "{name}": {str(e)}')
                 )
         
-        self.stdout.write(f'\n📊 Summary:')
+        self.stdout.write(f'\n[SUMMARY] Summary:')
         self.stdout.write(f'   Created: {created_count} categories')
         self.stdout.write(f'   Skipped: {skipped_count} categories')
         
         if created_count > 0:
             self.stdout.write(
-                self.style.SUCCESS(f'\n🎉 Job categories setup complete!')
+                self.style.SUCCESS(f'\n[SUCCESS] Job categories setup complete!')
             )
 
 

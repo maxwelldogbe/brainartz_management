@@ -2,7 +2,8 @@ from django.contrib import admin
 from .models import (
     Work, Payment, EmployeeProfile, JobCategory, WorkFile,
     DailySalesReport, DailySalesReportItem, SalesReportNote, DailyExpense,
-    Material, Procurement, JobMaterial, StockMovement
+    Material, Procurement, JobMaterial, StockMovement, CustomerContact,
+    MarketingMessage
 )
 
 
@@ -248,3 +249,83 @@ class StockMovementAdmin(admin.ModelAdmin):
     
     def has_delete_permission(self, request, obj=None):
         return False  # Stock movements should not be deleted
+
+
+@admin.register(CustomerContact)
+class CustomerContactAdmin(admin.ModelAdmin):
+    list_display = ('name', 'phone', 'total_works', 'total_spent', 'opted_out', 'last_work_date', 'can_receive_marketing')
+    list_filter = ('opted_out', 'first_work_date', 'last_work_date')
+    search_fields = ('name', 'phone', 'notes')
+    readonly_fields = ('first_work_date', 'last_work_date', 'total_works', 'total_spent', 'created_at', 'updated_at')
+    
+    fieldsets = (
+        ('Customer Information', {
+            'fields': ('name', 'phone')
+        }),
+        ('Marketing Preferences', {
+            'fields': ('opted_out',)
+        }),
+        ('Statistics', {
+            'fields': ('total_works', 'total_spent', 'first_work_date', 'last_work_date'),
+            'classes': ('collapse',)
+        }),
+        ('Additional Information', {
+            'fields': ('notes',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def can_receive_marketing(self, obj):
+        return obj.can_receive_marketing()
+    can_receive_marketing.boolean = True
+    can_receive_marketing.short_description = 'Can Receive Marketing'
+
+
+@admin.register(MarketingMessage)
+class MarketingMessageAdmin(admin.ModelAdmin):
+    list_display = ('title', 'message_preview', 'has_link', 'is_active', 'times_used', 'last_used', 'created_by', 'created_at')
+    list_filter = ('is_active', 'created_at', 'last_used')
+    search_fields = ('title', 'message', 'link_url')
+    readonly_fields = ('created_by', 'created_at', 'updated_at', 'times_used', 'last_used', 'full_message_preview')
+    
+    fieldsets = (
+        ('Message Information', {
+            'fields': ('title', 'message', 'is_active')
+        }),
+        ('Link (Optional)', {
+            'fields': ('link_url', 'link_text')
+        }),
+        ('Preview', {
+            'fields': ('full_message_preview',),
+            'description': 'This is how the message will appear to customers'
+        }),
+        ('Usage Statistics', {
+            'fields': ('times_used', 'last_used'),
+            'classes': ('collapse',)
+        }),
+        ('Metadata', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def message_preview(self, obj):
+        return obj.message[:50] + '...' if len(obj.message) > 50 else obj.message
+    message_preview.short_description = 'Message'
+    
+    def has_link(self, obj):
+        return bool(obj.link_url)
+    has_link.boolean = True
+    has_link.short_description = 'Has Link'
+    
+    def full_message_preview(self, obj):
+        return obj.get_full_message()
+    full_message_preview.short_description = 'Full Message Preview'
+    
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)

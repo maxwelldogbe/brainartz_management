@@ -1,10 +1,51 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import Work
+from .models import Work, CustomerContact
 from django.utils import timezone
 
 # import the SMS sender from authentication app
 from authentication.sms_backends import send_sms
+
+
+@receiver(post_save, sender=Work)
+def save_customer_contact(sender, instance: Work, created, **kwargs):
+    """
+    Automatically save or update customer contact information when a work is created/updated.
+    This builds a database of customers for marketing purposes.
+    """
+    # Only process if we have valid customer information
+    if not instance.customer_name or not instance.customer_phone:
+        return
+    
+    # Skip if phone is placeholder
+    if instance.customer_phone.strip() in ['', 'N/A', 'n/a']:
+        return
+    
+    phone = instance.customer_phone.strip()
+    name = instance.customer_name.strip()
+    
+    try:
+        # Get or create customer contact
+        customer, is_new = CustomerContact.objects.get_or_create(
+            phone=phone,
+            defaults={'name': name}
+        )
+        
+        # Update customer information
+        if not is_new:
+            # Update name if it's different (customer might have provided more details)
+            if customer.name != name:
+                customer.name = name
+            
+            # Increment work count and update total spent
+            customer.total_works += 1
+            customer.total_spent += instance.price
+            customer.save()
+    except Exception as e:
+        # Log error but don't fail work creation
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to save customer contact: {e}")
 
 
 @receiver(post_save, sender=Work)
@@ -46,7 +87,7 @@ def work_post_save(sender, instance: Work, created, update_fields=None, **kwargs
         
         message = (
             f"Hello {instance.customer_name},\n\n"
-            f"Great news! Your work '{work_identifier}' has been completed on {formatted_date}. ✅\n\n"
+            f"Great news! Your work '{work_identifier}' has been completed on {formatted_date}.\n\n"
             f"Thank you for choosing our services. Please contact us if you have any questions.\n\n"
             f"Best regards,\nThe Team"
         )

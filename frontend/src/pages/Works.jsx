@@ -10,7 +10,7 @@ import {
 } from "../utils/services";
 import EnhancedWorkForm from "../components/EnhancedWorkForm";
 import WorkFilters from "../components/WorkFilters";
-import { WorkList } from "../components/EnhancedWorkCard";
+import { WorkList, WorkTable } from "../components/EnhancedWorkCard";
 import WorkFileUpload from "../components/WorkFileUpload";
 import Modal from "../components/Modal";
 import { Plus, Grid, List } from "lucide-react";
@@ -102,7 +102,7 @@ export default function Works() {
   const handleToggleComplete = async (work) => {
     // Prevent double-clicks
     if (updatingWorks.has(work.id)) {
-      console.log('⚠️ Work update already in progress for ID:', work.id);
+      console.log('Work update already in progress for ID:', work.id);
       return;
     }
     
@@ -112,28 +112,28 @@ export default function Works() {
       
       let updatedWork;
       
-      console.log(`🔄 Toggling work completion for work ID: ${work.id}, current status: ${work.completed ? 'completed' : 'incomplete'}`);
+      console.log(`Toggling work completion for work ID: ${work.id}, current status: ${work.completed ? 'completed' : 'incomplete'}`);
       
       if (work.completed) {
         // Reopen work - now properly calls the backend API
-        console.log('🔓 Reopening work for corrections...');
+        console.log('Reopening work for corrections...');
         updatedWork = await reopenWork(work.id);
-        console.log('✅ Work reopened successfully:', updatedWork);
+        console.log('Work reopened successfully:', updatedWork);
         showSuccess("Work reopened for corrections");
       } else {
         // Complete work
-        console.log('✅ Marking work as completed...');
+        console.log('Marking work as completed...');
         updatedWork = await markWorkCompleted(work.id);
-        console.log('✅ Work completed successfully:', updatedWork);
+        console.log('Work completed successfully:', updatedWork);
         showSuccess("Work marked as completed");
       }
       
       // Update the work in the local state
       setWorks(prev => prev.map(w => w.id === work.id ? updatedWork : w));
-      console.log('📊 Local state updated');
+      console.log('Local state updated');
       
     } catch (error) {
-      console.error("❌ Failed to toggle work completion:", error);
+      console.error("Failed to toggle work completion:", error);
       console.error("Error details:", {
         message: error.message,
         response: error.response?.data,
@@ -176,11 +176,11 @@ export default function Works() {
 
   // Helper functions for notifications
   const showSuccess = (message) => {
-    alert('✅ ' + message);
+    alert(message);
   };
 
   const showError = (message) => {
-    alert('❌ ' + message);
+    alert('Error: ' + message);
   };
 
   return (
@@ -253,15 +253,26 @@ export default function Works() {
         workers={workers}
       />
 
-      {/* Works List */}
-      <WorkList
-        works={works}
-        onEdit={handleEditWork}
-        onToggleComplete={handleToggleComplete}
-        onViewFiles={handleViewFiles}
-        loading={loading}
-        updatingWorks={updatingWorks}
-      />
+      {/* Works List / Grid */}
+      {viewMode === 'grid' ? (
+        <WorkList
+          works={works}
+          onEdit={handleEditWork}
+          onToggleComplete={handleToggleComplete}
+          onViewFiles={handleViewFiles}
+          loading={loading}
+          updatingWorks={updatingWorks}
+        />
+      ) : (
+        <WorkTable
+          works={works}
+          onEdit={handleEditWork}
+          onToggleComplete={handleToggleComplete}
+          onViewFiles={handleViewFiles}
+          loading={loading}
+          updatingWorks={updatingWorks}
+        />
+      )}
 
       {/* Work Form Modal */}
       <EnhancedWorkForm

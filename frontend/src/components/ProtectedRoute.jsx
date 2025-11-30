@@ -17,12 +17,12 @@ export default function ProtectedRoute({ children }) {
             });
 
             // Role-based redirection logic
-            if (location.pathname === '/' || location.pathname === '') {
+            if (location.pathname === '/portal' || location.pathname === '/portal/') {
                 if (hasAdminAccess()) {
-                    navigate('/admin-dashboard', { replace: true });
+                    navigate('/portal/admin-dashboard', { replace: true });
                 } else {
                     // Regular users/workers stay on main dashboard
-                    navigate('/dashboard', { replace: true });
+                    navigate('/portal/dashboard', { replace: true });
                 }
             }
         }
@@ -42,7 +42,7 @@ export default function ProtectedRoute({ children }) {
 
     // Redirect to login if not authenticated
     if (!isAuthenticated) {
-        return <Navigate to="/login" state={{ from: location }} replace />;
+        return <Navigate to="/portal/login" state={{ from: location }} replace />;
     }
 
     // Show loading while user data is being fetched

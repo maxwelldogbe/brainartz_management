@@ -116,7 +116,7 @@ export default function Invite() {
       <div className="flex justify-between items-center pt-6 border-t border-gray-200">
         <div>
           <button
-            onClick={() => navigate('/workers')}
+            onClick={() => navigate('/portal/workers')}
             className="text-blue-600 hover:text-blue-800 font-medium"
           >
             👥 View All Employees →

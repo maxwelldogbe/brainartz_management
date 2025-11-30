@@ -25,40 +25,40 @@ def send_test_sms():
     phone = input("\nPhone number: ").strip()
     
     if not phone:
-        print("❌ No phone number provided. Exiting.")
+        print("[X] No phone number provided. Exiting.")
         return
     
     # Normalize phone number
     normalized = normalize_phone_number(phone)
-    print(f"\n📱 Normalized phone: {normalized}")
+    print(f"\n[PHONE] Normalized phone: {normalized}")
     
     # Create test message
     message = (
         "Hello! This is a test message from BrainArtz Management System. "
-        "SMS integration via Teleconic is working correctly! 🎉"
+        "SMS integration via Teleconic is working correctly!"
     )
     
-    print(f"\n📝 Message: {message}")
-    print(f"📊 Length: {len(message)} characters")
+    print(f"\n[MESSAGE] Message: {message}")
+    print(f"[INFO] Length: {len(message)} characters")
     
     # Confirm before sending
-    confirm = input("\n⚠️  Send SMS? (yes/no): ").strip().lower()
+    confirm = input("\n[!] Send SMS? (yes/no): ").strip().lower()
     
     if confirm not in ['yes', 'y']:
-        print("❌ SMS sending cancelled.")
+        print("[X] SMS sending cancelled.")
         return
     
-    print("\n📤 Sending SMS...")
+    print("\n[SENDING] Sending SMS...")
     
     # Send SMS
     success = send_sms(normalized, message)
     
     if success:
-        print("\n✅ SMS sent successfully!")
+        print("\n[OK] SMS sent successfully!")
         print(f"   Recipient: {normalized}")
         print(f"   Message length: {len(message)} chars")
     else:
-        print("\n❌ Failed to send SMS")
+        print("\n[ERROR] Failed to send SMS")
         print("   Check:")
         print("   1. API key is valid")
         print("   2. Phone number is correct")
@@ -69,8 +69,8 @@ if __name__ == "__main__":
     try:
         send_test_sms()
     except KeyboardInterrupt:
-        print("\n\n❌ Cancelled by user")
+        print("\n\n[X] Cancelled by user")
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"\n[ERROR] Error: {e}")
         import traceback
         traceback.print_exc()

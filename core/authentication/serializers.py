@@ -121,10 +121,52 @@ class ManualEmployeeCreateSerializer(serializers.ModelSerializer):
 
 class UserSerializer(BaseUserSerializer):
     is_admin = serializers.BooleanField(read_only=True)
+    profile = ProfileSerializer(read_only=True)
+    first_name = serializers.CharField(max_length=150)
+    last_name = serializers.CharField(max_length=150)
+    is_active = serializers.BooleanField()
 
     class Meta(BaseUserSerializer.Meta):
         model = User
-        fields = ('id', 'email', 'username', 'is_worker', 'is_admin')
+        fields = ('id', 'email', 'username', 'first_name', 'last_name', 'is_worker', 'is_admin', 'is_active', 'profile')
+        read_only_fields = ('email',)
+
+
+class PasswordChangeSerializer(serializers.Serializer):
+    """Serializer for password change by authenticated user"""
+    old_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    new_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    confirm_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    
+    def validate_old_password(self, value):
+        """Validate that old password is correct"""
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError('Current password is incorrect')
+        return value
+    
+    def validate_new_password(self, value):
+        """Validate new password strength"""
+        if len(value) < 8:
+            raise serializers.ValidationError('Password must be at least 8 characters long')
+        return value
+    
+    def validate(self, attrs):
+        """Validate that new passwords match"""
+        if attrs['new_password'] != attrs['confirm_password']:
+            raise serializers.ValidationError({'confirm_password': 'New passwords do not match'})
+        
+        if attrs['new_password'] == attrs['old_password']:
+            raise serializers.ValidationError({'new_password': 'New password must be different from current password'})
+        
+        return attrs
+    
+    def save(self):
+        """Save the new password"""
+        user = self.context['request'].user
+        user.set_password(self.validated_data['new_password'])
+        user.save()
+        return user
 
 
 class InvitationTokenSerializer(serializers.ModelSerializer):
