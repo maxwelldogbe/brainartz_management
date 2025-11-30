@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
 import { Link, useNavigate } from 'react-router-dom';
 import { salesReportsAPI } from '../utils/services';
 import { formatCurrency, formatDate } from '../types/salesReports';
 import { useAuth } from '../context/AuthContext';
 
 export default function SalesReports() {
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const { user } = useAuth();
   const [reports, setReports] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -108,7 +109,7 @@ export default function SalesReports() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Sales Reports</h1>
         <Link
-          to="/sales-reports/new"
+          to="/portal/sales-reports/new"
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
         >
           New Report
@@ -128,7 +129,6 @@ export default function SalesReports() {
           <div className="bg-white p-6 rounded-lg shadow border">
             <div className="flex items-center">
               <div className="p-2 bg-blue-50 rounded-lg">
-                {/* <span className="text-2xl">📊</span> */}
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Reports</p>
@@ -143,7 +143,6 @@ export default function SalesReports() {
           <div className="bg-white p-6 rounded-lg shadow border">
             <div className="flex items-center">
               <div className="p-2 bg-green-50 rounded-lg">
-                {/* <span className="text-2xl">💰</span> */}
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
@@ -156,7 +155,6 @@ export default function SalesReports() {
           <div className="bg-white p-6 rounded-lg shadow border">
             <div className="flex items-center">
               <div className="p-2 bg-orange-50 rounded-lg">
-                {/* <span className="text-2xl">⏳</span> */}
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Outstanding</p>
@@ -234,7 +232,7 @@ export default function SalesReports() {
               }
             </p>
             <Link
-              to="/sales-reports/new"
+              to="/portal/sales-reports/new"
               className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
               Create First Report
@@ -302,14 +300,14 @@ export default function SalesReports() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         <Link
-                          to={`/sales-reports/${report.id}`}
+                          to={`/portal/sales-reports/${report.id}`}
                           className="text-blue-600 hover:text-blue-900"
                         >
                           View
                         </Link>
                         {report.can_edit && (
                           <Link
-                            to={`/sales-reports/${report.id}/edit`}
+                            to={`/portal/sales-reports/${report.id}/edit`}
                             className="text-green-600 hover:text-green-900"
                           >
                             Edit

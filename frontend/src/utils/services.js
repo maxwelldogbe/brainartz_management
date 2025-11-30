@@ -16,6 +16,8 @@ export const fetchWorks = (filters = {}) => {
   });
   return axios.get(`/api/services/works/?${params}`).then(res => res.data);
 };
+export const fetchUnpaidWorks = () => axios.get('/api/services/works/unpaid_works/').then(res => res.data);
+export const fetchWorksForSelect = (includeFullyPaid = false) => axios.get(`/api/services/works/select_options/?include_fully_paid=${includeFullyPaid}`).then(res => res.data);
 export const createWork = (data) => axios.post("/api/services/works/", data).then(res => res.data);
 export const updateWork = (id, data) => axios.put(`/api/services/works/${id}/`, data).then(res => res.data);
 export const deleteWork = (id) => axios.delete(`/api/services/works/${id}/`).then(res => res.data);
@@ -231,5 +233,77 @@ export const salesReportsAPI = {
 
   deleteNote: (id) => {
     return axios.delete(`/api/services/sales-report-notes/${id}/`).then(res => res.data);
+  }
+};
+
+/* ------------------ Customer Contacts (Marketing Database) ------------------ */
+export const customerContactsAPI = {
+  list: (params = {}) => {
+    const queryParams = new URLSearchParams(params);
+    return axios.get(`/api/services/customer-contacts/?${queryParams}`).then(res => res.data);
+  },
+
+  get: (id) => {
+    return axios.get(`/api/services/customer-contacts/${id}/`).then(res => res.data);
+  },
+
+  create: (data) => {
+    return axios.post('/api/services/customer-contacts/', data).then(res => res.data);
+  },
+
+  update: (id, data) => {
+    return axios.put(`/api/services/customer-contacts/${id}/`, data).then(res => res.data);
+  },
+
+  delete: (id) => {
+    return axios.delete(`/api/services/customer-contacts/${id}/`).then(res => res.data);
+  },
+
+  optOut: (id) => {
+    return axios.post(`/api/services/customer-contacts/${id}/opt_out/`).then(res => res.data);
+  },
+
+  optIn: (id) => {
+    return axios.post(`/api/services/customer-contacts/${id}/opt_in/`).then(res => res.data);
+  },
+
+  getMarketingList: () => {
+    return axios.get('/api/services/customer-contacts/marketing_list/').then(res => res.data);
+  },
+
+  sendBulkSMS: (data) => {
+    return axios.post('/api/services/customer-contacts/send_bulk_sms/', data).then(res => res.data);
+  }
+};
+
+/* ------------------ Marketing Messages ------------------ */
+export const marketingMessagesAPI = {
+  list: (params = {}) => {
+    const queryParams = new URLSearchParams(params);
+    return axios.get(`/api/services/marketing-messages/?${queryParams}`).then(res => res.data);
+  },
+
+  get: (id) => {
+    return axios.get(`/api/services/marketing-messages/${id}/`).then(res => res.data);
+  },
+
+  create: (data) => {
+    return axios.post('/api/services/marketing-messages/', data).then(res => res.data);
+  },
+
+  update: (id, data) => {
+    return axios.put(`/api/services/marketing-messages/${id}/`, data).then(res => res.data);
+  },
+
+  delete: (id) => {
+    return axios.delete(`/api/services/marketing-messages/${id}/`).then(res => res.data);
+  },
+
+  toggleActive: (id) => {
+    return axios.post(`/api/services/marketing-messages/${id}/toggle_active/`).then(res => res.data);
+  },
+
+  useTemplate: (id) => {
+    return axios.post(`/api/services/marketing-messages/${id}/use_template/`).then(res => res.data);
   }
 };

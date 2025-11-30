@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
 import { Link } from 'react-router-dom';
 import { Plus, Package, AlertTriangle, TrendingUp, ShoppingCart, Activity, Clock, Users } from 'lucide-react';
 import { materialsAPI, procurementsAPI, stockMovementsAPI, materialUsageAPI } from '../utils/services';

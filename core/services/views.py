@@ -10,19 +10,21 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from decimal import Decimal
 from .models import (
-    Customer, Work, Payment, EmployeeProfile, JobCategory, WorkFile,
+    Work, Payment, EmployeeProfile, JobCategory, WorkFile,
     DailySalesReport, DailySalesReportItem, SalesReportNote, DailyExpense,
-    Material, Procurement, JobMaterial, StockMovement, MaterialUsage
+    Material, Procurement, JobMaterial, StockMovement, MaterialUsage,
+    CustomerContact, MarketingMessage
 )
 from .serializers import (
-    CustomerSerializer, WorkSerializer, PaymentSerializer, EmployeeProfileSerializer, 
+    WorkSerializer, PaymentSerializer, EmployeeProfileSerializer, 
     JobCategorySerializer, WorkFileSerializer, WorkCreateSerializer, WorkFileUploadSerializer,
-    UserActivitySerializer, JobCategorySelectSerializer, CustomerSelectSerializer, WorkSelectSerializer,
+    UserActivitySerializer, JobCategorySelectSerializer, WorkSelectSerializer,
     DailySalesReportSerializer, DailySalesReportCreateSerializer, DailySalesReportItemSerializer,
     SalesReportNoteSerializer, DailyExpenseSerializer,
     MaterialSerializer, ProcurementSerializer, ProcurementDeliverySerializer,
     JobMaterialSerializer, JobMaterialCreateSerializer, StockMovementSerializer,
-    StockAdjustmentSerializer, MaterialStatsSerializer, MaterialUsageSerializer
+    StockAdjustmentSerializer, MaterialStatsSerializer, MaterialUsageSerializer,
+    CustomerContactSerializer, MarketingMessageSerializer
 )
 from .permissions import (
     IsOwnerOrAdminForUnsafeMethods, IsManagerOrStaffReadOnly, 
@@ -33,26 +35,6 @@ from rest_framework import permissions as drf_permissions
 from .serializers import WorkerSerializer
 
 User = get_user_model()
-
-
-class CustomerViewSet(viewsets.ModelViewSet):
-    queryset = Customer.objects.all()
-    serializer_class = CustomerSerializer
-    permission_classes = [IsOwnerOrAdminForUnsafeMethods]
-
-    def perform_create(self, serializer):
-        user = self.request.user if self.request and self.request.user and self.request.user.is_authenticated else None
-        if user is not None:
-            serializer.save(creator=user)
-        else:
-            serializer.save()
-
-    @action(detail=False, methods=['get'])
-    def select_options(self, request):
-        """Lightweight endpoint for customer dropdown options"""
-        customers = Customer.objects.all()
-        serializer = CustomerSelectSerializer(customers, many=True)
-        return Response(serializer.data)
 
 
 class JobCategoryViewSet(viewsets.ModelViewSet):
@@ -86,7 +68,7 @@ class JobCategoryViewSet(viewsets.ModelViewSet):
 
 
 class WorkViewSet(viewsets.ModelViewSet):
-    queryset = Work.objects.all().select_related('customer', 'category', 'worker').prefetch_related('files')
+    queryset = Work.objects.all().select_related('category', 'worker').prefetch_related('files')
     serializer_class = WorkSerializer
     permission_classes = [IsOwnerOrAdminForUnsafeMethods]
 
@@ -112,7 +94,7 @@ class WorkViewSet(viewsets.ModelViewSet):
         include_fully_paid = request.query_params.get('include_fully_paid', '').lower() in ['true', '1', 'yes']
         
         # Get all works with payment totals calculated
-        works = Work.objects.select_related('customer').annotate(
+        works = Work.objects.annotate(
             total_payments=Case(
                 When(payments__isnull=True, then=0),
                 default=Sum('payments__amount'),
@@ -142,7 +124,7 @@ class WorkViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def pending(self, request):
         """Get all pending/incomplete works"""
-        works = Work.objects.filter(completed=False).select_related('customer', 'category', 'worker')
+        works = Work.objects.filter(completed=False).select_related('category', 'worker')
         serializer = WorkSerializer(works, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -152,7 +134,7 @@ class WorkViewSet(viewsets.ModelViewSet):
         from django.db.models import Sum, Case, When, DecimalField, F
         
         # Get works where total payments < work price (or no payments at all)
-        works = Work.objects.select_related('customer', 'category').annotate(
+        works = Work.objects.select_related('category').annotate(
             total_payments=Case(
                 When(payments__isnull=True, then=0),
                 default=Sum('payments__amount'),
@@ -341,7 +323,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
     If an employee makes an error, they should create another Payment with a `note` explaining corrections.
     """
-    queryset = Payment.objects.all().select_related('work', 'work__customer')
+    queryset = Payment.objects.all().select_related('work')
     serializer_class = PaymentSerializer
     permission_classes = [IsOwnerOrAdminForUnsafeMethods]
 
@@ -392,7 +374,7 @@ class AdminDashboardView(APIView):
 
     def get(self, request):
         # Enhanced aggregated stats for admin dashboard
-        total_customers = Customer.objects.count()
+        # Customer count removed - customer info now part of Work model
         total_works = Work.objects.count()
         completed_works = Work.objects.filter(completed=True).count()
         pending_works = Work.objects.filter(completed=False).count()
@@ -421,8 +403,11 @@ class AdminDashboardView(APIView):
             .values('id', 'username', 'email', 'works_count', 'completed_works')
         )
 
+        # Count unique customers from works
+        unique_customers = Work.objects.values('customer_name').distinct().count()
+        
         data = {
-            'total_customers': total_customers,
+            'total_customers': unique_customers,  # Count of unique customer names from works
             'total_works': total_works,
             'completed_works': completed_works,
             'pending_works': pending_works,
@@ -460,20 +445,8 @@ def daily_summary(request):
     })
 
 
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
-def customer_summary(request):
-    # Enhanced customer summary with work categories
-    data = (
-        Customer.objects.all()
-        .annotate(
-            works_count=Count('works'),
-            completed_works=Count('works', filter=Q(works__completed=True)),
-            total_spent=Sum('works__payments__amount')
-        )
-        .values('id', 'name', 'works_count', 'completed_works', 'total_spent')
-    )
-    return Response(list(data))
+# Customer summary removed - Customer model no longer exists
+# Customer info is now stored directly on Work model (customer_name, customer_phone)
 
 
 @api_view(['GET'])
@@ -1029,10 +1002,7 @@ class ProcurementViewSet(viewsets.ModelViewSet):
         if status_filter:
             queryset = queryset.filter(status=status_filter)
         
-        # Filter by supplier
-        supplier = self.request.query_params.get('supplier')
-        if supplier:
-            queryset = queryset.filter(supplier_name__icontains=supplier)
+        # Supplier filter removed (no longer tracked in model)
         
         # Filter by date range
         date_from = self.request.query_params.get('date_from')
@@ -1105,10 +1075,16 @@ class StockMovementViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = StockMovement.objects.all()
     serializer_class = StockMovementSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None  # Disable pagination to return all records
     
     def get_queryset(self):
         """Filter stock movements"""
         queryset = StockMovement.objects.select_related('material')
+        
+        # Filter by search term (material name)
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(material__name__icontains=search)
         
         # Filter by material
         material_id = self.request.query_params.get('material')
@@ -1118,11 +1094,194 @@ class StockMovementViewSet(viewsets.ReadOnlyModelViewSet):
         # Filter by movement type
         movement_type = self.request.query_params.get('movement_type')
         if movement_type:
-            queryset = queryset.filter(movement_type=movement_type)
+            # Map frontend types to backend types
+            if movement_type == 'in':
+                queryset = queryset.filter(movement_type='inflow')
+            elif movement_type == 'out':
+                queryset = queryset.filter(movement_type='outflow')
+            else:
+                queryset = queryset.filter(movement_type=movement_type)
         
         # Filter by reference type
         reference_type = self.request.query_params.get('reference_type')
         if reference_type:
             queryset = queryset.filter(reference_type=reference_type)
         
+        # Filter by date range
+        date_from = self.request.query_params.get('date_from')
+        if date_from:
+            queryset = queryset.filter(created_at__date__gte=date_from)
+        
+        date_to = self.request.query_params.get('date_to')
+        if date_to:
+            queryset = queryset.filter(created_at__date__lte=date_to)
+        
         return queryset.order_by('-created_at')
+
+
+class CustomerContactViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing customer contacts (marketing database).
+    Customers are automatically added when works are created.
+    Accessible to admin and staff users.
+    """
+    queryset = CustomerContact.objects.all()
+    serializer_class = CustomerContactSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        
+        # Filter by search query
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search) | 
+                Q(phone__icontains=search) |
+                Q(notes__icontains=search)
+            )
+        
+        # Filter by marketing eligibility
+        can_receive_marketing = self.request.query_params.get('can_receive_marketing')
+        if can_receive_marketing == 'true':
+            queryset = queryset.filter(opted_out=False)
+        elif can_receive_marketing == 'false':
+            queryset = queryset.filter(opted_out=True)
+        
+        # Filter by date range
+        date_from = self.request.query_params.get('date_from')
+        if date_from:
+            queryset = queryset.filter(last_work_date__gte=date_from)
+        
+        date_to = self.request.query_params.get('date_to')
+        if date_to:
+            queryset = queryset.filter(last_work_date__lte=date_to)
+        
+        # Filter by minimum works
+        min_works = self.request.query_params.get('min_works')
+        if min_works:
+            queryset = queryset.filter(total_works__gte=int(min_works))
+        
+        return queryset.order_by('-last_work_date')
+    
+    @action(detail=False, methods=['get'])
+    def marketing_list(self, request):
+        """Get list of customers who can receive marketing messages"""
+        contacts = self.get_queryset().filter(opted_out=False)
+        serializer = self.get_serializer(contacts, many=True)
+        return Response({
+            'count': contacts.count(),
+            'contacts': serializer.data
+        })
+    
+    @action(detail=True, methods=['post'])
+    def opt_out(self, request, pk=None):
+        """Mark a customer as opted out of marketing messages"""
+        contact = self.get_object()
+        contact.opted_out = True
+        contact.save()
+        return Response({'status': 'Customer opted out of marketing messages'})
+    
+    @action(detail=True, methods=['post'])
+    def opt_in(self, request, pk=None):
+        """Mark a customer as opted in to marketing messages"""
+        contact = self.get_object()
+        contact.opted_out = False
+        contact.save()
+        return Response({'status': 'Customer opted in to marketing messages'})
+    
+    @action(detail=False, methods=['post'])
+    def send_bulk_sms(self, request):
+        """Send promotional SMS to selected customers"""
+        from authentication.sms_backends import send_sms
+        
+        contact_ids = request.data.get('contact_ids', [])
+        message = request.data.get('message', '')
+        
+        if not contact_ids:
+            return Response(
+                {'error': 'No contacts selected'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not message.strip():
+            return Response(
+                {'error': 'Message is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get contacts that can receive marketing
+        contacts = CustomerContact.objects.filter(
+            id__in=contact_ids, 
+            opted_out=False
+        )
+        
+        success_count = 0
+        failed_count = 0
+        
+        for contact in contacts:
+            try:
+                send_sms(contact.phone, message)
+                success_count += 1
+            except Exception as e:
+                failed_count += 1
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Failed to send SMS to {contact.phone}: {e}")
+        
+        return Response({
+            'status': 'Bulk SMS sending completed',
+            'success_count': success_count,
+            'failed_count': failed_count,
+            'total_attempted': contacts.count()
+        })
+
+
+class MarketingMessageViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing marketing message templates.
+    Allows creating, editing, and managing promotional message templates.
+    Only accessible to admin users.
+    """
+    queryset = MarketingMessage.objects.all()
+    serializer_class = MarketingMessageSerializer
+    permission_classes = [permissions.IsAuthenticated, drf_permissions.IsAdminUser]
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        
+        # Filter by active status
+        is_active = self.request.query_params.get('is_active')
+        if is_active is not None:
+            queryset = queryset.filter(is_active=is_active.lower() == 'true')
+        
+        # Search by title or message
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) | 
+                Q(message__icontains=search)
+            )
+        
+        return queryset.order_by('-created_at')
+    
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+    
+    @action(detail=True, methods=['post'])
+    def toggle_active(self, request, pk=None):
+        """Toggle the active status of a message template"""
+        message = self.get_object()
+        message.is_active = not message.is_active
+        message.save()
+        return Response({
+            'status': 'Message template updated',
+            'is_active': message.is_active
+        })
+    
+    @action(detail=True, methods=['post'])
+    def use_template(self, request, pk=None):
+        """Mark template as used (called after sending)"""
+        message = self.get_object()
+        message.increment_usage()
+        return Response({'status': 'Template usage recorded'})

@@ -3,9 +3,6 @@ import {
   Save, 
   X, 
   ShoppingCart, 
-  Plus, 
-  Trash2, 
-  Users, 
   Calendar,
   AlertTriangle,
   Package,
@@ -13,7 +10,6 @@ import {
   Hash,
   FileText
 } from 'lucide-react';
-import SupplierForm from './SupplierForm';
 import { materialsAPI, procurementsAPI } from '../../utils/services';
 
 /**
@@ -27,23 +23,15 @@ const SimpleProcurementForm = ({
 }) => {
   // Form state
   const [formData, setFormData] = useState({
-    supplier_name: '',
-    supplier_contact: '',
-    supplier_email: '',
-    supplier_phone: '',
-    expected_delivery: '',
-    urgency: 'medium',
-    notes: '',
+    material: '',
     quantity_ordered: 1,
-    unit_cost: 0,
-    material: ''
+    unit_cost: 0
   });
 
   const [materials, setMaterials] = useState([]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [showSupplierForm, setShowSupplierForm] = useState(false);
 
   // Load materials
   useEffect(() => {
@@ -54,16 +42,9 @@ const SimpleProcurementForm = ({
   useEffect(() => {
     if (procurement) {
       setFormData({
-        supplier_name: procurement.supplier_name || '',
-        supplier_contact: procurement.supplier_contact || '',
-        supplier_email: procurement.supplier_email || '',
-        supplier_phone: procurement.supplier_phone || '',
-        expected_delivery: procurement.expected_delivery?.split('T')[0] || '',
-        urgency: procurement.urgency || 'medium',
-        notes: procurement.notes || '',
+        material: procurement.material?.id || procurement.material || '',
         quantity_ordered: procurement.quantity_ordered || 1,
-        unit_cost: procurement.unit_cost || 0,
-        material: procurement.material?.id || procurement.material || ''
+        unit_cost: procurement.unit_cost || 0
       });
     }
   }, [procurement]);
@@ -92,29 +73,11 @@ const SimpleProcurementForm = ({
     }
   };
 
-  // Handle supplier creation
-  const handleSupplierCreated = (newSupplier) => {
-    setFormData(prev => ({
-      ...prev,
-      supplier_name: newSupplier.name,
-      supplier_contact: newSupplier.contact,
-      supplier_email: newSupplier.email || '',
-      supplier_phone: newSupplier.phone || ''
-    }));
-    setShowSupplierForm(false);
-  };
+
 
   // Validate form
   const validateForm = () => {
     const newErrors = {};
-
-    if (!formData.supplier_name.trim()) {
-      newErrors.supplier_name = 'Supplier name is required';
-    }
-
-    if (!formData.supplier_contact.trim()) {
-      newErrors.supplier_contact = 'Supplier contact is required';
-    }
 
     if (!formData.material) {
       newErrors.material = 'Material is required';
@@ -143,9 +106,11 @@ const SimpleProcurementForm = ({
     setSaving(true);
 
     try {
+      // Ensure quantity_ordered is an integer
       const submissionData = {
-        ...formData,
-        total_cost: formData.quantity_ordered * formData.unit_cost
+        material: parseInt(formData.material),
+        quantity_ordered: parseInt(formData.quantity_ordered),
+        unit_cost: parseFloat(formData.unit_cost)
       };
 
       let response;
@@ -156,9 +121,22 @@ const SimpleProcurementForm = ({
       }
 
       onSave(response);
+      onClose();
     } catch (error) {
       console.error('Error saving procurement:', error);
-      setErrors({ submit: 'Failed to save procurement. Please try again.' });
+      
+      // Display backend validation errors if available
+      if (error.response?.data) {
+        const backendErrors = {};
+        Object.keys(error.response.data).forEach(key => {
+          backendErrors[key] = Array.isArray(error.response.data[key]) 
+            ? error.response.data[key][0] 
+            : error.response.data[key];
+        });
+        setErrors(backendErrors);
+      } else {
+        setErrors({ submit: error.message || 'Failed to save procurement. Please try again.' });
+      }
     } finally {
       setSaving(false);
     }
@@ -210,121 +188,34 @@ const SimpleProcurementForm = ({
 
           {/* Form Fields */}
           <div className="space-y-6 mt-6">
-            {/* Supplier Information */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium text-gray-900">Supplier Information</h4>
-                <button
-                  type="button"
-                  onClick={() => setShowSupplierForm(true)}
-                  className="flex items-center gap-1 px-3 py-1 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  <Plus size={14} />
-                  New Supplier
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Supplier Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.supplier_name}
-                    onChange={(e) => handleChange('supplier_name', e.target.value)}
-                    className={inputClasses('supplier_name')}
-                    placeholder="Enter supplier name"
-                  />
-                  {errors.supplier_name && (
-                    <p className="text-red-600 text-sm mt-1">{errors.supplier_name}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Contact Person *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.supplier_contact}
-                    onChange={(e) => handleChange('supplier_contact', e.target.value)}
-                    className={inputClasses('supplier_contact')}
-                    placeholder="Enter contact name"
-                  />
-                  {errors.supplier_contact && (
-                    <p className="text-red-600 text-sm mt-1">{errors.supplier_contact}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email (Optional)
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.supplier_email}
-                    onChange={(e) => handleChange('supplier_email', e.target.value)}
-                    className={inputClasses('supplier_email')}
-                    placeholder="supplier@example.com"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone (Optional)
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.supplier_phone}
-                    onChange={(e) => handleChange('supplier_phone', e.target.value)}
-                    className={inputClasses('supplier_phone')}
-                    placeholder="+1 234 567 8900"
-                  />
-                </div>
-              </div>
+            {/* Material Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Material *
+              </label>
+              <select
+                value={formData.material}
+                onChange={(e) => handleChange('material', e.target.value)}
+                className={inputClasses('material')}
+                disabled={loading}
+              >
+                <option value="">Select Material</option>
+                {materials.map(material => (
+                  <option key={material.id} value={material.id}>
+                    {material.name} ({material.unit})
+                  </option>
+                ))}
+              </select>
+              {errors.material && (
+                <p className="text-red-600 text-sm mt-1">{errors.material}</p>
+              )}
             </div>
 
-            {/* Order Information */}
+            {/* Order Details */}
             <div className="space-y-4">
-              <h4 className="font-medium text-gray-900">Order Information</h4>
+              <h4 className="font-medium text-gray-900">Order Details</h4>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Material *
-                  </label>
-                  <select
-                    value={formData.material}
-                    onChange={(e) => handleChange('material', e.target.value)}
-                    className={inputClasses('material')}
-                    disabled={loading}
-                  >
-                    <option value="">Select Material</option>
-                    {materials.map(material => (
-                      <option key={material.id} value={material.id}>
-                        {material.name} ({material.category || 'Other'})
-                      </option>
-                    ))}
-                  </select>
-                  {errors.material && (
-                    <p className="text-red-600 text-sm mt-1">{errors.material}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Expected Delivery
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.expected_delivery}
-                    onChange={(e) => handleChange('expected_delivery', e.target.value)}
-                    className={inputClasses('expected_delivery')}
-                    min={new Date().toISOString().split('T')[0]}
-                  />
-                </div>
-
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Quantity *
@@ -332,7 +223,7 @@ const SimpleProcurementForm = ({
                   <input
                     type="number"
                     value={formData.quantity_ordered}
-                    onChange={(e) => handleChange('quantity_ordered', parseInt(e.target.value, 10) || 0)}
+                    onChange={(e) => handleChange('quantity_ordered', e.target.value)}
                     className={inputClasses('quantity_ordered')}
                     min="1"
                     placeholder="0"
@@ -349,7 +240,7 @@ const SimpleProcurementForm = ({
                   <input
                     type="number"
                     value={formData.unit_cost}
-                    onChange={(e) => handleChange('unit_cost', parseFloat(e.target.value) || 0)}
+                    onChange={(e) => handleChange('unit_cost', e.target.value)}
                     className={inputClasses('unit_cost')}
                     min="0"
                     step="0.01"
@@ -362,48 +253,14 @@ const SimpleProcurementForm = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Priority
-                  </label>
-                  <select
-                    value={formData.urgency}
-                    onChange={(e) => handleChange('urgency', e.target.value)}
-                    className={inputClasses('urgency')}
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Total Cost
                   </label>
-                  <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                  <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg h-10 flex items-center">
                     <span className="text-lg font-semibold text-green-600">
                       ₵{totalCost.toFixed(2)}
                     </span>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Notes */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Notes (Optional)
-              </label>
-              <textarea
-                value={formData.notes}
-                onChange={(e) => handleChange('notes', e.target.value)}
-                className={inputClasses('notes')}
-                placeholder="Additional notes about this procurement..."
-                rows={3}
-                maxLength={500}
-              />
-              <div className="text-xs text-gray-500 mt-1">
-                {formData.notes.length}/500 characters
               </div>
             </div>
           </div>
@@ -439,15 +296,6 @@ const SimpleProcurementForm = ({
             </button>
           </div>
         </form>
-
-        {/* Supplier Form Modal */}
-        {showSupplierForm && (
-          <SupplierForm
-            onSuccess={handleSupplierCreated}
-            onCancel={() => setShowSupplierForm(false)}
-            saving={false}
-          />
-        )}
       </div>
     </div>
   );

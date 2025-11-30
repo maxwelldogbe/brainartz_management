@@ -6,26 +6,14 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 def send_sms(phone_number: str, message: str) -> bool:
-    """Send SMS to phone_number with message.
+    """Send SMS to phone_number with message using Teleconic API.
 
-    Supports multiple SMS providers. Return True on success.
+    Return True on success.
     """
     # Normalize phone number
     phone_number = normalize_phone_number(phone_number)
     
-    provider = getattr(settings, 'SMS_PROVIDER', None)
-    
-    if provider == 'twilio':
-        return send_twilio_sms(phone_number, message)
-    elif provider == 'vonage':  # Formerly Nexmo
-        return send_vonage_sms(phone_number, message)
-    elif provider == 'africasTalking':
-        return send_africas_talking_sms(phone_number, message)
-    else:
-        # Fallback: log to console in development
-        logger.info(f"[SMS to {phone_number}] {message}")
-        print(f"[SMS to {phone_number}] {message}")
-        return True
+    return send_teleconic_sms(phone_number, message)
 
 
 def normalize_phone_number(phone: str) -> str:
@@ -48,104 +36,47 @@ def normalize_phone_number(phone: str) -> str:
     return clean
 
 
-def send_twilio_sms(phone_number: str, message: str) -> bool:
-    """Send SMS using Twilio."""
+def send_teleconic_sms(phone_number: str, message: str) -> bool:
+    """Send SMS using Teleconic API.
+    
+    Teleconic is a telecommunications provider.
+    API Documentation: https://sms.teleconic.com/api/v1
+    """
     try:
-        from twilio.rest import Client
-        client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+        api_key = getattr(settings, 'TELECONIC_API_KEY', None)
+        sender_id = getattr(settings, 'TELECONIC_SENDER_ID', 'BrainArtz')
+        api_url = getattr(settings, 'TELECONIC_API_URL', 'https://sms.teleconic.com/api/v1/send')
         
-        message_obj = client.messages.create(
-            body=message,
-            from_=settings.TWILIO_FROM,
-            to=phone_number
-        )
-        
-        logger.info(f"Twilio SMS sent successfully. SID: {message_obj.sid}")
-        return True
-    except Exception as exc:
-        logger.exception(f"Twilio SMS failed to {phone_number}: {exc}")
-        return False
-
-
-def send_vonage_sms(phone_number: str, message: str) -> bool:
-    """Send SMS using Vonage (formerly Nexmo)."""
-    try:
-        import vonage
-        
-        client = vonage.Client(
-            key=settings.VONAGE_API_KEY,
-            secret=settings.VONAGE_API_SECRET
-        )
-        
-        response = client.sms.send_message({
-            'from': settings.VONAGE_FROM,
-            'to': phone_number,
-            'text': message
-        })
-        
-        if response['messages'][0]['status'] == '0':
-            logger.info(f"Vonage SMS sent successfully to {phone_number}")
-            return True
-        else:
-            logger.error(f"Vonage SMS failed: {response['messages'][0]['error-text']}")
+        if not api_key:
+            logger.error("Teleconic API key not configured")
             return False
-            
-    except Exception as exc:
-        logger.exception(f"Vonage SMS failed to {phone_number}: {exc}")
-        return False
-
-
-def send_africas_talking_sms(phone_number: str, message: str) -> bool:
-    """Send SMS using Africa's Talking (popular African SMS provider)."""
-    try:
-        import africastalking
         
-        # Initialize the SDK
-        africastalking.initialize(
-            username=settings.AFRICAS_TALKING_USERNAME,
-            api_key=settings.AFRICAS_TALKING_API_KEY
-        )
-        
-        # Get the SMS service
-        sms = africastalking.SMS
-        
-        # Send the message
-        response = sms.send(message, [phone_number], sender_id=settings.AFRICAS_TALKING_SENDER_ID)
-        
-        if response['SMSMessageData']['Recipients'][0]['status'] == 'Success':
-            logger.info(f"Africa's Talking SMS sent successfully to {phone_number}")
-            return True
-        else:
-            logger.error(f"Africa's Talking SMS failed: {response}")
-            return False
-            
-    except Exception as exc:
-        logger.exception(f"Africa's Talking SMS failed to {phone_number}: {exc}")
-        return False
-
-
-def send_generic_http_sms(phone_number: str, message: str) -> bool:
-    """Send SMS using a generic HTTP API endpoint."""
-    try:
-        url = settings.SMS_HTTP_URL
-        headers = {'Content-Type': 'application/json'}
-        
-        # Add authentication if configured
-        if hasattr(settings, 'SMS_HTTP_AUTH_HEADER'):
-            headers['Authorization'] = settings.SMS_HTTP_AUTH_HEADER
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {api_key}'
+        }
         
         payload = {
             'to': phone_number,
             'message': message,
-            'from': getattr(settings, 'SMS_HTTP_FROM', 'Employee Portal')
+            'sender_id': sender_id
         }
         
-        response = requests.post(url, json=payload, headers=headers, timeout=30)
+        response = requests.post(api_url, json=payload, headers=headers, timeout=30)
         response.raise_for_status()
         
-        logger.info(f"HTTP SMS sent successfully to {phone_number}")
-        return True
+        result = response.json()
         
+        if result.get('status') == 'success' or response.status_code == 200:
+            logger.info(f"Teleconic SMS sent successfully to {phone_number}. Message ID: {result.get('message_id', 'N/A')}")
+            return True
+        else:
+            logger.error(f"Teleconic SMS failed: {result.get('message', 'Unknown error')}")
+            return False
+        
+    except requests.exceptions.RequestException as exc:
+        logger.exception(f"Teleconic SMS request failed to {phone_number}: {exc}")
+        return False
     except Exception as exc:
-        logger.exception(f"HTTP SMS failed to {phone_number}: {exc}")
+        logger.exception(f"Teleconic SMS failed to {phone_number}: {exc}")
         return False

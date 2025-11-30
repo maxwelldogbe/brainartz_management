@@ -108,14 +108,13 @@ export default function Register() {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <div className="text-center">
-            <div className="text-6xl mb-4">🎯</div>
+            <div className="text-center">
             <h2 className="text-3xl font-extrabold text-gray-900">
               {isInvited ? 'Complete Your Registration' : 'Create Account'}
             </h2>
             <p className="mt-2 text-sm text-gray-600">
               {isInvited 
-                ? "You've been invited to join the team! 🎉 Complete your account setup below."
+                ? "You've been invited to join the team. Complete your account setup below."
                 : 'Join our management system'
               }
             </p>
@@ -278,7 +277,6 @@ export default function Register() {
           {isInvited && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-start space-x-2">
-                <span className="text-blue-500 mt-0.5">💡</span>
                 <div className="text-sm text-blue-700">
                   <p className="font-medium mb-1">Registration Tips:</p>
                   <ul className="list-disc list-inside space-y-1">
@@ -297,7 +295,7 @@ export default function Register() {
               Already have an account?{' '}
               <button
                 type="button"
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/portal/login')}
                 className="font-medium text-blue-600 hover:text-blue-500"
               >
                 Sign in here

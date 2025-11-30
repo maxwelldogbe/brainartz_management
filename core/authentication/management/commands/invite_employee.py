@@ -60,11 +60,11 @@ class Command(BaseCommand):
 
             # Create SMS message
             message = (
-                f"🎉 You're invited to join our team!\n\n"
+                f"You're invited to join our team!\n\n"
                 f"Create your account here: {invite_link}\n\n"
                 f"Your invitation code: {invite.token}\n"
                 f"Expires: {invite.expires_at.strftime('%Y-%m-%d at %H:%M')}\n\n"
-                f"Welcome aboard! 🚀"
+                f"Welcome aboard!"
             )
 
             # Display information
@@ -90,16 +90,16 @@ class Command(BaseCommand):
                 
                 if sms_success:
                     self.stdout.write(
-                        self.style.SUCCESS(f'✓ SMS invitation sent successfully to {phone}!')
+                        self.style.SUCCESS(f'[+] SMS invitation sent successfully to {phone}!')
                     )
                 else:
                     self.stdout.write(
-                        self.style.ERROR(f'✗ Failed to send SMS to {phone}')
+                        self.style.ERROR(f'[X] Failed to send SMS to {phone}')
                     )
                     raise CommandError('SMS sending failed')
 
             self.stdout.write(
-                self.style.SUCCESS(f'\n🎯 Employee invitation created successfully!')
+                self.style.SUCCESS(f'\n[SUCCESS] Employee invitation created successfully!')
             )
 
         except Exception as e:

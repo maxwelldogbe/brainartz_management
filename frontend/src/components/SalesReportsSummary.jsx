@@ -28,7 +28,7 @@ export default function SalesReportsSummary() {
 
   if (loading) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow border">
+      <div className="bg-white p-6 rounded-lg shadow border min-w-0">
         <div className="animate-pulse">
           <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
           <div className="space-y-3">
@@ -43,7 +43,7 @@ export default function SalesReportsSummary() {
 
   if (error) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow border">
+      <div className="bg-white p-6 rounded-lg shadow border min-w-0">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 Sales Reports</h3>
         <div className="text-red-600 text-sm">{error}</div>
       </div>
@@ -52,13 +52,13 @@ export default function SalesReportsSummary() {
 
   if (!summary) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow border">
+      <div className="bg-white p-6 rounded-lg shadow border min-w-0">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 Sales Reports</h3>
         <div className="text-center py-8">
           <span className="text-4xl block mb-2">📊</span>
           <p className="text-gray-600 mb-4">No sales reports yet</p>
           <Link
-            to="/sales-reports/new"
+            to="/portal/sales-reports/new"
             className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
           >
             Create First Report
@@ -69,11 +69,11 @@ export default function SalesReportsSummary() {
   }
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow border">
+    <div className="bg-white p-6 rounded-lg shadow border min-w-0">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold text-gray-900">📊 Sales Reports</h3>
         <Link
-          to="/sales-reports"
+          to="/portal/sales-reports"
           className="text-blue-600 hover:text-blue-800 text-sm font-medium"
         >
           View All →
@@ -118,7 +118,7 @@ export default function SalesReportsSummary() {
             {summary.recent_reports.slice(0, 3).map((report) => (
               <Link
                 key={report.id}
-                to={`/sales-reports/${report.id}`}
+                to={`/portal/sales-reports/${report.id}`}
                 className="flex justify-between items-center p-2 hover:bg-gray-50 rounded transition-colors"
               >
                 <div>
@@ -159,16 +159,16 @@ export default function SalesReportsSummary() {
       )}
 
       {/* Quick Actions */}
-      <div className="mt-4 flex space-x-2">
+      <div className="mt-4 flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
         <Link
-          to="/sales-reports/new"
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
+          to="/portal/sales-reports/new"
+          className="w-full sm:flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm text-center transition-colors"
         >
           + New Report
         </Link>
         <Link
-          to="/sales-reports"
-          className="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-2 rounded text-sm text-center transition-colors"
+          to="/portal/sales-reports"
+          className="w-full sm:flex-1 border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-2 rounded text-sm text-center transition-colors"
         >
           View All
         </Link>

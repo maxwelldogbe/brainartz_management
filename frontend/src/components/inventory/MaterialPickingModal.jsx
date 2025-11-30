@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Package, Search, Plus, User, FileText, Clock } from 'lucide-react';
+/* eslint-disable react-hooks/exhaustive-deps */
+import { X, Package, Search, Plus, FileText, Clock } from 'lucide-react';
 import { materialsAPI, materialUsageAPI } from '../../utils/services';
 
 const MaterialPickingModal = ({ onClose, onSave }) => {
@@ -9,8 +10,7 @@ const MaterialPickingModal = ({ onClose, onSave }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMaterials, setSelectedMaterials] = useState([]);
   const [formData, setFormData] = useState({
-    note: '',
-    actionType: 'usage' // 'usage' for recording material pickup, 'request' for procurement request
+    note: ''
   });
 
   useEffect(() => {
@@ -85,29 +85,13 @@ const MaterialPickingModal = ({ onClose, onSave }) => {
       setLoading(true);
       setError(null);
 
-      if (formData.actionType === 'usage') {
-        // Record material usage (picking) - this will create usage records and reduce inventory
-        for (const material of selectedMaterials) {
-          await materialUsageAPI.recordUsage({
-            material_id: material.id,
-            quantity_taken: material.quantity,
-            note: formData.note || `Material picked for work - ${material.quantity} ${material.unit} of ${material.name}`
-          });
-        }
-      } else {
-        // Create procurement request (notify admin) - this doesn't change inventory
-        // For now, we'll just log this as the procurement request API might not exist yet
-        console.log('Creating procurement request:', {
-          materials: selectedMaterials,
-          note: formData.note,
-          timestamp: new Date().toISOString()
+      // Record material usage (picking) - this will create usage records and reduce inventory
+      for (const material of selectedMaterials) {
+        await materialUsageAPI.recordUsage({
+          material_id: material.id,
+          quantity_taken: material.quantity,
+          note: formData.note || `Material picked - ${material.quantity} ${material.unit} of ${material.name}`
         });
-        
-        // You could implement a procurement request API endpoint here
-        // await procurementRequestsAPI.create({ materials: selectedMaterials, note: formData.note });
-        
-        // For demonstration, we'll show a success message
-        alert('Procurement request submitted successfully! Admin will be notified.');
       }
 
       onSave();
@@ -135,13 +119,10 @@ const MaterialPickingModal = ({ onClose, onSave }) => {
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
-                {formData.actionType === 'usage' ? 'Record Material Usage' : 'Request Materials'}
+                Record Material Pickup
               </h2>
               <p className="text-sm text-gray-600">
-                {formData.actionType === 'usage' 
-                  ? 'Track materials taken from inventory for your work'
-                  : 'Request materials from admin for procurement'
-                }
+                Record materials taken from inventory - Staff and timestamp will be automatically tracked
               </p>
             </div>
             <button
@@ -161,45 +142,6 @@ const MaterialPickingModal = ({ onClose, onSave }) => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Action Type */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Action Type
-              </label>
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, actionType: 'usage' }))}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    formData.actionType === 'usage'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center justify-center space-x-2 mb-2">
-                    <User size={20} />
-                    <span className="font-medium">Pick Materials</span>
-                  </div>
-                  <p className="text-sm">Record materials taken from inventory</p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, actionType: 'request' }))}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    formData.actionType === 'request'
-                      ? 'border-orange-500 bg-orange-50 text-orange-700'
-                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center justify-center space-x-2 mb-2">
-                    <Package size={20} />
-                    <span className="font-medium">Request Materials</span>
-                  </div>
-                  <p className="text-sm">Notify admin of material needs</p>
-                </button>
-              </div>
-            </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Available Materials */}
               <div>
@@ -342,7 +284,7 @@ const MaterialPickingModal = ({ onClose, onSave }) => {
             {/* Note */}
             <div>
               <label htmlFor="note" className="block text-sm font-medium text-gray-700 mb-2">
-                {formData.actionType === 'usage' ? 'Usage Note (Optional)' : 'Request Reason'}
+                Usage Note (Optional)
               </label>
               <div className="relative">
                 <FileText className="absolute left-3 top-3 text-gray-400" size={16} />
@@ -352,30 +294,24 @@ const MaterialPickingModal = ({ onClose, onSave }) => {
                   onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   rows={3}
-                  placeholder={
-                    formData.actionType === 'usage' 
-                      ? 'Optional note about material usage (e.g., "For printing project", "Regular office supplies")...' 
-                      : 'Explain why these materials are needed...'
-                  }
+                  placeholder="Optional note about material usage (e.g., 'For printing project', 'Regular office supplies')..."
                 />
               </div>
             </div>
 
             {/* Info Box */}
-            {formData.actionType === 'usage' && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-start space-x-3">
-                  <Clock className="text-blue-600 mt-1" size={20} />
-                  <div>
-                    <h4 className="text-sm font-medium text-blue-900">Material Usage Tracking</h4>
-                    <p className="text-sm text-blue-800 mt-1">
-                      This will record that you have taken these materials from inventory and automatically 
-                      reduce the stock quantities. An audit trail will be created showing who took what and when.
-                    </p>
-                  </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <Clock className="text-blue-600 mt-1" size={20} />
+                <div>
+                  <h4 className="text-sm font-medium text-blue-900">Automatic Tracking</h4>
+                  <p className="text-sm text-blue-800 mt-1">
+                    This will automatically record your name, the date/time, and reduce stock quantities. 
+                    An audit trail will be created for accountability and inventory management.
+                  </p>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Actions */}
             <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
@@ -396,12 +332,7 @@ const MaterialPickingModal = ({ onClose, onSave }) => {
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                 )}
                 <span>
-                  {loading 
-                    ? 'Processing...' 
-                    : formData.actionType === 'usage' 
-                      ? 'Record Material Usage' 
-                      : 'Submit Request'
-                  }
+                  {loading ? 'Recording...' : 'Record Material Pickup'}
                 </span>
               </button>
             </div>

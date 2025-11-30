@@ -89,25 +89,25 @@ class Command(BaseCommand):
             user.set_password(password_info)
             user.save()
             self.stdout.write(
-                self.style.SUCCESS(f'✓ Password reset for {user.username}')
+                self.style.SUCCESS(f'[+] Password reset for {user.username}')
             )
 
         # Prepare SMS message
         if reset_password:
             message = (
-                f"Hi {user.get_full_name()}! 👋\n\n"
+                f"Hi {user.get_full_name()}!\n\n"
                 f"Your password has been reset:\n"
-                f"👤 Username: {user.username}\n"
-                f"📧 Email: {user.email}\n"
-                f"🔒 New Password: {password_info}\n\n"
+                f"Username: {user.username}\n"
+                f"Email: {user.email}\n"
+                f"New Password: {password_info}\n\n"
                 f"Please log in and change your password.\n"
             )
         else:
             message = (
-                f"Hi {user.get_full_name()}! 👋\n\n"
+                f"Hi {user.get_full_name()}!\n\n"
                 f"Your login details:\n"
-                f"👤 Username: {user.username}\n"
-                f"📧 Email: {user.email}\n\n"
+                f"Username: {user.username}\n"
+                f"Email: {user.email}\n\n"
                 f"Contact admin if you need password reset.\n"
             )
 
@@ -117,13 +117,13 @@ class Command(BaseCommand):
             
             if sms_success:
                 self.stdout.write(
-                    self.style.SUCCESS(f'✓ Credentials sent via SMS to {employee_phone}')
+                    self.style.SUCCESS(f'[+] Credentials sent via SMS to {employee_phone}')
                 )
                 if reset_password:
                     self.stdout.write(f'New password: {password_info}')
             else:
                 self.stdout.write(
-                    self.style.ERROR(f'✗ Failed to send SMS to {employee_phone}')
+                    self.style.ERROR(f'[X] Failed to send SMS to {employee_phone}')
                 )
                 self.stdout.write('\nCredentials to share manually:')
                 self.stdout.write(f'Username: {user.username}')
@@ -133,7 +133,7 @@ class Command(BaseCommand):
                 
         except Exception as e:
             self.stdout.write(
-                self.style.ERROR(f'✗ Error sending SMS: {str(e)}')
+                self.style.ERROR(f'[X] Error sending SMS: {str(e)}')
             )
             
             # Display credentials for manual sharing

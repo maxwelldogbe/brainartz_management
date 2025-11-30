@@ -66,7 +66,11 @@ SITE_ID = 1
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # Enable CORS middleware
     'django.middleware.security.SecurityMiddleware',
-    "whitenoise.middleware.WhiteNoiseMiddleware",
+    # WhiteNoise allows the Django app to serve its own static files in
+    # simple deployments (and when DEBUG is False). It's installed in
+    # requirements.txt; enabling the middleware here makes collectstatic
+    # output available at STATIC_URL without a separate web server.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -155,9 +159,18 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
+
+# When DEBUG is False and collectstatic has been run, use WhiteNoise's
+# compressed manifest storage so the app can serve static files itself.
+# This makes static files available at STATIC_URL without an external webserver.
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files (uploaded files)
 MEDIA_URL = '/media/'
@@ -223,11 +236,10 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CORS_ALLOW_CREDENTIALS = True
 
-# SMS provider configuration (used by authentication.sms_backends)
-SMS_PROVIDER = os.getenv('SMS_PROVIDER')
-TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
-TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
-TWILIO_FROM = os.getenv('TWILIO_FROM')
+# SMS Configuration - Teleconic
+TELECONIC_API_KEY = os.getenv('TELECONIC_API_KEY')
+TELECONIC_SENDER_ID = os.getenv('TELECONIC_SENDER_ID', 'BrainArtz')
+TELECONIC_API_URL = os.getenv('TELECONIC_API_URL', 'https://sms.teleconic.com/api/v1/send')
 
 # Hosts
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost').split(',')

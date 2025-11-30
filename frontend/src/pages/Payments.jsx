@@ -4,7 +4,7 @@ import {
   createPayment,
   updatePayment,
   deletePayment,
-  fetchWorks,
+  fetchUnpaidWorks,
 } from "../utils/services";
 import { useAuth } from "../context/AuthContext";
 import Modal from "../components/Modal";
@@ -14,6 +14,7 @@ import {
   Trash2,
   X,
   Check,
+  Eye,
 } from "lucide-react";
 
 export default function Payments() {
@@ -29,6 +30,8 @@ export default function Payments() {
     note: "",
   });
   const [modalOpen, setModalOpen] = useState(false);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewingPayment, setViewingPayment] = useState(null);
 
   const loadPayments = async () => {
     try {
@@ -40,9 +43,16 @@ export default function Payments() {
 
   const loadWorks = async () => {
     try {
-      setWorks(await fetchWorks());
+      // Fetch only unpaid or partially paid works
+      const worksData = await fetchUnpaidWorks();
+      console.log("Fetched works:", worksData);
+      console.log("Works count:", worksData.length);
+      if (worksData.length > 0) {
+        console.log("First work sample:", worksData[0]);
+      }
+      setWorks(worksData);
     } catch (err) {
-      console.error("Failed to fetch works:", err);
+      console.error("Failed to fetch unpaid works:", err);
     }
   };
 
@@ -99,6 +109,7 @@ export default function Payments() {
         await updatePayment(editing.id, form);
       } else await createPayment(form);
       await loadPayments();
+      await loadWorks(); // Reload works to update unpaid list
       handleCancel();
     } catch (err) {
       console.error("Failed to save payment:", err);
@@ -139,9 +150,8 @@ export default function Payments() {
               <th className="p-3">ID</th>
               <th className="p-3">Amount</th>
               <th className="p-3">Work</th>
-              <th className="p-3">Paid At</th>
+              <th className="p-3">Method</th>
               <th className="p-3">Processed By</th>
-              <th className="p-3">Note</th>
               <th className="p-3">Actions</th>
             </tr>
           </thead>
@@ -154,25 +164,50 @@ export default function Payments() {
                 } hover:bg-gray-100 transition`}
               >
                 <td className="p-3 font-medium text-gray-800">{p.id}</td>
-                <td className="p-3">${p.amount}</td>
-                <td className="p-3">{p.work_description}</td>
-                <td className="p-3">{p.paid_at}</td>
+                <td className="p-3 font-semibold text-green-600">${p.amount}</td>
+                <td className="p-3">{p.work_title || p.work_description}</td>
+                <td className="p-3">
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    p.method === 'cash' ? 'bg-green-100 text-green-800' :
+                    p.method === 'momo' ? 'bg-blue-100 text-blue-800' :
+                    p.method === 'bank' ? 'bg-purple-100 text-purple-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {p.method === 'momo' ? 'Mobile Money' : 
+                     p.method === 'bank' ? 'Bank Transfer' : 
+                     p.method.charAt(0).toUpperCase() + p.method.slice(1)}
+                  </span>
+                </td>
                 <td className="p-3">{p.processed_by || "—"}</td>
-                <td className="p-3">{p.note || ""}</td>
                 <td className="p-3 space-x-2">
+                  <button
+                    onClick={() => {
+                      setViewingPayment(p);
+                      setViewModalOpen(true);
+                    }}
+                    className="bg-white hover:bg-gray-100 p-2 rounded-lg shadow-sm transition"
+                    style={{ border: '1px solid #2563eb' }}
+                    title="View Details"
+                  >
+                    <Eye className="h-4 w-4 text-blue-600" />
+                  </button>
                   {user && user.is_admin && (
                     <>
                       <button
                         onClick={() => handleEdit(p)}
-                        className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-lg shadow-sm transition"
+                        className="bg-white hover:bg-gray-100 p-2 rounded-lg shadow-sm transition"
+                        style={{ border: '1px solid #eab308' }}
+                        title="Edit"
                       >
-                        <Pencil className="h-4 w-4" />
+                        <Pencil className="h-4 w-4 text-yellow-500" />
                       </button>
                       <button
                         onClick={() => handleDelete(p.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg shadow-sm transition"
+                        className="bg-white hover:bg-gray-100 p-2 rounded-lg shadow-sm transition"
+                        style={{ border: '1px solid #dc2626' }}
+                        title="Delete"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4 text-red-600" />
                       </button>
                     </>
                   )}
@@ -198,38 +233,59 @@ export default function Payments() {
             key={p.id}
             className="bg-white rounded-lg shadow-md p-4 space-y-2"
           >
-            <div className="flex justify-between text-sm text-gray-500">
-              <span>ID: {p.id}</span>
-              <span>{p.paid_at}</span>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">ID: {p.id}</span>
+              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                p.method === 'cash' ? 'bg-green-100 text-green-800' :
+                p.method === 'momo' ? 'bg-blue-100 text-blue-800' :
+                p.method === 'bank' ? 'bg-purple-100 text-purple-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {p.method === 'momo' ? 'MoMo' : 
+                 p.method === 'bank' ? 'Bank' : 
+                 p.method.charAt(0).toUpperCase() + p.method.slice(1)}
+              </span>
             </div>
-            <div className="text-lg font-semibold text-gray-800">
+            <div className="text-lg font-semibold text-green-600">
               ${p.amount}
             </div>
             <div className="text-sm text-gray-700">
-              Work: {p.work_description}
+              Work: {p.work_title || p.work_description}
             </div>
             <div className="text-sm text-gray-700">
               Processed By: {p.processed_by || "—"}
             </div>
-            {p.note && (
-              <div className="text-sm text-gray-500 italic">"{p.note}"</div>
-            )}
-            {user && user.is_admin && (
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={() => handleEdit(p)}
-                  className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-lg shadow-sm transition"
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete(p.id)}
-                  className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg shadow-sm transition"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            )}
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => {
+                  setViewingPayment(p);
+                  setViewModalOpen(true);
+                }}
+                className="flex-1 bg-white hover:bg-gray-100 p-2 rounded-lg shadow-sm transition flex items-center justify-center gap-2"
+                style={{ border: '1px solid #2563eb' }}
+              >
+                <Eye className="h-4 w-4 text-blue-600" />
+                <span className="text-blue-600">View</span>
+              </button>
+              {user && user.is_admin && (
+                <>
+                  <button
+                    onClick={() => handleEdit(p)}
+                    className="bg-white hover:bg-gray-100 p-2 rounded-lg shadow-sm transition"
+                    style={{ border: '1px solid #eab308' }}
+                  >
+                    <Pencil className="h-4 w-4 text-yellow-500" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(p.id)}
+                    className="bg-white hover:bg-gray-100 p-2 rounded-lg shadow-sm transition"
+                    style={{ border: '1px solid #dc2626' }}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-600" />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -265,12 +321,13 @@ export default function Payments() {
               name="work"
               value={form.work}
               onChange={handleChangeEnhanced}
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+              style={{ color: '#000000 !important', backgroundColor: 'white' }}
             >
-              <option value="">Select Work</option>
+              <option value="" style={{ color: '#000000', backgroundColor: 'white' }}>Select Work ({works.length} available)</option>
               {works.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.description}
+                <option key={w.id} value={w.id} style={{ color: '#000000', backgroundColor: 'white', padding: '8px' }}>
+                  {w.description || w.title || `Work #${w.id}`}
                 </option>
               ))}
             </select>
@@ -343,6 +400,134 @@ export default function Payments() {
               </span>
             </button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Payment Details Modal */}
+      <Modal isOpen={viewModalOpen} onClose={() => setViewModalOpen(false)}>
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-gray-800 border-b pb-2">
+            Payment Details
+          </h2>
+
+          {viewingPayment && (
+            <div className="space-y-4">
+              {/* Payment ID and Amount */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Payment ID
+                  </label>
+                  <p className="text-lg font-semibold text-gray-800">
+                    #{viewingPayment.id}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Amount
+                  </label>
+                  <p className="text-lg font-bold text-green-600">
+                    ${viewingPayment.amount}
+                  </p>
+                </div>
+              </div>
+
+              {/* Work Information */}
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">
+                  Work
+                </label>
+                <p className="text-gray-800 bg-gray-50 p-3 rounded-lg">
+                  {viewingPayment.work_title && (
+                    <span className="font-medium block mb-1">
+                      {viewingPayment.work_title}
+                    </span>
+                  )}
+                  <span className="text-sm text-gray-600">
+                    {viewingPayment.work_description}
+                  </span>
+                </p>
+              </div>
+
+              {/* Payment Method */}
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">
+                  Payment Method
+                </label>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                  viewingPayment.method === 'cash' ? 'bg-green-100 text-green-800' :
+                  viewingPayment.method === 'momo' ? 'bg-blue-100 text-blue-800' :
+                  viewingPayment.method === 'bank' ? 'bg-purple-100 text-purple-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {viewingPayment.method === 'momo' ? 'Mobile Money' : 
+                   viewingPayment.method === 'bank' ? 'Bank Transfer' : 
+                   viewingPayment.method.charAt(0).toUpperCase() + viewingPayment.method.slice(1)}
+                </span>
+              </div>
+
+              {/* Tracking Number */}
+              {viewingPayment.tracking_number && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Tracking/Reference Number
+                  </label>
+                  <p className="text-gray-800 bg-gray-50 p-3 rounded-lg font-mono text-sm">
+                    {viewingPayment.tracking_number}
+                  </p>
+                </div>
+              )}
+
+              {/* Payment Date and Time */}
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">
+                  Paid At
+                </label>
+                <p className="text-gray-800">
+                  {new Date(viewingPayment.paid_at).toLocaleString('en-US', {
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              </div>
+
+              {/* Processed By */}
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">
+                  Processed By
+                </label>
+                <p className="text-gray-800">
+                  {viewingPayment.processed_by || "—"}
+                </p>
+              </div>
+
+              {/* Note */}
+              {viewingPayment.note && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Note
+                  </label>
+                  <p className="text-gray-800 bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400 italic">
+                    {viewingPayment.note}
+                  </p>
+                </div>
+              )}
+
+              {/* Close Button */}
+              <div className="pt-4 border-t">
+                <button
+                  onClick={() => setViewModalOpen(false)}
+                  className="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
     </div>

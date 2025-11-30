@@ -163,7 +163,7 @@ class Command(BaseCommand):
 
             # Display success information
             self.stdout.write(
-                self.style.SUCCESS(f'\n✓ Employee account created successfully!')
+                self.style.SUCCESS(f'\n[+] Employee account created successfully!')
             )
             self.stdout.write(f'ID: {user.id}')
             self.stdout.write(f'Username: {username}')
@@ -176,28 +176,28 @@ class Command(BaseCommand):
             sms_success = False
             if send_sms_flag:
                 sms_message = (
-                    f"Welcome to the team, {user.get_full_name()}! 🎉\n\n"
+                    f"Welcome to the team, {user.get_full_name()}!\n\n"
                     f"Your account has been created:\n"
-                    f"👤 Username: {username}\n"
-                    f"📧 Email: {email}\n"
-                    f"🔒 Password: {password}\n\n"
+                    f"Username: {username}\n"
+                    f"Email: {email}\n"
+                    f"Password: {password}\n\n"
                     f"Please log in and change your password.\n"
-                    f"Welcome aboard! 🚀"
+                    f"Welcome aboard!"
                 )
                 
                 try:
                     sms_success = send_sms(normalized_phone, sms_message)
                     if sms_success:
                         self.stdout.write(
-                            self.style.SUCCESS(f'✓ Login credentials sent via SMS to {normalized_phone}')
+                            self.style.SUCCESS(f'[+] Login credentials sent via SMS to {normalized_phone}')
                         )
                     else:
                         self.stdout.write(
-                            self.style.WARNING(f'✗ Failed to send SMS to {normalized_phone}')
+                            self.style.WARNING(f'[X] Failed to send SMS to {normalized_phone}')
                         )
                 except Exception as e:
                     self.stdout.write(
-                        self.style.ERROR(f'✗ SMS sending error: {str(e)}')
+                        self.style.ERROR(f'[X] SMS sending error: {str(e)}')
                     )
 
             # Display instructions

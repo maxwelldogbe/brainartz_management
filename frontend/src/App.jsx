@@ -1,12 +1,21 @@
 import React from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import './App.css'
+
+// Redirect component that preserves URL parameters
+const RedirectWithParams = ({ to }) => {
+  const params = useParams();
+  const newPath = Object.keys(params).reduce(
+    (path, key) => path.replace(`:${key}`, params[key]),
+    to
+  );
+  return <Navigate to={newPath} replace />;
+};
 
 // Components
 import Customer from './pages/Customer'
 import Works from './pages/Works'
 import Payments from './pages/Payments'
-import Summary from './pages/Summary'
 import AdminDashboard from './pages/AdminDashboard'
 import Invite from './pages/Invite'
 import Dashboard from './pages/Dashboard'
@@ -22,26 +31,36 @@ import Procurements from './pages/Procurements'
 import ProcurementRequests from './pages/ProcurementRequests'
 import StockMovements from './pages/StockMovements'
 import InventoryReports from './pages/InventoryReports'
+import CustomerContacts from './pages/CustomerContacts'
+import MarketingMessages from './pages/MarketingMessages'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import { RoleGuard } from './components/RoleGuard'
 
 import Login from './pages/Login'
 import Register from './pages/Register'
+import ChangePassword from './pages/ChangePassword'
+import LandingPage from './pages/LandingPage'
 
 function App() {
   return (
     <Routes>
-      {/* Public Routes */}
-      <Route path='/login' element={<Login />} />
-      <Route path='/register/:token' element={<Register />} />
-      <Route path='/register' element={<Register />} />
+      {/* Public Landing Page */}
+      <Route path='/' element={<LandingPage />} />
       
-      {/* Protected Routes */}
-      <Route path='/' element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+      {/* Staff Portal Routes - Hidden from public */}
+      <Route path='/portal/login' element={<Login />} />
+      <Route path='/portal/register/:token' element={<Register />} />
+      <Route path='/portal/register' element={<Register />} />
+      
+      {/* Protected Staff Routes */}
+      <Route path='/portal' element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         {/* Default Dashboard Route */}
         <Route index element={<Dashboard />} />
         <Route path='dashboard' element={<Dashboard />} />
+        
+        {/* Password Change Route - Available to all authenticated users */}
+        <Route path='change-password' element={<ChangePassword />} />
         
         {/* Admin-Only Routes */}
         <Route path='admin-dashboard' element={
@@ -64,6 +83,16 @@ function App() {
             <JobCategories />
           </RoleGuard>
         } />
+        <Route path='customer-contacts' element={
+          <RoleGuard requireWorker={true}>
+            <CustomerContacts />
+          </RoleGuard>
+        } />
+        <Route path='marketing-messages' element={
+          <RoleGuard requireAdmin={true}>
+            <MarketingMessages />
+          </RoleGuard>
+        } />
         
         {/* Worker+ Routes (Workers and Admins) */}
         <Route path='customers' element={
@@ -79,11 +108,6 @@ function App() {
         <Route path='payments' element={
           <RoleGuard requireWorker={true}>
             <Payments />
-          </RoleGuard>
-        } />
-        <Route path='summary' element={
-          <RoleGuard requireWorker={true}>
-            <Summary />
           </RoleGuard>
         } />
         <Route path='work-analytics' element={
@@ -146,6 +170,12 @@ function App() {
           </RoleGuard>
         } />
       </Route>
+
+      {/* Redirect old sales-reports paths to new portal paths */}
+      <Route path='/sales-reports' element={<Navigate to='/portal/sales-reports' replace />} />
+      <Route path='/sales-reports/new' element={<Navigate to='/portal/sales-reports/new' replace />} />
+      <Route path='/sales-reports/:id/edit' element={<RedirectWithParams to='/portal/sales-reports/:id/edit' />} />
+      <Route path='/sales-reports/:id' element={<RedirectWithParams to='/portal/sales-reports/:id' />} />
     </Routes>
   )
 }

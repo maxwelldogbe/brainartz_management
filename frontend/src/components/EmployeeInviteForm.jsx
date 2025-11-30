@@ -52,7 +52,7 @@ export default function EmployeeInviteForm({ onSuccess, onError, onFallbackSugge
       const result = await sendInvite(form);
       
       if (result.sms_sent) {
-        onSuccess?.('SMS invitation sent successfully! 🎉');
+        onSuccess?.('SMS invitation sent successfully');
       } else {
         onError?.('SMS delivery failed. Consider manual account creation.', 'warning');
         // Show fallback options
@@ -95,7 +95,6 @@ export default function EmployeeInviteForm({ onSuccess, onError, onFallbackSugge
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex items-center space-x-2 mb-4">
-        <span className="text-2xl">📱</span>
         <h2 className="text-xl font-bold text-gray-800">Send SMS Invitation</h2>
       </div>
       
@@ -171,9 +170,8 @@ export default function EmployeeInviteForm({ onSuccess, onError, onFallbackSugge
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                 <span>Sending SMS...</span>
               </>
-            ) : (
+                ) : (
               <>
-                <span>📤</span>
                 <span>Send SMS Invitation</span>
               </>
             )}
@@ -184,7 +182,6 @@ export default function EmployeeInviteForm({ onSuccess, onError, onFallbackSugge
       {/* Info Box */}
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-start space-x-2">
-          <span className="text-blue-500 mt-0.5">ℹ️</span>
           <div className="text-sm text-blue-700">
             <p className="font-medium mb-1">How it works:</p>
             <ol className="list-decimal list-inside space-y-1">

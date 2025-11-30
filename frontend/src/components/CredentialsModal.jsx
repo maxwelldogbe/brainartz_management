@@ -32,12 +32,11 @@ export default function CredentialsModal({ isOpen, credentials, onClose }) {
   if (!credentials) return null;
 
   return (
-    <Modal open={isOpen} onClose={handleClose} title="🔑 Employee Login Credentials">
+    <Modal open={isOpen} onClose={handleClose} title="Employee Login Credentials">
       <div className="space-y-6">
         {/* Security Warning */}
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <div className="flex items-center space-x-2">
-            <span className="text-2xl">🔒</span>
             <div>
               <h4 className="font-semibold text-amber-800">Security Notice</h4>
               <p className="text-sm text-amber-700">
@@ -51,7 +50,6 @@ export default function CredentialsModal({ isOpen, credentials, onClose }) {
         {credentials.smsStatus && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="flex items-center space-x-2">
-              <span className="text-2xl">✅</span>
               <div>
                 <h4 className="font-semibold text-green-800">SMS Sent Successfully</h4>
                 <p className="text-sm text-green-700">
@@ -77,7 +75,6 @@ export default function CredentialsModal({ isOpen, credentials, onClose }) {
                 onClick={() => copyToClipboard('username', credentials.username)}
                 className="flex items-center space-x-1 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
               >
-                <span>{copied.username ? '✓' : '📋'}</span>
                 <span>{copied.username ? 'Copied' : 'Copy'}</span>
               </button>
             </div>
@@ -94,7 +91,6 @@ export default function CredentialsModal({ isOpen, credentials, onClose }) {
                 onClick={() => copyToClipboard('password', credentials.password)}
                 className="flex items-center space-x-1 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
               >
-                <span>{copied.password ? '✓' : '📋'}</span>
                 <span>{copied.password ? 'Copied' : 'Copy'}</span>
               </button>
             </div>
@@ -112,7 +108,6 @@ export default function CredentialsModal({ isOpen, credentials, onClose }) {
                   onClick={() => copyToClipboard('email', credentials.email)}
                   className="flex items-center space-x-1 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                 >
-                  <span>{copied.email ? '✓' : '📋'}</span>
                   <span>{copied.email ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
@@ -146,7 +141,7 @@ export default function CredentialsModal({ isOpen, credentials, onClose }) {
             }}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
           >
-            {copied.all ? '✓ Copied All' : '📋 Copy All'}
+            {copied.all ? 'Copied All' : 'Copy All'}
           </button>
         </div>
       </div>

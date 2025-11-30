@@ -90,37 +90,42 @@ class IsManagerOrStaffReadOnly(permissions.BasePermission):
 
 class IsProcurementManager(permissions.BasePermission):
     """
-    Only managers can mark procurements as delivered and adjust stock manually.
+    Workers can create procurement requests.
+    Only admins can mark procurements as delivered and update stock.
     """
     
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
             
-        # Safe methods allowed for all authenticated users
+        # Safe methods (GET, HEAD, OPTIONS) allowed for all authenticated users
         if request.method in permissions.SAFE_METHODS:
             return True
             
-        # Only managers can create, update procurements and mark as delivered
-        return request.user.is_staff
+        # POST (create) - Workers and admins can create procurement requests
+        if request.method == 'POST':
+            return request.user.is_worker or request.user.is_admin
+            
+        # PUT, PATCH, DELETE - Only admins can update/delete procurements
+        return request.user.is_admin
     
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
             
-        # Only managers can modify procurements
-        return request.user and request.user.is_staff
+        # Only admins can modify existing procurements (mark as delivered, etc.)
+        return request.user and request.user.is_admin
 
 
 class IsStockManager(permissions.BasePermission):
     """
     Permission for stock management operations (manual adjustments).
-    Only managers can perform direct stock adjustments.
+    Only admins can perform direct stock adjustments.
     """
     
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
             
-        # Only managers can adjust stock manually
-        return request.user.is_staff
+        # Only admins can adjust stock manually
+        return request.user.is_admin

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "../utils/axios";
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,10 +35,9 @@ export default function AdminDashboard() {
     );
   }
 
-  if (error) {
+      if (error) {
     return (
       <div className="text-center py-8">
-        <div className="text-6xl mb-4">⚠️</div>
         <h3 className="text-lg font-semibold text-gray-800 mb-2">Error Loading Admin Dashboard</h3>
         <p className="text-gray-600 mb-4">{error}</p>
         <button 
@@ -52,7 +53,6 @@ export default function AdminDashboard() {
   if (!data) {
     return (
       <div className="text-center py-8">
-        {/* <div className="text-6xl mb-4">📊</div> */}
         <h3 className="text-lg font-semibold text-gray-800">No Data Available</h3>
         <p className="text-gray-600">Admin dashboard data is not available at the moment.</p>
       </div>
@@ -60,7 +60,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0">
       {/* Page title */}
       <div>
         <h2 className="text-2xl font-bold text-gray-800">System Overview</h2>
@@ -69,33 +69,35 @@ export default function AdminDashboard() {
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="p-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl shadow-lg">
-          <div className="flex items-center justify-between">
+        <div className="p-4 bg-blue-600 text-white rounded-lg shadow-lg min-w-0 h-36 md:h-40 lg:h-44 overflow-hidden">
+          <div className="flex flex-col justify-between h-full">
             <div>
-              <h3 className="text-lg font-semibold">Total Customers</h3>
-              <p className="text-3xl font-bold mt-2">{data.total_customers}</p>
+              <h3 className="text-lg font-semibold truncate">Total Works</h3>
             </div>
-            {/* <div className="text-4xl opacity-80">👥</div> */}
+            <div>
+              <p className="text-2xl md:text-3xl font-bold mt-1 truncate">{data.total_works}</p>
+            </div>
           </div>
         </div>
-        
-        <div className="p-6 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg">
-          <div className="flex items-center justify-between">
+
+        <div className="p-4 bg-blue-600 text-white rounded-lg shadow-lg min-w-0 h-36 md:h-40 lg:h-44 overflow-hidden">
+          <div className="flex flex-col justify-between h-full">
             <div>
-              <h3 className="text-lg font-semibold">Total Works</h3>
-              <p className="text-3xl font-bold mt-2">{data.total_works}</p>
+              <h3 className="text-lg font-semibold truncate">Total Revenue</h3>
             </div>
-            {/* <div className="text-4xl opacity-80">🔨</div> */}
+            <div>
+              <p className="text-2xl md:text-3xl font-bold mt-1 truncate">${data.total_revenue}</p>
+            </div>
           </div>
         </div>
-        
-        <div className="p-6 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl shadow-lg">
-          <div className="flex items-center justify-between">
+
+        <div onClick={() => navigate('/portal/customer-contacts')} className="p-4 bg-blue-600 text-white rounded-lg shadow-lg cursor-pointer hover:bg-blue-700 transition-all transform hover:scale-105 min-w-0 h-36 md:h-40 lg:h-44 overflow-hidden">
+          <div className="flex flex-col justify-between h-full">
             <div>
-              <h3 className="text-lg font-semibold">Total Revenue</h3>
-              <p className="text-3xl font-bold mt-2">${data.total_revenue}</p>
+              <h3 className="text-lg font-semibold truncate">Customer Contacts</h3>
+              <p className="text-sm mt-1 opacity-90 truncate">Send Promotional SMS</p>
             </div>
-            {/* <div className="text-4xl opacity-80">💰</div> */}
+            <div className="text-sm opacity-80">SMS</div>
           </div>
         </div>
       </div>
@@ -110,7 +112,7 @@ export default function AdminDashboard() {
         <div className="p-6">
           {data.payments_by_employee && data.payments_by_employee.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-full">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="text-left p-3 text-sm font-semibold text-gray-700">Employee</th>
@@ -128,10 +130,10 @@ export default function AdminDashboard() {
                         <div className="flex items-center space-x-3">
                           <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                             <span className="text-blue-600 font-semibold text-sm">
-                              {emp.email.charAt(0).toUpperCase()}
+                              {emp.username ? emp.username.charAt(0).toUpperCase() : emp.email.charAt(0).toUpperCase()}
                             </span>
                           </div>
-                          <span className="font-medium text-gray-800">{emp.email}</span>
+                          <span className="font-medium text-gray-800">@{emp.username || emp.email}</span>
                         </div>
                       </td>
                       <td className="p-3">
@@ -151,7 +153,6 @@ export default function AdminDashboard() {
             </div>
           ) : (
             <div className="text-center py-8">
-              {/* <div className="text-4xl mb-4">📈</div> */}
               <h4 className="text-lg font-semibold text-gray-800 mb-2">No Performance Data</h4>
               <p className="text-gray-600">Employee payment data will appear here once transactions are processed.</p>
             </div>

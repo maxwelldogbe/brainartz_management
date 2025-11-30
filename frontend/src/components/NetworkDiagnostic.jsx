@@ -15,7 +15,7 @@ const NetworkDiagnostic = () => {
 
     try {
       // Test basic connectivity
-      const response = await axios.post('/auth/jwt/create/', {
+      const _response = await axios.post('/auth/jwt/create/', {
         email: 'test@test.com',
         password: 'wrongpassword'
       });

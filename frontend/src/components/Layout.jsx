@@ -12,7 +12,7 @@ export default function Layout() {
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    navigate("/portal/login");
   };
 
   if (!isAuthenticated) return null;
@@ -21,7 +21,7 @@ export default function Layout() {
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar - Always fixed */}
       <aside
-        className={`fixed top-0 left-0 h-screen w-64 bg-gray-900 text-white flex flex-col justify-between shadow-lg transform transition-transform duration-300 z-40 overflow-y-auto
+        className={`fixed top-0 left-0 h-screen w-72 bg-gray-900 text-white flex flex-col justify-between shadow-lg transform transition-transform duration-300 z-40 overflow-y-auto
         ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
       >
         <div>
@@ -39,7 +39,7 @@ export default function Layout() {
           <nav className="mt-6 flex flex-col space-y-2 px-4 text-sm font-medium">
             {/* Dashboard - Available to all authenticated users */}
             <NavLink
-              to="/dashboard"
+              to="/portal/dashboard"
               className={({ isActive }) =>
                 `block px-3 py-2 rounded ${
                   isActive
@@ -52,10 +52,25 @@ export default function Layout() {
               Dashboard
             </NavLink>
 
+            {/* Change Password - Available to all authenticated users */}
+            <NavLink
+              to="/portal/change-password"
+              className={({ isActive }) =>
+                `block px-3 py-2 rounded ${
+                  isActive
+                    ? "bg-gray-800 text-blue-400"
+                    : "hover:bg-gray-800 hover:text-blue-300"
+                }`
+              }
+              onClick={() => setIsOpen(false)}
+              >
+              Change Password
+            </NavLink>
+
             {/* Admin-Only: Admin Dashboard */}
             <RoleBasedContent requireAdmin={true}>
               <NavLink
-                to="/admin-dashboard"
+                to="/portal/admin-dashboard"
                 className={({ isActive }) =>
                   `block px-3 py-2 rounded ${
                     isActive
@@ -77,22 +92,9 @@ export default function Layout() {
                 </span>
               </div>
               
-              <NavLink
-                to="/customers"
-                className={({ isActive }) =>
-                  `block px-3 py-2 rounded ${
-                    isActive
-                      ? "bg-gray-800 text-blue-400"
-                      : "hover:bg-gray-800 hover:text-blue-300"
-                  }`
-                }
-                onClick={() => setIsOpen(false)}
-              >
-                Customers
-              </NavLink>
               
               <NavLink
-                to="/works"
+                to="/portal/works"
                 className={({ isActive }) =>
                   `block px-3 py-2 rounded ${
                     isActive
@@ -106,7 +108,7 @@ export default function Layout() {
               </NavLink>
               
               <NavLink
-                to="/payments"
+                to="/portal/payments"
                 className={({ isActive }) =>
                   `block px-3 py-2 rounded ${
                     isActive
@@ -120,21 +122,7 @@ export default function Layout() {
               </NavLink>
               
               <NavLink
-                to="/summary"
-                className={({ isActive }) =>
-                  `block px-3 py-2 rounded ${
-                    isActive
-                      ? "bg-gray-800 text-blue-400"
-                      : "hover:bg-gray-800 hover:text-blue-300"
-                  }`
-                }
-                onClick={() => setIsOpen(false)}
-              >
-               Summary
-              </NavLink>
-              
-              <NavLink
-                to="/work-analytics"
+                to="/portal/work-analytics"
                 className={({ isActive }) =>
                   `block px-3 py-2 rounded ${
                     isActive
@@ -148,7 +136,7 @@ export default function Layout() {
               </NavLink>
               
               <NavLink
-                to="/sales-reports"
+                to="/portal/sales-reports"
                 className={({ isActive }) =>
                   `block px-3 py-2 rounded ${
                     isActive
@@ -168,7 +156,7 @@ export default function Layout() {
               </div>
               
               <NavLink
-                to="/inventory"
+                to="/portal/inventory"
                 className={({ isActive }) =>
                   `block px-3 py-2 rounded ${
                     isActive
@@ -182,7 +170,7 @@ export default function Layout() {
               </NavLink>
               
               <NavLink
-                to="/inventory/materials"
+                to="/portal/inventory/materials"
                 className={({ isActive }) =>
                   `block px-3 py-2 rounded ${
                     isActive
@@ -196,7 +184,7 @@ export default function Layout() {
               </NavLink>
               
               <NavLink
-                to="/inventory/procurements"
+                to="/portal/inventory/procurements"
                 className={({ isActive }) =>
                   `block px-3 py-2 rounded ${
                     isActive
@@ -210,7 +198,7 @@ export default function Layout() {
               </NavLink>
               
               <NavLink
-                to="/inventory/stock-movements"
+                to="/portal/inventory/stock-movements"
                 className={({ isActive }) =>
                   `block px-3 py-2 rounded ${
                     isActive
@@ -224,7 +212,7 @@ export default function Layout() {
               </NavLink>
               
               <NavLink
-                to="/inventory/reports"
+                to="/portal/inventory/reports"
                 className={({ isActive }) =>
                   `block px-3 py-2 rounded ${
                     isActive
@@ -235,6 +223,26 @@ export default function Layout() {
                 onClick={() => setIsOpen(false)}
               >
                 Inventory Reports
+              </NavLink>
+
+              <div className="pt-4 pb-2 mt-4">
+                <span className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Customer Marketing
+                </span>
+              </div>
+              
+                <NavLink
+                to="/portal/customer-contacts"
+                className={({ isActive }) =>
+                  `flex items-center space-x-2 px-3 py-2 rounded ${
+                    isActive
+                      ? "bg-gray-800 text-blue-400"
+                      : "hover:bg-gray-800 hover:text-blue-300"
+                  }`
+                }
+                onClick={() => setIsOpen(false)}
+              >
+                <span>Customer Contacts</span>
               </NavLink>
             </RoleBasedContent>
 
@@ -247,7 +255,7 @@ export default function Layout() {
               </div>
               
               <NavLink
-                to="/workers"
+                to="/portal/workers"
                 className={({ isActive }) =>
                   `flex items-center space-x-2 px-3 py-2 rounded ${
                     isActive
@@ -261,7 +269,7 @@ export default function Layout() {
               </NavLink>
               
               <NavLink
-                to="/invite"
+                to="/portal/invite"
                 className={({ isActive }) =>
                   `flex items-center space-x-2 px-3 py-2 rounded ${
                     isActive
@@ -275,7 +283,7 @@ export default function Layout() {
               </NavLink>
 
               <NavLink
-                to="/job-categories"
+                to="/portal/job-categories"
                 className={({ isActive }) =>
                   `flex items-center space-x-2 px-3 py-2 rounded ${
                     isActive
@@ -287,18 +295,38 @@ export default function Layout() {
               >
                 <span>Job Categories</span>
               </NavLink>
+              
+              <div className="pt-4 pb-2 mt-4">
+                <span className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Marketing (Admin Only)
+                </span>
+              </div>
+              
+                <NavLink
+                to="/portal/marketing-messages"
+                className={({ isActive }) =>
+                  `flex items-center space-x-2 px-3 py-2 rounded ${
+                    isActive
+                      ? "bg-gray-800 text-blue-400"
+                      : "hover:bg-gray-800 hover:text-blue-300"
+                  }`
+                }
+                onClick={() => setIsOpen(false)}
+              >
+                <span>Message Templates</span>
+              </NavLink>
             </RoleBasedContent>
 
             {/* Show access level info for debugging */}
             {import.meta.env.DEV && (
               <div className="mt-4 px-3 py-2 bg-gray-800 rounded text-xs">
                 <div className="text-gray-400">Access Level:</div>
-                <div>Admin: {canAccessAdminFeatures ? '✅' : '❌'}</div>
-                <div>Worker: {canAccessWorkerFeatures ? '✅' : '❌'}</div>
+                <div>Admin: {canAccessAdminFeatures ? 'Yes' : 'No'}</div>
+                <div>Worker: {canAccessWorkerFeatures ? 'Yes' : 'No'}</div>
                 <div className="text-gray-400 mt-1">Roles:</div>
-                <div>is_admin: {user?.is_admin ? '✅' : '❌'}</div>
-                <div>is_worker: {user?.is_worker ? '✅' : '❌'}</div>
-                <div>is_superuser: {user?.is_superuser ? '✅' : '❌'}</div>
+                <div>is_admin: {user?.is_admin ? 'Yes' : 'No'}</div>
+                <div>is_worker: {user?.is_worker ? 'Yes' : 'No'}</div>
+                <div>is_superuser: {user?.is_superuser ? 'Yes' : 'No'}</div>
               </div>
             )}
           </nav>
@@ -327,13 +355,14 @@ export default function Layout() {
         <button
           className="md:hidden fixed top-4 left-4 z-50 bg-gray-900 text-white p-2 rounded-lg shadow-lg"
           onClick={() => setIsOpen(true)}
+          aria-label="Open menu"
         >
-          ☰
+          Menu
         </button>
       )}
 
       {/* Main content area - scrollable */}
-      <div className="md:ml-64 min-h-screen">
+      <div className="md:ml-72 min-h-screen min-w-0">
         <main className="h-screen overflow-y-auto p-6">
           <Outlet />
         </main>

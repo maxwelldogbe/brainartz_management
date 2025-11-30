@@ -45,7 +45,7 @@ def test_manual_employee_creation():
             user = serializer.save()
             password = getattr(user, '_generated_password', 'N/A')
             
-            print(f"✓ Employee account created successfully!")
+            print(f"[+] Employee account created successfully!")
             print(f"   ID: {user.id}")
             print(f"   Username: {user.username}")
             print(f"   Email: {user.email}")
@@ -56,11 +56,11 @@ def test_manual_employee_creation():
             
             return user, password
         else:
-            print(f"✗ Validation errors: {serializer.errors}")
+            print(f"[X] Validation errors: {serializer.errors}")
             return None, None
             
     except Exception as e:
-        print(f"✗ Error creating account: {e}")
+        print(f"[X] Error creating account: {e}")
         return None, None
 
 
@@ -69,35 +69,35 @@ def test_credential_sharing_sms(user, password):
     print(f"\n=== Testing Credential Sharing for {user.username} ===")
     
     if not hasattr(user, 'profile') or not user.profile.phone:
-        print("✗ No phone number found for user")
+        print("[X] No phone number found for user")
         return False
     
     phone = user.profile.phone
     
     # Prepare login credentials message
     message = (
-        f"Welcome to the team, {user.get_full_name()}! 🎉\n\n"
+        f"Welcome to the team, {user.get_full_name()}! [SUCCESS]\n\n"
         f"Your account has been created:\n"
-        f"👤 Username: {user.username}\n"
-        f"📧 Email: {user.email}\n"
-        f"🔒 Password: {password}\n\n"
+        f"Username: Username: {user.username}\n"
+        f"Email: Email: {user.email}\n"
+        f"Password: Password: {password}\n\n"
         f"Please log in and change your password.\n"
-        f"Welcome aboard! 🚀"
+        f"Welcome aboard! "
     )
     
     try:
         sms_success = send_sms(phone, message)
         
         if sms_success:
-            print(f"✓ Login credentials sent via SMS to {phone}")
+            print(f"[+] Login credentials sent via SMS to {phone}")
         else:
-            print(f"✗ Failed to send SMS to {phone}")
+            print(f"[X] Failed to send SMS to {phone}")
             print("   Fallback: Share credentials manually")
             
         return sms_success
         
     except Exception as e:
-        print(f"✗ SMS sending error: {e}")
+        print(f"[X] SMS sending error: {e}")
         return False
 
 
@@ -110,34 +110,34 @@ def test_password_reset_and_resend(user):
     user.set_password(new_password)
     user.save()
     
-    print(f"✓ Password reset successfully")
+    print(f"[+] Password reset successfully")
     print(f"   New Password: {new_password}")
     
     # Send new credentials via SMS
     if hasattr(user, 'profile') and user.profile.phone:
         message = (
-            f"Hi {user.get_full_name()}! 👋\n\n"
+            f"Hi {user.get_full_name()}! \n\n"
             f"Your password has been reset:\n"
-            f"👤 Username: {user.username}\n"
-            f"📧 Email: {user.email}\n"
-            f"🔒 New Password: {new_password}\n\n"
+            f"Username: Username: {user.username}\n"
+            f"Email: Email: {user.email}\n"
+            f"Password: New Password: {new_password}\n\n"
             f"Please log in and change your password.\n"
         )
         
         try:
             sms_success = send_sms(user.profile.phone, message)
             if sms_success:
-                print(f"✓ New credentials sent via SMS to {user.profile.phone}")
+                print(f"[+] New credentials sent via SMS to {user.profile.phone}")
             else:
-                print(f"✗ Failed to send SMS with new credentials")
+                print(f"[X] Failed to send SMS with new credentials")
             
             return sms_success
             
         except Exception as e:
-            print(f"✗ Error sending password reset SMS: {e}")
+            print(f"[X] Error sending password reset SMS: {e}")
             return False
     else:
-        print("✗ No phone number available for SMS")
+        print("[X] No phone number available for SMS")
         return False
 
 
@@ -160,18 +160,18 @@ def test_account_creation_without_email():
             user = serializer.save()
             password = getattr(user, '_generated_password', 'N/A')
             
-            print(f"✓ Account created without email!")
+            print(f"[+] Account created without email!")
             print(f"   Generated Email: {user.email}")
             print(f"   Username: {user.username}")
             print(f"   Generated Password: {password}")
             
             return user
         else:
-            print(f"✗ Validation errors: {serializer.errors}")
+            print(f"[X] Validation errors: {serializer.errors}")
             return None
             
     except Exception as e:
-        print(f"✗ Error: {e}")
+        print(f"[X] Error: {e}")
         return None
 
 
@@ -212,9 +212,9 @@ def test_validation_errors():
         serializer = ManualEmployeeCreateSerializer(data=test_case['data'])
         
         if not serializer.is_valid():
-            print(f"✓ Expected validation error: {serializer.errors}")
+            print(f"[+] Expected validation error: {serializer.errors}")
         else:
-            print(f"✗ Unexpected success - should have failed validation")
+            print(f"[X] Unexpected success - should have failed validation")
 
 
 def test_duplicate_prevention():
@@ -233,9 +233,9 @@ def test_duplicate_prevention():
     serializer = ManualEmployeeCreateSerializer(data=original_data)
     if serializer.is_valid():
         user1 = serializer.save()
-        print(f"✓ First user created: {user1.username}")
+        print(f"[+] First user created: {user1.username}")
     else:
-        print(f"✗ Failed to create first user: {serializer.errors}")
+        print(f"[X] Failed to create first user: {serializer.errors}")
         return
     
     # Try to create duplicate username
@@ -249,9 +249,9 @@ def test_duplicate_prevention():
     
     serializer = ManualEmployeeCreateSerializer(data=duplicate_username_data)
     if not serializer.is_valid():
-        print(f"✓ Duplicate username prevented: {serializer.errors}")
+        print(f"[+] Duplicate username prevented: {serializer.errors}")
     else:
-        print(f"✗ Duplicate username not prevented!")
+        print(f"[X] Duplicate username not prevented!")
     
     # Try to create duplicate email
     duplicate_email_data = {
@@ -264,9 +264,9 @@ def test_duplicate_prevention():
     
     serializer = ManualEmployeeCreateSerializer(data=duplicate_email_data)
     if not serializer.is_valid():
-        print(f"✓ Duplicate email prevented: {serializer.errors}")
+        print(f"[+] Duplicate email prevented: {serializer.errors}")
     else:
-        print(f"✗ Duplicate email not prevented!")
+        print(f"[X] Duplicate email not prevented!")
 
 
 def cleanup_test_data():
@@ -282,14 +282,14 @@ def cleanup_test_data():
                 user = User.objects.get(username=username)
                 user.delete()
                 deleted_count += 1
-                print(f"✓ Deleted user: {username}")
+                print(f"[+] Deleted user: {username}")
             except User.DoesNotExist:
                 pass  # User doesn't exist, skip
         
-        print(f"✓ Cleaned up {deleted_count} test users")
+        print(f"[+] Cleaned up {deleted_count} test users")
         
     except Exception as e:
-        print(f"✗ Error during cleanup: {e}")
+        print(f"[X] Error during cleanup: {e}")
 
 
 def main():
@@ -320,15 +320,15 @@ def main():
     cleanup_test_data()
     
     print("\n" + "=" * 60)
-    print("🎉 Manual Employee Account Creation Tests Completed!")
+    print("[SUCCESS] Manual Employee Account Creation Tests Completed!")
     
-    print("\n💡 Key Features Tested:")
-    print("   ✓ Manual account creation with auto-generated passwords")
-    print("   ✓ Automatic email generation when not provided")
-    print("   ✓ SMS credential sharing")
-    print("   ✓ Password reset and credential resending")
-    print("   ✓ Input validation and duplicate prevention")
-    print("   ✓ Phone number normalization")
+    print("\n[INFO] Key Features Tested:")
+    print("   [+] Manual account creation with auto-generated passwords")
+    print("   [+] Automatic email generation when not provided")
+    print("   [+] SMS credential sharing")
+    print("   [+] Password reset and credential resending")
+    print("   [+] Input validation and duplicate prevention")
+    print("   [+] Phone number normalization")
 
 
 if __name__ == "__main__":

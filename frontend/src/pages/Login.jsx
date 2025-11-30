@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loginUser } from '../utils/auth';
 import Alert from '../components/Alert';
-import NetworkDiagnostic from '../components/NetworkDiagnostic';
 
 export default function Login() {
     const [form, setForm] = useState({ email: '', password: '' });
@@ -16,7 +15,7 @@ export default function Login() {
     useEffect(() => {
         if (isAuthenticated && user && !authLoading) {
             console.log('User already authenticated, redirecting...');
-            navigate('/', { replace: true });
+            navigate('/portal', { replace: true });
         }
     }, [isAuthenticated, user, authLoading, navigate]);
 
@@ -52,7 +51,7 @@ export default function Login() {
             if (userData) {
                 console.log('Redirecting user after successful login');
                 // Let the ProtectedRoute handle the smart redirection
-                navigate('/', { replace: true });
+                navigate('/portal', { replace: true });
             } else {
                 throw new Error('User data not loaded properly');
             }
@@ -102,18 +101,12 @@ export default function Login() {
             <div className="max-w-md w-full space-y-8">
                 <div>
                     <div className="text-center">
-                        <div className="text-6xl mb-4">🎯</div>
+                        <img className="mx-auto h-12 w-auto" src="src/assets/BrainArtz-black.png" alt="BrainArtz Logo" />
                         <h2 className="text-3xl font-extrabold text-gray-900">
                             Sign in to your account
                         </h2>
-                        <p className="mt-2 text-sm text-gray-600">
-                            Brainartz Management System
-                        </p>
                     </div>
                 </div>
-                
-                {/* Network Diagnostic Tool */}
-                <NetworkDiagnostic />
 
                 <form className="mt-8 space-y-6 bg-white p-8 rounded-lg shadow" onSubmit={handleSubmit}>
                     {/* Error Alert */}

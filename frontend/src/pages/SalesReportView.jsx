@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useParams, Link } from 'react-router-dom';
 import { salesReportsAPI } from '../utils/services';
 import { formatCurrency, formatDateTime, EXPENSE_CATEGORIES } from '../types/salesReports';
@@ -93,7 +94,7 @@ export default function SalesReportView() {
       <div className="text-center py-12">
         <div className="text-red-600 mb-4">{error}</div>
         <Link
-          to="/sales-reports"
+          to="/portal/sales-reports"
           className="text-blue-600 hover:text-blue-800"
         >
           ← Back to Reports
@@ -107,7 +108,7 @@ export default function SalesReportView() {
       <div className="text-center py-12">
         <h3 className="text-lg font-medium text-gray-900 mb-2">Report not found</h3>
         <Link
-          to="/sales-reports"
+          to="/portal/sales-reports"
           className="text-blue-600 hover:text-blue-800"
         >
           ← Back to Reports
@@ -143,24 +144,24 @@ export default function SalesReportView() {
             )}
           </div>
         </div>
-        <div className="flex space-x-2 print:hidden">
+        <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 print:hidden">
           <button
             onClick={handlePrint}
-            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+            className="w-full sm:w-auto px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors text-center"
           >
             Print
           </button>
           {report.can_edit && (
             <Link
-              to={`/sales-reports/${id}/edit`}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              to={`/portal/sales-reports/${id}/edit`}
+              className="w-full sm:w-auto px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-center"
             >
              Edit
             </Link>
           )}
           <Link
-            to="/sales-reports"
-            className="px-4 py-2 text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg transition-colors"
+            to="/portal/sales-reports"
+            className="w-full sm:w-auto px-3 py-2 text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg transition-colors text-center"
           >
             ← Back
           </Link>
@@ -206,22 +207,22 @@ export default function SalesReportView() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 print:grid-cols-4 print:gap-2">
-        <div className="bg-white p-4 rounded-lg shadow border print:shadow-none print:border print:border-gray-300">
+        <div className="bg-white p-4 rounded-lg shadow border print:shadow-none print:border print:border-gray-300 min-w-0">
           <div className="text-sm text-gray-600">Total Sales</div>
           <div className="text-xl font-bold text-gray-900">{formatCurrency(report.total_sales_amount)}</div>
         </div>
 
-        <div className="bg-white p-4 rounded-lg shadow border print:shadow-none print:border print:border-gray-300">
+        <div className="bg-white p-4 rounded-lg shadow border print:shadow-none print:border print:border-gray-300 min-w-0">
           <div className="text-sm text-gray-600">Payments Received</div>
           <div className="text-xl font-bold text-green-600">{formatCurrency(report.total_payments_received)}</div>
         </div>
 
-        <div className="bg-white p-4 rounded-lg shadow border print:shadow-none print:border print:border-gray-300">
+        <div className="bg-white p-4 rounded-lg shadow border print:shadow-none print:border print:border-gray-300 min-w-0">
           <div className="text-sm text-gray-600">Outstanding</div>
           <div className="text-xl font-bold text-orange-600">{formatCurrency(report.total_outstanding)}</div>
         </div>
 
-        <div className="bg-white p-4 rounded-lg shadow border print:shadow-none print:border print:border-gray-300">
+        <div className="bg-white p-4 rounded-lg shadow border print:shadow-none print:border print:border-gray-300 min-w-0">
           <div className="text-sm text-gray-600">Net Revenue</div>
           <div className="text-xl font-bold text-blue-600">{formatCurrency(report.net_total)}</div>
         </div>
@@ -233,7 +234,6 @@ export default function SalesReportView() {
 
         {report.report_items?.length === 0 ? (
           <div className="text-center py-8 text-gray-500 print:py-4">
-            {/* <span className="text-4xl block mb-2 print:text-2xl">📊</span> */}
             No category items recorded
           </div>
         ) : (
@@ -376,7 +376,6 @@ export default function SalesReportView() {
 
         {report.notes?.length === 0 ? (
           <div className="text-center py-8 text-gray-500 print:py-4">
-            {/* <span className="text-4xl block mb-2 print:text-2xl">📝</span> */}
             No notes added
           </div>
         ) : (
@@ -480,7 +479,7 @@ export default function SalesReportView() {
       </Modal>
 
       {/* Print Styles */}
-      <style jsx>{`
+      <style>{`
         @media print {
           @page {
             margin: 1in;

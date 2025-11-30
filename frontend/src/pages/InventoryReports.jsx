@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
 import { BarChart3, FileText, Download, Calendar, TrendingUp, TrendingDown, Package, AlertTriangle } from 'lucide-react';
 import { materialsAPI, stockMovementsAPI, procurementsAPI } from '../utils/services';
 

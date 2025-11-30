@@ -1,26 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { createWork, updateWork, fetchCustomers, jobCategoriesAPI, fetchWorkers } from '../utils/services';
+import { createWork, updateWork, jobCategoriesAPI, fetchWorkers } from '../utils/services';
 import Modal from './Modal';
 
 export default function EnhancedWorkForm({ 
   isOpen, 
   onClose, 
   onSave, 
-  editingWork = null, 
-  customerId = null 
+  editingWork = null 
 }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     price: '',
     category: null,
-    customer: customerId || null,
+    customer_name: '',
+    customer_phone: '',
     note: '',
     worker: null
   });
 
   const [categories, setCategories] = useState([]);
-  const [customers, setCustomers] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -28,17 +27,13 @@ export default function EnhancedWorkForm({
   useEffect(() => {
     const loadDropdownOptions = async () => {
       try {
-        const [categoriesData, workersData, customersData] = await Promise.all([
+        const [categoriesData, workersData] = await Promise.all([
           jobCategoriesAPI.getSelectOptions(),
-          fetchWorkers(),
-          !customerId ? fetchCustomers() : Promise.resolve([])
+          fetchWorkers()
         ]);
         
         setCategories(categoriesData);
         setWorkers(workersData.filter(worker => worker.is_worker || worker.is_admin));
-        if (!customerId) {
-          setCustomers(customersData);
-        }
       } catch (error) {
         console.error('Failed to load dropdown options:', error);
         showError('Failed to load form options');
@@ -54,7 +49,8 @@ export default function EnhancedWorkForm({
           description: editingWork.description || '',
           price: editingWork.price || '',
           category: editingWork.category || null,
-          customer: editingWork.customer || customerId || null,
+          customer_name: editingWork.customer_name || '',
+          customer_phone: editingWork.customer_phone || '',
           note: editingWork.note || '',
           worker: editingWork.worker || null
         });
@@ -64,14 +60,15 @@ export default function EnhancedWorkForm({
           description: '',
           price: '',
           category: null,
-          customer: customerId || null,
+          customer_name: '',
+          customer_phone: '',
           note: '',
           worker: null
         });
       }
       setErrors({});
     }
-  }, [editingWork, customerId, isOpen]);
+  }, [editingWork, isOpen]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -103,8 +100,16 @@ export default function EnhancedWorkForm({
       newErrors.price = 'Valid price is required';
     }
 
-    if (!customerId && !formData.customer) {
-      newErrors.customer = 'Customer selection is required';
+    // Validate customer name (required)
+    if (!formData.customer_name.trim()) {
+      newErrors.customer_name = 'Customer name is required';
+    }
+
+    // Validate customer phone (always required for notifications)
+    if (!formData.customer_phone.trim()) {
+      newErrors.customer_phone = 'Customer phone is required';
+    } else if (formData.customer_phone.trim().length < 10) {
+      newErrors.customer_phone = 'Please enter a valid phone number (minimum 10 digits)';
     }
 
     setErrors(newErrors);
@@ -126,7 +131,8 @@ export default function EnhancedWorkForm({
         title: formData.title.trim(),
         description: formData.description.trim(),
         price: parseFloat(formData.price),
-        customer: formData.customer,
+        customer_name: formData.customer_name.trim(),
+        customer_phone: formData.customer_phone.trim(),
         note: formData.note.trim() || '',
         category: formData.category,
         worker: formData.worker
@@ -211,43 +217,66 @@ export default function EnhancedWorkForm({
               <option value="">Select Category (Optional)</option>
               {categories.map(cat => (
                 <option key={cat.id} value={cat.id}>
-                  {cat.name}
+                  {cat.name} {cat.send_completion_notification ? '📲' : ''}
                 </option>
               ))}
             </select>
+            {formData.category && categories.find(c => c.id === parseInt(formData.category))?.send_completion_notification && (
+              <p className="mt-1 text-xs text-blue-600 flex items-center gap-1">
+                📲 This category sends completion notifications to customers
+              </p>
+            )}
           </div>
 
-          {/* Customer Selection */}
-          {!customerId && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Customer *
-              </label>
-              <select
-                name="customer"
-                value={formData.customer || ''}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.customer ? 'border-red-300' : 'border-gray-300'
-                }`}
-                required
-                disabled={loading}
-              >
-                <option value="">Select Customer</option>
-                {customers.map(customer => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name}
-                  </option>
-                ))}
-              </select>
-              {errors.customer && (
-                <p className="mt-1 text-sm text-red-600">{errors.customer}</p>
-              )}
-            </div>
-          )}
+          {/* Customer Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Customer Name *
+            </label>
+            <input
+              type="text"
+              name="customer_name"
+              value={formData.customer_name}
+              onChange={handleChange}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                errors.customer_name ? 'border-red-300' : 'border-gray-300'
+              }`}
+              placeholder="e.g., John Doe"
+              required
+              disabled={loading}
+            />
+            {errors.customer_name && (
+              <p className="mt-1 text-sm text-red-600">{errors.customer_name}</p>
+            )}
+          </div>
+
+          {/* Customer Phone */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Customer Phone *
+            </label>
+            <input
+              type="tel"
+              name="customer_phone"
+              value={formData.customer_phone}
+              onChange={handleChange}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                errors.customer_phone ? 'border-red-300' : 'border-gray-300'
+              }`}
+              placeholder="e.g., +233241234567"
+              required
+              disabled={loading}
+            />
+            {errors.customer_phone && (
+              <p className="mt-1 text-sm text-red-600">{errors.customer_phone}</p>
+            )}
+            <p className="mt-1 text-xs text-gray-500">
+              Required for sending completion notifications
+            </p>
+          </div>
 
           {/* Worker Assignment */}
-          <div className={customerId ? 'md:col-span-2' : ''}>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Assign Worker
             </label>

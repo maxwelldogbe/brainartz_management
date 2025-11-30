@@ -1,1 +1,94 @@
 @import "tailwindcss";
+
+/* Global override: remove all borders and shadows across the site.
+	 This intentionally uses !important to override utility classes
+	 (Tailwind's `.shadow`, `.border`, etc.) and any inline styles.
+	 NOTE: we purposely do NOT remove `outline` to preserve keyboard
+	 accessibility focus indicators. If you also want to remove outlines,
+	 add `outline: none !important;` below (not recommended).
+*/
+*, *::before, *::after {
+	box-shadow: none !important;
+	border: none !important;
+}
+
+/* Also remove drop-shadow and shadow utilities that use filter */
+.drop-shadow, .drop-shadow-sm, .drop-shadow-md, .drop-shadow-lg, .drop-shadow-xl {
+	filter: none !important;
+}
+
+/* Tailwind shadow utility classes (named variants) */
+.shadow, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl, .shadow-inner, .shadow-none {
+	box-shadow: none !important;
+}
+
+/* Hover/focus variants that add shadows */
+.hover\:shadow:hover, .hover\:shadow-sm:hover, .hover\:shadow-md:hover, .hover\:shadow-lg:hover, .hover\:shadow-xl:hover {
+	box-shadow: none !important;
+}
+
+/* Any inline-style with box-shadow will be overridden by the rule above */
+
+/* Responsive / layout safety rules ------------------------------------------------ */
+/* Use border-box everywhere to make widths predictable */
+html {
+	box-sizing: border-box;
+	-webkit-text-size-adjust: 100%;
+}
+*, *::before, *::after {
+	box-sizing: inherit;
+}
+
+/* Prevent horizontal overflow across the site while preserving vertical scroll */
+body, #root {
+	width: 100%;
+	min-height: 100vh;
+	overflow-x: hidden; /* hide accidental horizontal scroll caused by components */
+}
+
+/* Make images, videos and iframes responsive */
+img, picture, video, iframe, svg {
+	max-width: 100%;
+	height: auto;
+	display: block; /* avoids inline gaps */
+}
+
+/* Responsive container helper -- prefer using Tailwind container classes, but this
+	 provides a lightweight fallback for components using plain CSS */
+.container-responsive {
+	width: 100%;
+	max-width: 1280px;
+	margin-left: auto;
+	margin-right: auto;
+	padding-left: 1rem;
+	padding-right: 1rem;
+}
+
+/* Tables: allow horizontal scroll on small viewports instead of overflowing */
+.table-responsive {
+	width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+/* Prevent long words / tokens from breaking layouts */
+* {
+	overflow-wrap: break-word;
+	word-break: break-word;
+}
+
+/* Utility to clamp very wide elements if needed */
+.no-overflow {
+	max-width: 100%;
+	overflow-x: hidden;
+}
+
+/* Small screens: ensure padding and margins don't push content off-screen */
+@media (max-width: 640px) {
+	.container-responsive {
+		padding-left: 0.75rem;
+		padding-right: 0.75rem;
+	}
+}
+
+/* End responsive / layout safety rules ----------------------------------------- */

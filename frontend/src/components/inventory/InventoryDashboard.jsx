@@ -25,9 +25,9 @@ const InventoryDashboard = () => {
   const {
     materials,
     procurements,
-    dashboardData,
-    lowStockAlerts,
-    pendingProcurements,
+    _dashboardData,
+    _lowStockAlerts,
+    _pendingProcurements,
     loading,
     error,
     fetchDashboardData,

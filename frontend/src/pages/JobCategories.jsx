@@ -142,7 +142,6 @@ export default function JobCategories() {
       {/* Categories Grid */}
       {categories.length === 0 ? (
         <div className="text-center py-12">
-          <div className="text-6xl mb-4">🏷️</div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No categories yet</h3>
           <p className="text-gray-500 mb-4">Create your first job category to organize your works</p>
           <button
@@ -215,10 +214,15 @@ function CategoryCard({ category, onEdit, onToggleActive, onDelete }) {
 
         {/* Stats */}
         <div className="flex items-center justify-between mb-4 text-sm">
-          <div className={`flex items-center gap-4 ${
+            <div className={`flex items-center gap-4 ${
             category.is_active ? 'text-gray-600' : 'text-gray-400'
           }`}>
-            <span>📋 {category.works_count || 0} works</span>
+            <span>Works: {category.works_count || 0}</span>
+            {category.send_completion_notification && (
+              <span className="text-green-600" title="Sends completion notifications">
+                Notifications
+              </span>
+            )}
           </div>
         </div>
 

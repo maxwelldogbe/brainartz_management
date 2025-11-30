@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Package, Edit, Minus } from 'lucide-react';
+/* eslint-disable react-hooks/exhaustive-deps */
+import { Plus, Search, Package, Edit, Minus, ClipboardList } from 'lucide-react';
 import SimpleMaterialForm from '../components/inventory/SimpleMaterialForm';
 import StockAdjustmentModal from '../components/inventory/StockAdjustmentModal';
+import MaterialPickingModal from '../components/inventory/MaterialPickingModal';
 import { materialsAPI } from '../utils/services';
+import { useRoleAccess } from '../hooks/useRoleAccess';
 
 const Materials = () => {
+  const { canAccessAdminFeatures } = useRoleAccess();
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showStockModal, setShowStockModal] = useState(false);
+  const [showPickingModal, setShowPickingModal] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
   const [adjustingMaterial, setAdjustingMaterial] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -111,6 +116,11 @@ const Materials = () => {
     loadMaterials();
   };
 
+  const handlePickingModalClose = () => {
+    setShowPickingModal(false);
+    loadMaterials();
+  };
+
   const handleDeleteMaterial = async (id) => {
     if (window.confirm('Are you sure you want to delete this material?')) {
       try {
@@ -145,15 +155,30 @@ const Materials = () => {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Materials Management</h1>
-          <p className="text-gray-600">Manage inventory materials and stock levels</p>
+          <p className="text-gray-600">
+            {canAccessAdminFeatures 
+              ? 'Manage inventory materials and stock levels' 
+              : 'View inventory materials and record material pickups'}
+          </p>
         </div>
-        <button
-          onClick={handleAddMaterial}
-          className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
-        >
-          <Plus size={20} />
-          Add Material
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowPickingModal(true)}
+            className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+          >
+            <ClipboardList size={20} />
+            Record Material Pickup
+          </button>
+          {canAccessAdminFeatures && (
+            <button
+              onClick={handleAddMaterial}
+              className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+            >
+              <Plus size={20} />
+              Add Material
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -336,25 +361,31 @@ const Materials = () => {
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button
-                            onClick={() => handleEditMaterial(material)}
-                            className="text-indigo-600 hover:text-indigo-900 mr-4"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleAdjustStock(material)}
-                            className="text-green-600 hover:text-green-900 mr-4"
-                            title="Stock Adjustment"
-                          >
-                            <Plus size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteMaterial(material.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Delete
-                          </button>
+                          {canAccessAdminFeatures ? (
+                            <>
+                              <button
+                                onClick={() => handleEditMaterial(material)}
+                                className="text-indigo-600 hover:text-indigo-900 mr-4"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleAdjustStock(material)}
+                                className="text-green-600 hover:text-green-900 mr-4"
+                                title="Stock Adjustment"
+                              >
+                                <Plus size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteMaterial(material.id)}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                Delete
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-gray-400 text-sm">View Only</span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -381,6 +412,14 @@ const Materials = () => {
           material={adjustingMaterial}
           onClose={handleStockModalClose}
           onSave={handleStockModalClose}
+        />
+      )}
+
+      {/* Material Picking Modal */}
+      {showPickingModal && (
+        <MaterialPickingModal
+          onClose={handlePickingModalClose}
+          onSave={handlePickingModalClose}
         />
       )}
     </div>

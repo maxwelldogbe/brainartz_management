@@ -308,7 +308,7 @@ class InventoryService {
   /**
    * Get material categories (from Material.CATEGORY_CHOICES)
    */
-  async getCategories(params = {}) {
+  async getCategories() {
     try {
       // These are the predefined categories from Django Material model
       const categories = [
