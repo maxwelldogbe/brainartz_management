@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useRoleAccess } from "../hooks/useRoleAccess";
 import AdminDashboard from './AdminDashboard';
 import SalesReportsSummary from '../components/SalesReportsSummary';
+import { formatMoneyGHS } from "../utils/formatMoney";
 
 export default function Dashboard() {
   const [summary, setSummary] = useState(null);
@@ -27,7 +28,6 @@ export default function Dashboard() {
             const summaryRes = await axios.get('/api/services/summary/daily/');
             setSummary(summaryRes.data);
           } catch (err) {
-            console.warn('Could not load summary data:', err);
             setSummary(null);
           }
         }
@@ -35,8 +35,6 @@ export default function Dashboard() {
         // Load user profile
         try {
           const profileRes = await axios.get('/api/authentication/profile/');
-          console.log('Profile data received:', profileRes.data);
-          console.log('Avatar value:', profileRes.data.avatar);
           
           // Store profile data (avatar will be URL string when reading)
           const profileData = {
@@ -46,13 +44,10 @@ export default function Dashboard() {
           };
           setProfile(profileData);
           setAvatarPreview(profileRes.data.avatar); // URL for preview
-          console.log('Avatar preview set to:', profileRes.data.avatar);
         } catch (err) {
-          console.warn('Could not load profile data:', err);
           setProfile({ phone: '', bio: '', avatar: null });
         }
       } catch (err) {
-        console.error('Dashboard loading error:', err);
         setError('Failed to load dashboard data');
       } finally {
         setLoading(false);
@@ -123,8 +118,6 @@ export default function Dashboard() {
       
       alert('Profile updated successfully');
     } catch (err) {
-      console.error('Failed to save profile', err);
-      console.error('Error details:', err.response?.data);
       alert('Failed to save profile changes');
     }
   };
@@ -354,7 +347,9 @@ function PersonalSummaryCard({ summary }) {
         </div>
         <div className="flex justify-between">
           <span className="text-gray-600">Today's Revenue:</span>
-          <span className="font-medium text-blue-600">${summary.revenue_today}</span>
+          <span className="font-medium text-blue-600" title={`GH₵${parseFloat(summary.revenue_today || 0).toLocaleString()}`}>
+            {formatMoneyGHS(parseFloat(summary.revenue_today || 0))}
+          </span>
         </div>
       </div>
     </div>

@@ -209,3 +209,34 @@ payment-config.json
 .idea/dataSources.local.xml
 .idea/sqlDataSources.xml
 .idea/dynamic.xml
+# ============================================
+# CRITICAL: Additional Security Protections
+# ============================================
+
+# Ensure core .env is ignored
+core/.env
+core/*.env
+
+# Database files
+core/db.sqlite3
+core/db.sqlite3-journal
+core/*.db
+core/*.sqlite
+core/*.sqlite3
+
+# Media uploads (may contain user data)
+core/media/
+
+# Static files (generated)
+core/staticfiles/
+
+# Additional frontend builds
+frontend/dist/
+frontend/build/
+
+# Build output directories (for deployment on server)
+dist/
+build/
+*/dist/
+*/build/
+

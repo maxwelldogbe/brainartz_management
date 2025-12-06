@@ -43,7 +43,6 @@ export default function Works() {
         
         await loadWorksData();
       } catch (err) {
-        console.error("Failed to load initial data:", err);
         setError("Failed to load page data");
       }
     };
@@ -62,7 +61,6 @@ export default function Works() {
       setWorks(data);
       setError(null);
     } catch (err) {
-      console.error("Failed to fetch works:", err);
       setError("Failed to load works");
     } finally {
       setLoading(false);
@@ -74,7 +72,6 @@ export default function Works() {
       const files = await workFilesAPI.getByWork(workId);
       setWorkFiles(files);
     } catch (error) {
-      console.error("Failed to load work files:", error);
       setWorkFiles([]);
     }
   };
@@ -102,7 +99,6 @@ export default function Works() {
   const handleToggleComplete = async (work) => {
     // Prevent double-clicks
     if (updatingWorks.has(work.id)) {
-      console.log('Work update already in progress for ID:', work.id);
       return;
     }
     
@@ -112,29 +108,21 @@ export default function Works() {
       
       let updatedWork;
       
-      console.log(`Toggling work completion for work ID: ${work.id}, current status: ${work.completed ? 'completed' : 'incomplete'}`);
       
       if (work.completed) {
         // Reopen work - now properly calls the backend API
-        console.log('Reopening work for corrections...');
         updatedWork = await reopenWork(work.id);
-        console.log('Work reopened successfully:', updatedWork);
         showSuccess("Work reopened for corrections");
       } else {
         // Complete work
-        console.log('Marking work as completed...');
         updatedWork = await markWorkCompleted(work.id);
-        console.log('Work completed successfully:', updatedWork);
         showSuccess("Work marked as completed");
       }
       
       // Update the work in the local state
       setWorks(prev => prev.map(w => w.id === work.id ? updatedWork : w));
-      console.log('Local state updated');
       
     } catch (error) {
-      console.error("Failed to toggle work completion:", error);
-      console.error("Error details:", {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status

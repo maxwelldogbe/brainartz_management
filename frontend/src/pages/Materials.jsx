@@ -38,9 +38,7 @@ const Materials = () => {
         low_stock: filters.lowStock
       };
       
-      console.log('🔍 Loading materials with params:', params);
       const response = await materialsAPI.getAll(params);
-      console.log('📦 Materials API response:', response);
       
       // Handle different response structures
       let materialsData = [];
@@ -51,15 +49,11 @@ const Materials = () => {
       } else if (response && Array.isArray(response.data)) {
         materialsData = response.data;
       } else {
-        console.warn('Unexpected response structure:', response);
         materialsData = [];
       }
       
-      console.log('📊 Processed materials data:', materialsData);
       setMaterials(materialsData);
     } catch (error) {
-      console.error('❌ Error loading materials:', error);
-      console.error('Error details:', {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status
@@ -73,7 +67,6 @@ const Materials = () => {
       } else if (error.response?.status >= 500) {
         setError('Server error. Please try again later.');
       } else {
-        console.log('No materials found or network error - showing empty state');
       }
       setMaterials([]);
     } finally {
@@ -127,7 +120,6 @@ const Materials = () => {
         await materialsAPI.delete(id);
         loadMaterials();
       } catch (error) {
-        console.error('Error deleting material:', error);
         setError('Failed to delete material. Please try again.');
       }
     }
@@ -144,7 +136,6 @@ const Materials = () => {
       });
       loadMaterials();
     } catch (error) {
-      console.error('Error updating stock:', error);
       setError('Failed to update stock. Please try again.');
     }
   };

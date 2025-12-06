@@ -9,7 +9,6 @@ export default function ProtectedRoute({ children }) {
 
     useEffect(() => {
         if (!loading && isAuthenticated && user) {
-            console.log('User role check:', {
                 is_admin: user.is_admin,
                 is_worker: user.is_worker,
                 is_superuser: user.is_superuser,

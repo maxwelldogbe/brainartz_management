@@ -13,7 +13,7 @@ from .models import (
     Work, Payment, EmployeeProfile, JobCategory, WorkFile,
     DailySalesReport, DailySalesReportItem, SalesReportNote, DailyExpense,
     Material, Procurement, JobMaterial, StockMovement, MaterialUsage,
-    CustomerContact, MarketingMessage
+    CustomerContact, MarketingMessage, Notification
 )
 from .serializers import (
     WorkSerializer, PaymentSerializer, EmployeeProfileSerializer, 
@@ -24,7 +24,7 @@ from .serializers import (
     MaterialSerializer, ProcurementSerializer, ProcurementDeliverySerializer,
     JobMaterialSerializer, JobMaterialCreateSerializer, StockMovementSerializer,
     StockAdjustmentSerializer, MaterialStatsSerializer, MaterialUsageSerializer,
-    CustomerContactSerializer, MarketingMessageSerializer
+    CustomerContactSerializer, MarketingMessageSerializer, NotificationSerializer
 )
 from .permissions import (
     IsOwnerOrAdminForUnsafeMethods, IsManagerOrStaffReadOnly, 
@@ -967,7 +967,7 @@ class MaterialUsageViewSet(viewsets.ReadOnlyModelViewSet):
             )
         
         try:
-            quantity_taken = Decimal(str(quantity_taken))
+            quantity_taken = int(quantity_taken)
             result = ProcurementService.record_material_usage(
                 material_id=material_id,
                 quantity_taken=quantity_taken,
@@ -1223,11 +1223,8 @@ class CustomerContactViewSet(viewsets.ModelViewSet):
             try:
                 send_sms(contact.phone, message)
                 success_count += 1
-            except Exception as e:
+            except Exception:
                 failed_count += 1
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"Failed to send SMS to {contact.phone}: {e}")
         
         return Response({
             'status': 'Bulk SMS sending completed',
@@ -1285,3 +1282,84 @@ class MarketingMessageViewSet(viewsets.ModelViewSet):
         message = self.get_object()
         message.increment_usage()
         return Response({'status': 'Template usage recorded'})
+
+
+class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for user notifications.
+    
+    list: Get paginated list of notifications for current user
+    retrieve: Get a specific notification
+    mark_read: Mark a notification as read
+    mark_all_read: Mark all notifications as read
+    delete: Delete a notification
+    unread_count: Get count of unread notifications
+    """
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        """Return notifications for current user only"""
+        user = self.request.user
+        queryset = Notification.objects.filter(recipient=user)
+        
+        # Filter by read status if specified
+        is_read = self.request.query_params.get('is_read', None)
+        if is_read is not None:
+            is_read_bool = is_read.lower() in ['true', '1', 'yes']
+            queryset = queryset.filter(is_read=is_read_bool)
+        
+        # Filter by type if specified
+        notification_type = self.request.query_params.get('type', None)
+        if notification_type:
+            queryset = queryset.filter(notification_type=notification_type)
+        
+        return queryset
+    
+    @action(detail=True, methods=['post'])
+    def mark_read(self, request, pk=None):
+        """Mark a notification as read"""
+        from .notification_service import mark_notification_read
+        
+        notification = self.get_object()
+        success = mark_notification_read(notification.id, request.user)
+        
+        if success:
+            return Response({
+                'status': 'Notification marked as read',
+                'id': notification.id
+            })
+        else:
+            return Response(
+                {'error': 'Failed to mark notification as read'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=False, methods=['post'])
+    def mark_all_read(self, request):
+        """Mark all notifications as read for current user"""
+        from .notification_service import mark_all_notifications_read
+        
+        count = mark_all_notifications_read(request.user)
+        return Response({
+            'status': 'All notifications marked as read',
+            'count': count
+        })
+    
+    @action(detail=False, methods=['get'])
+    def unread_count(self, request):
+        """Get count of unread notifications"""
+        count = Notification.objects.filter(
+            recipient=request.user,
+            is_read=False
+        ).count()
+        return Response({'count': count})
+    
+    def destroy(self, request, pk=None):
+        """Delete a notification"""
+        notification = self.get_object()
+        notification.delete()
+        return Response(
+            {'status': 'Notification deleted'},
+            status=status.HTTP_204_NO_CONTENT
+        )

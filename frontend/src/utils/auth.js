@@ -5,16 +5,13 @@ import axios from '../utils/axios';
 
 export const loginUser = async (email, password) => {
   try {
-    console.log('Making login request to:', '/auth/jwt/create/');
     const res = await axios.post('/auth/jwt/create/', { email, password });
-    console.log('Login response received:', { 
       status: res.status, 
       hasAccess: !!res.data.access, 
       hasRefresh: !!res.data.refresh 
     });
     return res.data;
   } catch (error) {
-    console.error('Login request failed:', {
       status: error.response?.status,
       message: error.message,
       data: error.response?.data
@@ -28,7 +25,6 @@ export const refreshToken = async refresh => {
     const res = await axios.post('/auth/jwt/refresh/', { refresh });
     return res.data;
   } catch (error) {
-    console.error('Token refresh failed:', error.response?.data);
     throw error;
   }
 };
@@ -38,7 +34,6 @@ export const verifyToken = async (token) => {
     const res = await axios.post('/auth/jwt/verify/', { token });
     return res.data;
   } catch (error) {
-    console.error('Token verification failed:', error.response?.data);
     throw error;
   }
 };
@@ -50,7 +45,6 @@ export const getCurrentUser = async () => {
     const res = await axios.get('/auth/users/me/');
     return res.data;
   } catch (error) {
-    console.error('Failed to get current user:', error.response?.data);
     throw error;
   }
 };
@@ -60,7 +54,6 @@ export const updateCurrentUser = async (userData) => {
     const res = await axios.patch('/auth/users/me/', userData);
     return res.data;
   } catch (error) {
-    console.error('Failed to update user:', error.response?.data);
     throw error;
   }
 };
@@ -74,7 +67,6 @@ export const changePassword = async (current_password, new_password, re_new_pass
     });
     return res.data;
   } catch (error) {
-    console.error('Password change failed:', error.response?.data);
     throw error;
   }
 };
@@ -84,7 +76,6 @@ export const resetPassword = async (email) => {
     const res = await axios.post('/auth/users/reset_password/', { email });
     return res.data;
   } catch (error) {
-    console.error('Password reset failed:', error.response?.data);
     throw error;
   }
 };
@@ -99,7 +90,6 @@ export const confirmPasswordReset = async (uid, token, new_password, re_new_pass
     });
     return res.data;
   } catch (error) {
-    console.error('Password reset confirmation failed:', error.response?.data);
     throw error;
   }
 };
@@ -107,7 +97,6 @@ export const confirmPasswordReset = async (uid, token, new_password, re_new_pass
 // =============== CUSTOM REGISTRATION (Via your authentication app) ===============
 
 export const registerUserFromToken = async (token, username, password, re_password) => {
-  console.log("Making request with token:", token);
   try {
     const res = await axios.post(`/api/authentication/register/${token}/`, { 
       username,
@@ -116,7 +105,6 @@ export const registerUserFromToken = async (token, username, password, re_passwo
     });
     return res.data;
   } catch (error) {
-    console.error("Registration error:", error.response);
     throw error;
   }
 };
@@ -128,7 +116,6 @@ export const activateUser = async (uid, token) => {
     const res = await axios.post('/auth/users/activation/', { uid, token });
     return res.data;
   } catch (error) {
-    console.error('User activation failed:', error.response?.data);
     throw error;
   }
 };
@@ -138,7 +125,6 @@ export const resendActivation = async (email) => {
     const res = await axios.post('/auth/users/resend_activation/', { email });
     return res.data;
   } catch (error) {
-    console.error('Resend activation failed:', error.response?.data);
     throw error;
   }
 };
@@ -160,7 +146,6 @@ export const isTokenExpired = (token) => {
     const currentTime = Date.now() / 1000;
     return payload.exp < currentTime;
   } catch (error) {
-    console.error('Error parsing token:', error);
     return true;
   }
 };
@@ -173,7 +158,6 @@ export const listAllUsers = async () => {
     const res = await axios.get('/auth/users/');
     return res.data;
   } catch (error) {
-    console.error('Failed to list users:', error.response?.data);
     throw error;
   }
 };
@@ -183,7 +167,6 @@ export const getUserById = async (id) => {
     const res = await axios.get(`/auth/users/${id}/`);
     return res.data;
   } catch (error) {
-    console.error('Failed to get user:', error.response?.data);
     throw error;
   }
 };
@@ -193,7 +176,6 @@ export const updateUser = async (id, userData) => {
     const res = await axios.patch(`/auth/users/${id}/`, userData);
     return res.data;
   } catch (error) {
-    console.error('Failed to update user:', error.response?.data);
     throw error;
   }
 };
@@ -203,7 +185,6 @@ export const deleteUser = async (id) => {
     const res = await axios.delete(`/auth/users/${id}/`);
     return res.data;
   } catch (error) {
-    console.error('Failed to delete user:', error.response?.data);
     throw error;
   }
 };

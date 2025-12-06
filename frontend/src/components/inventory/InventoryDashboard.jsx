@@ -5,7 +5,7 @@ import {
   TrendingUp, 
   TrendingDown, 
   AlertTriangle,
-  DollarSign,
+  Banknote,
   Clock,
   CheckCircle,
   Truck,
@@ -161,7 +161,7 @@ const InventoryDashboard = () => {
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-green-100 rounded-lg">
-              <DollarSign className="w-6 h-6 text-green-600" />
+              <Banknote className="w-6 h-6 text-green-600" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Inventory Value</p>

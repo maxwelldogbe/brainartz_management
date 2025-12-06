@@ -56,7 +56,6 @@ const StockAdjustmentModal = ({ material, onClose, onSave }) => {
 
       onSave();
     } catch (error) {
-      console.error('Stock adjustment error:', error);
       setErrors({ submit: error.response?.data?.detail || 'Failed to adjust stock. Please try again.' });
     } finally {
       setLoading(false);

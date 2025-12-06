@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, X, Package, DollarSign, Hash, Tag } from 'lucide-react';
+import { Save, X, Package, Banknote, Hash, Tag } from 'lucide-react';
 import { materialsAPI } from '../../utils/services';
 
 /**
@@ -112,7 +112,6 @@ const SimpleMaterialForm = ({
 
       onSave(response);
     } catch (error) {
-      console.error('Error saving material:', error);
       setErrors({ submit: 'Failed to save material. Please try again.' });
     } finally {
       setSaving(false);
@@ -283,7 +282,7 @@ const SimpleMaterialForm = ({
                 Unit Cost
               </label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Banknote className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="number"
                   value={formData.unit_cost}

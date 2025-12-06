@@ -19,7 +19,6 @@ export default function Customers() {
       const data = await fetchCustomers();
       setCustomers(data);
     } catch (err) {
-      console.error("Failed to fetch customers:", err);
     }
   };
 
@@ -53,7 +52,6 @@ export default function Customers() {
       await loadCustomers();
       handleCancel();
     } catch (err) {
-      console.error("Failed to save customer:", err);
     }
   };
 
@@ -62,7 +60,6 @@ export default function Customers() {
       await deleteCustomer(id);
       await loadCustomers();
     } catch (err) {
-      console.error("Failed to delete customer:", err);
     }
   };
 

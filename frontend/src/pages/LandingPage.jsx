@@ -4,6 +4,12 @@ import { Phone, Mail, MapPin, Wrench, Twitter, Instagram, Facebook, Linkedin } f
 import { FaWhatsapp } from 'react-icons/fa';
 import NavBar from '../components/NavBar';
 import AdSlot from '../components/AdSlot';
+import graphicImg from '../assets/graphic.jpeg';
+import largeFormatImg from '../assets/large format.jpeg';
+import shirtImg from '../assets/shirt.jpeg';
+import photographyImg from '../assets/Forfaits et Services de Photographie.jpeg';
+import softwareImg from '../assets/software.jpeg';
+import workshopImg from '../assets/workshop.jpeg';
 
 // Small typewriter animated title using framer-motion
 const Typewriter = ({ text = '', className = '' }) => {
@@ -40,37 +46,37 @@ const Typewriter = ({ text = '', className = '' }) => {
 const services = [
   {
     id: 'designing',
-    image: 'src/assets/graphic.jpeg',
+    image: graphicImg,
     title: 'Graphic Design',
     features: ['Flyer Design', 'Banner Design', 'Invitations'],
   },
   {
     id: 'printing',
-    image: 'src/assets/large format.jpeg',
+    image: largeFormatImg,
     title: 'Printing',
     features: ['Document printing', 'Banner, Flyer', 'Mugs, Keyholders', 'Business cards', 'Invitation cards'],
   },
   {
     id: 'textiles',
-    image: 'src/assets/shirt.jpeg',
+    image: shirtImg,
     title: 'Textiles',
     features: ['Cloth design & printing', 'Shirt printing', ],
   },
   {
     id: 'photography',
-    image: 'src/assets/Forfaits et Services de Photographie.jpeg',
+    image: photographyImg,
     title: 'Photography',
     features: ['Event photography', 'Videography', 'Picture framing', 'Photobooks',],
   },
   {
     id: 'software',
-    image: 'src/assets/software.jpeg',
+    image: softwareImg,
     title: 'Software & Web Development',
     features: ['Static Website', 'Web Applications', 'Software Development'],
   },
   {
     id: 'training',
-    image: 'src/assets/workshop.jpeg',
+    image: workshopImg,
     title: 'Training & Workshops',
     features: ['One-on-one coaching', 'Group workshops', 'Internship programs'],
   },
@@ -97,25 +103,25 @@ const ServiceCard = ({ image, title, features = [] }) => (
 const works = [
   {
     id: 'work-1',
-    image: 'src/assets/graphic.jpeg',
+    image: graphicImg,
     title: 'Branding for Cafe Lumière',
     desc: 'Logo, business cards and shop signage designed for a local cafe.',
   },
   {
     id: 'work-2',
-    image: 'src/assets/large format.jpeg',
+    image: largeFormatImg,
     title: 'Event Banners & Stands',
     desc: 'Large-format banners and roll-ups for a 3-day trade expo.',
   },
   {
     id: 'work-3',
-    image: 'src/assets/shirt.jpeg',
+    image: shirtImg,
     title: 'Branded Apparel',
     desc: 'Custom shirt design and bulk printing for a community event.',
   },
   {
     id: 'work-4',
-    image: 'src/assets/Forfaits et Services de Photographie.jpeg',
+    image: photographyImg,
     title: 'Event Photography',
     desc: 'End-to-end photography and post-processing for weddings and corporate events.',
   },
@@ -123,8 +129,8 @@ const works = [
 
 // Social links data (used as props for SocialCard)
 const socialLinks = [
-  { id: 'twitter', href: '#', Icon: Twitter, label: 'Twitter' },
-  { id: 'instagram', href: '#', Icon: Instagram, label: 'Instagram' },
+  // { id: 'twitter', href: '#', Icon: Twitter, label: 'Twitter' },
+  // { id: 'instagram', href: '#', Icon: Instagram, label: 'Instagram' },
   { id: 'facebook', href: '#', Icon: Facebook, label: 'Facebook' },
   { id: 'linkedin', href: '#', Icon: Linkedin, label: 'LinkedIn' },
   { id: 'whatsapp', href: '#', Icon: FaWhatsapp, label: 'WhatsApp' },
@@ -183,7 +189,7 @@ const LandingPage = () => {
       {/* Hero Section - background image is set on the section and the only div inside is the animated card */}
       <section
         className="w-full py-20 relative h-64 md:h-96 lg:h-[28rem] overflow-hidden bg-cover bg-center bg-no-repeat flex items-center justify-center"
-        style={{ backgroundImage: "url('src/assets/Forfaits et Services de Photographie.jpeg')" }}
+        style={{ backgroundImage: `url(${photographyImg})` }}
         role="img"
         aria-label="BrainArtz hero background"
       >
@@ -275,6 +281,7 @@ const LandingPage = () => {
               {/* <Phone className="h-8 w-8 mx-auto mb-3 text-gray-900" /> */}
               <h4 className="text-lg font-semibold mb-1">Direct Contact</h4>
               <p className="text-base mb-1"><a href="tel:+233544074731" className="underline text-blue-600">+233 544 074 731</a></p>
+              <p className="text-base mb-1"><a href="tel:+233201023135" className="underline text-blue-600">+233 201 023 135</a></p>
               <p className="text-base"><a href="mailto:info@brainartz.com" className="underline text-blue-600">info@brainartz.com</a></p>
               <p className="text-sm opacity-80 mt-1">Mon-Sat: 8AM - 6PM</p>
             </div>

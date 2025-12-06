@@ -409,7 +409,6 @@ class InventoryService {
    * Centralized error handling
    */
   handleError(error, defaultMessage) {
-    console.error('Inventory Service Error:', error);
     
     if (error.response) {
       // Server responded with error status

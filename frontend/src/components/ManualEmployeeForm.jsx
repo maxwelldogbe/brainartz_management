@@ -85,7 +85,6 @@ export default function ManualEmployeeForm({ onSuccess, onError, onCredentialsGe
         password: ''
       });
     } catch (error) {
-      console.error('Manual creation error:', error);
       
       // Check if it's a 404 (backend not implemented)
       if (error.response?.status === 404) {

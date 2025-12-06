@@ -30,10 +30,8 @@ const Procurements = () => {
       setError(null);
       
       const params = statusFilter ? { status: statusFilter } : {};
-      console.log('🔍 Loading procurements with params:', params);
       
       const response = await procurementsAPI.getAll(params);
-      console.log('🛒 Procurements API response:', response);
       
       // Handle different response structures
       let procurementsData = [];
@@ -44,15 +42,11 @@ const Procurements = () => {
       } else if (response && Array.isArray(response.data)) {
         procurementsData = response.data;
       } else {
-        console.warn('Unexpected response structure:', response);
         procurementsData = [];
       }
       
-      console.log('📊 Processed procurements data:', procurementsData);
       setProcurements(procurementsData);
     } catch (error) {
-      console.error('❌ Error loading procurements:', error);
-      console.error('Error details:', {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status
@@ -89,7 +83,6 @@ const Procurements = () => {
         delivered: all.filter(p => p.status === 'delivered').length
       });
     } catch (error) {
-      console.error('Error loading stats:', error);
       setStats({ total: 0, pending: 0, delivered: 0 });
     }
   };
@@ -117,7 +110,6 @@ const Procurements = () => {
       loadProcurements();
       loadStats();
     } catch (error) {
-      console.error('Error marking procurement as delivered:', error);
       setError('Failed to mark procurement as delivered. Please try again.');
     }
   };

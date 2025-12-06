@@ -1,21 +1,21 @@
 // src/utils/axios.js
 import axios from 'axios';
 
-// Force proxy usage in development by checking if we're on localhost
-const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const baseURL = isDev ? '' : (import.meta.env.VITE_API_URL || 'https://brainartz-management-backend.onrender.com');
+// Use relative paths for same-origin requests (production)
+// Use empty baseURL in dev to leverage Vite proxy
+const isDev = import.meta.env.DEV;
+const baseURL = isDev ? '' : '';
 
-console.log('Environment check:', {
   isDev,
   hostname: window.location.hostname,
-  baseURL: baseURL || 'Using Vite proxy',
+  baseURL: baseURL || 'Using relative paths (same origin)',
   mode: import.meta.env.MODE
 });
 
 const instance = axios.create({
   baseURL,
   timeout: 10000, // 10 second timeout
-  withCredentials: false, // Don't send cookies cross-origin
+  withCredentials: false,
   headers: {
     'Content-Type': 'application/json',
   }
@@ -26,7 +26,6 @@ instance.interceptors.request.use(config => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  console.log('API Request:', {
     method: config.method?.toUpperCase(),
     url: config.url,
     fullURL: baseURL ? `${baseURL}${config.url}` : `Proxy: ${window.location.origin}${config.url}`,
@@ -38,7 +37,6 @@ instance.interceptors.request.use(config => {
 
 instance.interceptors.response.use(
   (response) => {
-    console.log('API Response Success:', {
       status: response.status,
       url: response.config.url,
       method: response.config.method?.toUpperCase(),
@@ -49,7 +47,6 @@ instance.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error('API Response Error:', {
       status: error.response?.status,
       url: error.config?.url,
       method: error.config?.method?.toUpperCase(),
@@ -60,7 +57,6 @@ instance.interceptors.response.use(
     
     // Handle 401 errors by clearing auth state
     if (error.response?.status === 401) {
-      console.log('Unauthorized request, clearing tokens');
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
     }

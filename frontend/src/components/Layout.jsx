@@ -3,6 +3,8 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { RoleBasedContent } from "./RoleGuard";
 import { useRoleAccess } from "../hooks/useRoleAccess";
+import NotificationBell from "./notifications/NotificationBell";
+import NotificationPermissionPrompt from "./notifications/NotificationPermissionPrompt";
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -19,6 +21,9 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Notification Permission Prompt */}
+      <NotificationPermissionPrompt />
+      
       {/* Sidebar - Always fixed */}
       <aside
         className={`fixed top-0 left-0 h-screen w-72 bg-gray-900 text-white flex flex-col justify-between shadow-lg transform transition-transform duration-300 z-40 overflow-y-auto
@@ -52,9 +57,9 @@ export default function Layout() {
               Dashboard
             </NavLink>
 
-            {/* Change Password - Available to all authenticated users */}
+            {/* Notifications - Available to all authenticated users */}
             <NavLink
-              to="/portal/change-password"
+              to="/portal/notifications"
               className={({ isActive }) =>
                 `block px-3 py-2 rounded ${
                   isActive
@@ -63,8 +68,8 @@ export default function Layout() {
                 }`
               }
               onClick={() => setIsOpen(false)}
-              >
-              Change Password
+            >
+              Notifications
             </NavLink>
 
             {/* Admin-Only: Admin Dashboard */}
@@ -363,7 +368,17 @@ export default function Layout() {
 
       {/* Main content area - scrollable */}
       <div className="md:ml-72 min-h-screen min-w-0">
-        <main className="h-screen overflow-y-auto p-6">
+        {/* Top bar with notifications */}
+        <div className="sticky top-0 z-20 bg-white shadow-sm border-b border-gray-200">
+          <div className="flex items-center justify-between px-6 py-3">
+            <div className="flex-1"></div>
+            <div className="flex items-center gap-4">
+              <NotificationBell />
+            </div>
+          </div>
+        </div>
+        
+        <main className="overflow-y-auto p-6">
           <Outlet />
         </main>
       </div>

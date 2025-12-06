@@ -10,7 +10,6 @@ export default function CredentialsModal({ isOpen, credentials, onClose }) {
       setCopied({ ...copied, [field]: true });
       setTimeout(() => setCopied({ ...copied, [field]: false }), 2000);
     } catch (err) {
-      console.error('Failed to copy:', err);
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
       textArea.value = value;

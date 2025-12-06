@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../utils/axios";
+import { formatMoneyGHS } from "../utils/formatMoney";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -15,7 +16,6 @@ export default function AdminDashboard() {
       setData(res.data);
       setError(null);
     } catch (err) {
-      console.error("Failed to load admin dashboard", err);
       setError("Failed to load admin dashboard data");
     } finally {
       setLoading(false);
@@ -68,36 +68,39 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="p-4 bg-blue-600 text-white rounded-lg shadow-lg min-w-0 h-36 md:h-40 lg:h-44 overflow-hidden">
+      <div className="grid grid-cols-12 gap-4">
+        <div className="col-span-12 sm:col-span-3 p-4 bg-gradient-to-br from-purple-600 to-purple-700 text-white rounded-lg shadow min-w-0 overflow-hidden">
           <div className="flex flex-col justify-between h-full">
             <div>
-              <h3 className="text-lg font-semibold truncate">Total Works</h3>
+              <h3 className="text-sm font-medium opacity-90 truncate">Total Works</h3>
             </div>
             <div>
-              <p className="text-2xl md:text-3xl font-bold mt-1 truncate">{data.total_works}</p>
+              <p className="text-xl font-bold mt-2 truncate break-words" title={data.total_works?.toLocaleString()}>
+                {data.total_works?.toLocaleString()}
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="p-4 bg-blue-600 text-white rounded-lg shadow-lg min-w-0 h-36 md:h-40 lg:h-44 overflow-hidden">
+        <div className="col-span-12 sm:col-span-6 p-4 bg-gradient-to-br from-green-600 to-green-700 text-white rounded-lg shadow min-w-0 overflow-hidden">
           <div className="flex flex-col justify-between h-full">
             <div>
-              <h3 className="text-lg font-semibold truncate">Total Revenue</h3>
+              <h3 className="text-sm font-medium opacity-90 truncate">Total Revenue</h3>
             </div>
             <div>
-              <p className="text-2xl md:text-3xl font-bold mt-1 truncate">${data.total_revenue}</p>
+              <p className="text-xl font-bold mt-2 truncate break-words" title={`GH₵${parseFloat(data.total_revenue || 0).toLocaleString()}`}>
+                {formatMoneyGHS(parseFloat(data.total_revenue || 0))}
+              </p>
             </div>
           </div>
         </div>
 
-        <div onClick={() => navigate('/portal/customer-contacts')} className="p-4 bg-blue-600 text-white rounded-lg shadow-lg cursor-pointer hover:bg-blue-700 transition-all transform hover:scale-105 min-w-0 h-36 md:h-40 lg:h-44 overflow-hidden">
-          <div className="flex flex-col justify-between h-full">
-            <div>
-              <h3 className="text-lg font-semibold truncate">Customer Contacts</h3>
-              <p className="text-sm mt-1 opacity-90 truncate">Send Promotional SMS</p>
+        <div onClick={() => navigate('/portal/customer-contacts')} className="col-span-12 sm:col-span-3 p-3 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-lg shadow cursor-pointer hover:shadow-md transition-all min-w-0 overflow-hidden">
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <h3 className="text-sm font-medium truncate">Customer Contacts</h3>
+              <p className="text-xs mt-1 opacity-80">Send SMS</p>
             </div>
-            <div className="text-sm opacity-80">SMS</div>
           </div>
         </div>
       </div>
@@ -142,8 +145,8 @@ export default function AdminDashboard() {
                         </span>
                       </td>
                       <td className="p-3">
-                        <span className="font-bold text-green-600">
-                          ${emp.payments_total}
+                        <span className="font-bold text-green-600" title={`GH₵${parseFloat(emp.payments_total || 0).toLocaleString()}`}>
+                          {formatMoneyGHS(parseFloat(emp.payments_total || 0))}
                         </span>
                       </td>
                     </tr>

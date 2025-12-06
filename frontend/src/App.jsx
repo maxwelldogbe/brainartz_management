@@ -33,6 +33,7 @@ import StockMovements from './pages/StockMovements'
 import InventoryReports from './pages/InventoryReports'
 import CustomerContacts from './pages/CustomerContacts'
 import MarketingMessages from './pages/MarketingMessages'
+import Notifications from './pages/Notifications'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import { RoleGuard } from './components/RoleGuard'
@@ -61,6 +62,9 @@ function App() {
         
         {/* Password Change Route - Available to all authenticated users */}
         <Route path='change-password' element={<ChangePassword />} />
+        
+        {/* Notifications - Available to all authenticated users */}
+        <Route path='notifications' element={<Notifications />} />
         
         {/* Admin-Only Routes */}
         <Route path='admin-dashboard' element={

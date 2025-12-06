@@ -77,7 +77,6 @@ export default function JobCategoryForm({ isOpen, onClose, onSave, editingCatego
       onSave(result);
       onClose();
     } catch (error) {
-      console.error('Failed to save category:', error);
       if (error.response?.data) {
         setErrors(error.response.data);
       } else {

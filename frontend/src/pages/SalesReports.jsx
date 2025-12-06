@@ -29,7 +29,6 @@ export default function SalesReports() {
       setSummary(summaryData);
       setError(null);
     } catch (err) {
-      console.error('Error loading sales reports:', err);
       setError('Failed to load sales reports. Please try again.');
     } finally {
       setLoading(false);
@@ -64,7 +63,6 @@ export default function SalesReports() {
       await salesReportsAPI.delete(reportId);
       loadReports(); // Reload data
     } catch (err) {
-      console.error('Error deleting report:', err);
       alert('Failed to delete report. Please try again.');
     }
   };
@@ -223,7 +221,6 @@ export default function SalesReports() {
       <div className="bg-white rounded-lg shadow border overflow-hidden">
         {reports.length === 0 ? (
           <div className="text-center py-12">
-            {/* <span className="text-6xl mb-4 block">📊</span> */}
             <h3 className="text-lg font-medium text-gray-900 mb-2">No sales reports found</h3>
             <p className="text-gray-600 mb-4">
               {Object.values(filters).some(v => v) 

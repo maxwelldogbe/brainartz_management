@@ -5,7 +5,7 @@ from .views import (
     EmployeeProfileViewSet, UserViewSet, WorkerViewSet,
     DailySalesReportViewSet, DailySalesReportItemViewSet, SalesReportNoteViewSet, DailyExpenseViewSet,
     MaterialViewSet, ProcurementViewSet, JobMaterialViewSet, StockMovementViewSet, MaterialUsageViewSet,
-    CustomerContactViewSet, MarketingMessageViewSet,
+    CustomerContactViewSet, MarketingMessageViewSet, NotificationViewSet,
     daily_summary, work_statistics, sales_report_summary
 )
 from .views import AdminDashboardView
@@ -33,6 +33,9 @@ router.register(r'material-usage', MaterialUsageViewSet, basename='material-usag
 # Customer Contacts & Marketing endpoints
 router.register(r'customer-contacts', CustomerContactViewSet, basename='customer-contact')
 router.register(r'marketing-messages', MarketingMessageViewSet, basename='marketing-message')
+
+# Notification endpoints
+router.register(r'notifications', NotificationViewSet, basename='notification')
 
 urlpatterns = [
     path('', include(router.urls)),

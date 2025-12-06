@@ -8,7 +8,7 @@ import {
   Trash2, 
   Settings,
   MoreVertical,
-  DollarSign,
+  Banknote,
   Tag
 } from 'lucide-react';
 
@@ -143,7 +143,7 @@ const MaterialCard = ({
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">Unit Cost:</span>
             <div className="flex items-center gap-1">
-              <DollarSign size={14} className="text-gray-400" />
+              <Banknote size={14} className="text-gray-400" />
               <span className="font-medium text-gray-900">
                 {material.unitCost.toFixed(2)}
               </span>
@@ -154,7 +154,7 @@ const MaterialCard = ({
           <div className="flex items-center justify-between pt-2 border-t border-gray-100">
             <span className="text-sm font-medium text-gray-700">Total Value:</span>
             <div className="flex items-center gap-1">
-              <DollarSign size={14} className="text-green-600" />
+              <Banknote size={14} className="text-green-600" />
               <span className="font-semibold text-green-700">
                 {totalValue.toFixed(2)}
               </span>

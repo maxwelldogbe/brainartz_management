@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { salesReportsAPI } from '../utils/services';
-import { formatCurrency, formatDate } from '../types/salesReports';
+import { formatDate } from '../types/salesReports';
+import { formatMoneyGHS } from '../utils/formatMoney';
 
 export default function SalesReportsSummary() {
   const [summary, setSummary] = useState(null);
@@ -19,7 +20,6 @@ export default function SalesReportsSummary() {
       setSummary(summaryData);
       setError(null);
     } catch (err) {
-      console.error('Error loading sales reports summary:', err);
       setError('Failed to load sales reports summary');
     } finally {
       setLoading(false);
@@ -87,7 +87,9 @@ export default function SalesReportsSummary() {
           <div className="text-xs text-gray-500">Total Reports</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-green-600">{formatCurrency(summary.total_revenue)}</div>
+          <div className="text-2xl font-bold text-green-600" title={`GH₵${parseFloat(summary.total_revenue || 0).toLocaleString()}`}>
+            {formatMoneyGHS(parseFloat(summary.total_revenue || 0))}
+          </div>
           <div className="text-xs text-gray-500">This Month</div>
         </div>
       </div>
@@ -130,11 +132,11 @@ export default function SalesReportsSummary() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-medium text-gray-900">
-                    {formatCurrency(report.total_sales_amount)}
+                  <div className="text-sm font-medium text-gray-900" title={`GH₵${parseFloat(report.total_sales_amount || 0).toLocaleString()}`}>
+                    {formatMoneyGHS(parseFloat(report.total_sales_amount || 0))}
                   </div>
-                  <div className="text-xs text-green-600">
-                    {formatCurrency(report.net_total)} net
+                  <div className="text-xs text-green-600" title={`GH₵${parseFloat(report.net_total || 0).toLocaleString()}`}>
+                    {formatMoneyGHS(parseFloat(report.net_total || 0))} net
                   </div>
                 </div>
               </Link>
@@ -150,8 +152,8 @@ export default function SalesReportsSummary() {
             <span className="text-orange-600 mr-2">⚠️</span>
             <div>
               <div className="text-sm font-medium text-orange-800">Outstanding Payments</div>
-              <div className="text-xs text-orange-600">
-                {formatCurrency(summary.total_outstanding)} pending collection
+              <div className="text-xs text-orange-600" title={`GH₵${parseFloat(summary.total_outstanding || 0).toLocaleString()}`}>
+                {formatMoneyGHS(parseFloat(summary.total_outstanding || 0))} pending collection
               </div>
             </div>
           </div>

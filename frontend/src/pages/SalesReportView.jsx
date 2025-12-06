@@ -32,7 +32,6 @@ export default function SalesReportView() {
       setReport(reportData);
       setError(null);
     } catch (err) {
-      console.error('Error loading report:', err);
       setError('Failed to load report. Please try again.');
     } finally {
       setLoading(false);
@@ -55,7 +54,6 @@ export default function SalesReportView() {
       setNoteForm({ note: '' });
       await loadReport();
     } catch (err) {
-      console.error('Error saving note:', err);
       alert('Failed to save note. Please try again.');
     }
   };
@@ -67,7 +65,6 @@ export default function SalesReportView() {
       await salesReportsAPI.deleteNote(noteId);
       await loadReport();
     } catch (err) {
-      console.error('Error deleting note:', err);
       alert('Failed to delete note. Please try again.');
     }
   };

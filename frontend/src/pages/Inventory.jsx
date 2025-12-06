@@ -37,7 +37,6 @@ const Inventory = () => {
         loadRecentUsages()
       ]);
     } catch (error) {
-      console.error('❌ Error loading inventory data:', error);
     } finally {
       setLoading(false);
     }
@@ -45,24 +44,18 @@ const Inventory = () => {
 
   const loadMaterials = async () => {
     try {
-      console.log('🔍 Loading materials for inventory overview...');
       const response = await materialsAPI.getAll({ limit: 10 });
-      console.log('📦 Materials response:', response);
       
       const materialsData = Array.isArray(response) ? response : (response?.results || response?.data || []);
-      console.log('📊 Processed materials:', materialsData);
       setMaterials(materialsData);
     } catch (error) {
-      console.error('❌ Error loading materials:', error);
       setMaterials([]);
     }
   };
 
   const loadStats = async () => {
     try {
-      console.log('📊 Loading material statistics...');
       const response = await materialsAPI.getStatistics();
-      console.log('📈 Stats response:', response);
       
       // Handle the new statistics structure
       if (response && typeof response === 'object') {
@@ -77,7 +70,6 @@ const Inventory = () => {
         }));
       }
     } catch (error) {
-      console.error('❌ Error loading stats:', error);
     }
   };
 
@@ -91,7 +83,6 @@ const Inventory = () => {
       const pendingCount = procurementsData.filter(p => p.status === 'pending').length;
       setStats(prev => ({ ...prev, pendingProcurements: pendingCount }));
     } catch (error) {
-      console.error('❌ Error loading recent procurements:', error);
     }
   };
 
@@ -101,7 +92,6 @@ const Inventory = () => {
       const movementsData = Array.isArray(response) ? response : (response?.results || []);
       setRecentMovements(movementsData);
     } catch (error) {
-      console.error('❌ Error loading recent movements:', error);
     }
   };
 
@@ -111,7 +101,6 @@ const Inventory = () => {
       const usagesData = Array.isArray(response) ? response.slice(0, 5) : (response?.results?.slice(0, 5) || []);
       setRecentUsages(usagesData);
     } catch (error) {
-      console.error('❌ Error loading recent material usage:', error);
     }
   };
 
@@ -132,7 +121,7 @@ const Inventory = () => {
           <p className="text-gray-600">Manage materials, stock levels, and procurement</p>
         </div>
         <Link
-          to="/inventory/materials/new"
+          to="/portal/inventory/materials/new"
           className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
         >
           <Plus size={20} />
@@ -221,7 +210,7 @@ const Inventory = () => {
       {/* Enhanced Quick Actions with Procurement Functions */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
         <Link
-          to="/inventory/materials"
+          to="/portal/inventory/materials"
           className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow text-center"
         >
           <Package className="mx-auto mb-2 text-blue-500" size={24} />
@@ -230,7 +219,7 @@ const Inventory = () => {
         </Link>
 
         <Link
-          to="/inventory/procurements"
+          to="/portal/inventory/procurements"
           className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow text-center"
         >
           <ShoppingCart className="mx-auto mb-2 text-green-500" size={24} />
@@ -239,7 +228,7 @@ const Inventory = () => {
         </Link>
 
         <Link
-          to="/inventory/procurement-requests"
+          to="/portal/inventory/procurement-requests"
           className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow text-center"
         >
           <Plus className="mx-auto mb-2 text-orange-500" size={24} />
@@ -248,7 +237,7 @@ const Inventory = () => {
         </Link>
 
         <Link
-          to="/inventory/stock-movements"
+          to="/portal/inventory/stock-movements"
           className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow text-center"
         >
           <TrendingUp className="mx-auto mb-2 text-purple-500" size={24} />
@@ -257,7 +246,7 @@ const Inventory = () => {
         </Link>
 
         <Link
-          to="/inventory/reports"
+          to="/portal/inventory/reports"
           className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow text-center"
         >
           <AlertTriangle className="mx-auto mb-2 text-red-500" size={24} />
@@ -273,7 +262,7 @@ const Inventory = () => {
           <div className="p-6 border-b border-gray-200">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">Recent Materials</h2>
-              <Link to="/inventory/materials" className="text-blue-500 hover:text-blue-700 text-sm">
+              <Link to="/portal/inventory/materials" className="text-blue-500 hover:text-blue-700 text-sm">
                 View All →
               </Link>
             </div>
@@ -284,7 +273,7 @@ const Inventory = () => {
               <h3 className="text-lg font-medium text-gray-900 mb-2">No materials yet</h3>
               <p className="text-gray-600 mb-6">Get started by adding your first material.</p>
               <Link
-                to="/inventory/materials"
+                to="/portal/inventory/materials"
                 className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
               >
                 Add Material
@@ -327,7 +316,7 @@ const Inventory = () => {
           <div className="p-6 border-b border-gray-200">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">Recent Procurements</h2>
-              <Link to="/inventory/procurements" className="text-blue-500 hover:text-blue-700 text-sm">
+              <Link to="/portal/inventory/procurements" className="text-blue-500 hover:text-blue-700 text-sm">
                 View All →
               </Link>
             </div>
@@ -373,7 +362,7 @@ const Inventory = () => {
           <div className="p-6 border-b border-gray-200">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">Recent Stock Movements</h2>
-              <Link to="/inventory/stock-movements" className="text-blue-500 hover:text-blue-700 text-sm">
+              <Link to="/portal/inventory/stock-movements" className="text-blue-500 hover:text-blue-700 text-sm">
                 View All →
               </Link>
             </div>

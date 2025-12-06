@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   ShoppingCart, 
   Calendar, 
-  DollarSign, 
+  Banknote, 
   Package, 
   Clock, 
   CheckCircle, 
@@ -191,7 +191,7 @@ const ProcurementCard = ({
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">Total Cost:</span>
             <div className="flex items-center gap-1">
-              <DollarSign size={14} className="text-green-600" />
+              <Banknote size={14} className="text-green-600" />
               <span className="font-semibold text-green-700">
                 {procurement.totalCost?.toFixed(2) || '0.00'}
               </span>

@@ -17,7 +17,6 @@ export function AuthProvider({ children }) {
             axios.get('/auth/users/me/')
                 .then(res => {
                     setUser(res.data);
-                    console.log('User loaded:', res.data); // Debug user roles
                 })
                 .catch(() => {
                     setUser(null);
@@ -32,20 +31,17 @@ export function AuthProvider({ children }) {
     }, []);
 
     const login = (token, refreshToken) => {
-        console.log('Starting login process with tokens');
         localStorage.setItem('token', token);
         localStorage.setItem('refreshToken', refreshToken);
         
         // fetch user after login and return promise so callers can await it
         return axios.get('/auth/users/me/')
             .then(res => { 
-                console.log('User data fetched successfully:', res.data);
                 setUser(res.data);
                 setIsAuthenticated(true); // Set authentication AFTER user is loaded
                 return res.data; 
             })
             .catch(error => { 
-                console.error('Failed to fetch user after login:', error);
                 setUser(null); 
                 setIsAuthenticated(false);
                 // Clean up tokens on user fetch failure

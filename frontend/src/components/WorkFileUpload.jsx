@@ -19,13 +19,11 @@ export default function WorkFileUpload({ workId, files = [], onFilesUpdate }) {
       }
       
       if (result.errors && result.errors.length > 0) {
-        console.warn('Upload errors:', result.errors);
         showWarning(`${result.errors.length} file${result.errors.length !== 1 ? 's' : ''} failed to upload`);
       }
       
       onFilesUpdate?.(); // Refresh files list
     } catch (error) {
-      console.error('Upload error:', error);
       showError('Upload failed. Please try again.');
     } finally {
       setUploading(false);
@@ -67,7 +65,6 @@ export default function WorkFileUpload({ workId, files = [], onFilesUpdate }) {
       showSuccess('File deleted successfully');
       onFilesUpdate?.();
     } catch (error) {
-      console.error('Delete error:', error);
       showError('Failed to delete file');
     }
   };

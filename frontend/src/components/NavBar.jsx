@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Twitter, Instagram, Facebook, Linkedin } from 'lucide-react';
+import logo from '../assets/BrainArtz-black.png';
 
 const NavBar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -10,7 +11,7 @@ const NavBar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto">
   <div className="bg-white/30 backdrop-blur-sm border border-white/20 px-3 sm:px-4 py-3 flex justify-between items-center rounded-md shadow-sm">
           <div className="flex items-center space-x-3">
-            <img src="src/assets/BrainArtz-black.png" alt="BrainArtz Logo" className="h-8 w-8" />
+            <img src={logo} alt="BrainArtz Logo" className="h-8 w-8" />
             <h1 className="text-2xl font-bold text-gray-900">BrainArtz</h1>
           </div>
 

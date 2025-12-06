@@ -6,7 +6,7 @@ import {
   Calendar,
   AlertTriangle,
   Package,
-  DollarSign,
+  Banknote,
   Hash,
   FileText
 } from 'lucide-react';
@@ -56,7 +56,6 @@ const SimpleProcurementForm = ({
       const materialsData = Array.isArray(response) ? response : (response?.results || response?.data || []);
       setMaterials(materialsData);
     } catch (error) {
-      console.error('Error loading materials:', error);
       setMaterials([]);
     } finally {
       setLoading(false);
@@ -123,7 +122,6 @@ const SimpleProcurementForm = ({
       onSave(response);
       onClose();
     } catch (error) {
-      console.error('Error saving procurement:', error);
       
       // Display backend validation errors if available
       if (error.response?.data) {
