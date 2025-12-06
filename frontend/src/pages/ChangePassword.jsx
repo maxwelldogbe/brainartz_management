@@ -56,7 +56,6 @@ export default function ChangePassword() {
             }, 2000);
 
         } catch (err) {
-            console.error('Password change error:', err);
             
             let errorMessage = 'Failed to change password. Please try again.';
             

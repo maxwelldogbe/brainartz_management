@@ -188,7 +188,7 @@ const MaterialList = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Value</p>
-              <p className="text-xl font-semibold">${stats.totalValue.toFixed(2)}</p>
+              <p className="text-xl font-semibold">GH₵{stats.totalValue.toFixed(2)}</p>
             </div>
           </div>
         </div>
@@ -406,7 +406,7 @@ const MaterialList = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            ${material.unitCost.toFixed(2)}
+                            GH₵{material.unitCost.toFixed(2)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {stockLevel === 'out' ? (

@@ -593,3 +593,78 @@ class MarketingMessage(models.Model):
         self.times_used += 1
         self.last_used = timezone.now()
         self.save(update_fields=['times_used', 'last_used'])
+
+
+class Notification(models.Model):
+    """Real-time notifications for work and inventory updates"""
+    
+    NOTIFICATION_TYPES = [
+        # Work notifications
+        ('new_work', 'New Work'),
+        ('work_reopened', 'Work Reopened'),
+        ('work_completed', 'Work Completed'),
+        
+        # Inventory notifications
+        ('low_stock', 'Low Stock Alert'),
+        ('material_request', 'Material Request'),
+        ('procurement_created', 'Procurement Created'),
+        ('procurement_delivered', 'Procurement Delivered'),
+        ('material_pickup', 'Material Pickup'),
+    ]
+    
+    recipient = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='notifications'
+    )
+    notification_type = models.CharField(
+        max_length=30,
+        choices=NOTIFICATION_TYPES
+    )
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    
+    # Related objects (optional - depends on notification type)
+    work_order = models.ForeignKey(
+        Work,
+        on_delete=models.CASCADE,
+        related_name='notifications',
+        null=True,
+        blank=True
+    )
+    material = models.ForeignKey(
+        Material,
+        on_delete=models.CASCADE,
+        related_name='notifications',
+        null=True,
+        blank=True
+    )
+    procurement = models.ForeignKey(
+        Procurement,
+        on_delete=models.CASCADE,
+        related_name='notifications',
+        null=True,
+        blank=True
+    )
+    
+    is_read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['recipient', '-created_at']),
+            models.Index(fields=['recipient', 'is_read']),
+        ]
+    
+    def __str__(self):
+        return f"{self.notification_type} - {self.recipient.username}"
+    
+    def mark_as_read(self):
+        """Mark notification as read"""
+        if not self.is_read:
+            from django.utils import timezone
+            self.is_read = True
+            self.read_at = timezone.now()
+            self.save(update_fields=['is_read', 'read_at'])

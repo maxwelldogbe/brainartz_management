@@ -47,7 +47,6 @@ export default function CustomerContacts() {
       setError(null);
     } catch (err) {
       setError('Failed to load customer contacts');
-      console.error('Error fetching contacts:', err);
     } finally {
       setLoading(false);
     }
@@ -58,7 +57,6 @@ export default function CustomerContacts() {
       const data = await marketingMessagesAPI.list({ is_active: 'true' });
       setMessageTemplates(data);
     } catch (err) {
-      console.error('Error fetching message templates:', err);
     }
   }, []);
 
@@ -148,7 +146,6 @@ export default function CustomerContacts() {
       setSelectedContacts([]);
     } catch (err) {
       showError('Failed to send SMS. Please try again.');
-      console.error('Error sending bulk SMS:', err);
     } finally {
       setSendingBulkSMS(false);
     }
@@ -188,7 +185,6 @@ export default function CustomerContacts() {
       fetchContacts();
     } catch (err) {
       showError('Failed to add customer. Please check the details and try again.');
-      console.error('Error adding customer:', err);
     }
   };
 
@@ -340,7 +336,7 @@ export default function CustomerContacts() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      ${parseFloat(contact.total_spent).toFixed(2)}
+                      GH₵{parseFloat(contact.total_spent).toFixed(2)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

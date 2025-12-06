@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { analyticsAPI } from '../utils/services';
-import { BarChart, TrendingUp, DollarSign, CheckCircle, Clock, Users } from 'lucide-react';
+import { BarChart, TrendingUp, Banknote, CheckCircle, Clock, Users } from 'lucide-react';
 
 export default function WorkAnalytics() {
   const [analytics, setAnalytics] = useState(null);
@@ -23,7 +23,6 @@ export default function WorkAnalytics() {
       setAnalytics({ workStats, dailySummary });
       setError(null);
     } catch (error) {
-      console.error('Failed to load analytics:', error);
       setError('Failed to load analytics data');
     } finally {
       setLoading(false);
@@ -118,8 +117,8 @@ export default function WorkAnalytics() {
         
         <StatCard
           title="Total Revenue"
-          value={`$${(analytics?.workStats?.overall?.total_revenue || 0).toLocaleString()}`}
-          icon={<DollarSign className="h-5 w-5" />}
+          value={`${(analytics?.workStats?.overall?.total_revenue || 0).toLocaleString()}`}
+          icon={<span className="text-xl font-bold">₵</span>}
           color="purple"
         />
       </div>
@@ -204,7 +203,7 @@ export default function WorkAnalytics() {
               <CheckCircle className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-sm font-medium text-gray-900">5 works completed today</p>
-                <p className="text-xs text-gray-600">Revenue: $2,850</p>
+                <p className="text-xs text-gray-600">Revenue: GH₵2,850</p>
               </div>
             </div>
             
@@ -212,7 +211,7 @@ export default function WorkAnalytics() {
               <TrendingUp className="h-5 w-5 text-blue-600" />
               <div>
                 <p className="text-sm font-medium text-gray-900">3 new works created</p>
-                <p className="text-xs text-gray-600">Potential value: $1,200</p>
+                <p className="text-xs text-gray-600">Potential value: GH₵1,200</p>
               </div>
             </div>
             
@@ -241,7 +240,7 @@ export default function WorkAnalytics() {
             
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
-                ${(analytics.dailySummary.total_revenue || 0).toLocaleString()}
+                GH₵{(analytics.dailySummary.total_revenue || 0).toLocaleString()}
               </div>
               <p className="text-sm text-gray-600">Revenue Today</p>
             </div>
@@ -306,7 +305,7 @@ function CategoryCard({ category }) {
           <div className="text-gray-500">Done</div>
         </div>
         <div className="text-center">
-          <div className="font-semibold text-blue-600">${(category.total_revenue || 0).toLocaleString()}</div>
+          <div className="font-semibold text-blue-600">GH₵{(category.total_revenue || 0).toLocaleString()}</div>
           <div className="text-gray-500">Revenue</div>
         </div>
       </div>

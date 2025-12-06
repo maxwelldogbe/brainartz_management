@@ -30,14 +30,11 @@ const StockMovements = () => {
         date_to: filters.dateTo
       };
       
-      console.log('🔍 Loading stock movements with params:', params);
       const response = await stockMovementsAPI.getAll(params);
-      console.log('📦 Stock movements response:', response);
       
       const movementsData = Array.isArray(response) ? response : (response?.results || response?.data || []);
       setMovements(movementsData);
     } catch (error) {
-      console.error('❌ Error loading stock movements:', error);
       setError('Failed to load stock movements. Please try again.');
       setMovements([]);
     } finally {

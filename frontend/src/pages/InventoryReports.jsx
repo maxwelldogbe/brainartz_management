@@ -25,7 +25,6 @@ const InventoryReports = () => {
   const loadReportData = async () => {
     try {
       setLoading(true);
-      console.log('📊 Loading inventory reports...');
 
       // Load multiple data sources in parallel
       const [materialsResponse, movementsResponse, procurementsResponse] = await Promise.all([
@@ -85,7 +84,6 @@ const InventoryReports = () => {
       });
 
     } catch (error) {
-      console.error('❌ Error loading report data:', error);
     } finally {
       setLoading(false);
     }
@@ -101,7 +99,7 @@ const InventoryReports = () => {
       ['Total Materials', reportData.overview.totalMaterials],
       ['Low Stock Items', reportData.overview.lowStockCount],
       ['Out of Stock Items', reportData.overview.outOfStockCount],
-      ['Total Inventory Value', `$${reportData.overview.totalValue?.toFixed(2)}`],
+      ['Total Inventory Value', `GH₵${reportData.overview.totalValue?.toFixed(2)}`],
       ['Total Movements', reportData.overview.totalMovements],
       [''],
       ['Low Stock Items'],
@@ -197,7 +195,7 @@ const InventoryReports = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm">Total Value</p>
-              <p className="text-2xl font-bold text-green-600">${reportData.overview.totalValue?.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-green-600">GH₵{reportData.overview.totalValue?.toFixed(2)}</p>
             </div>
             <TrendingUp className="text-green-500" size={24} />
           </div>

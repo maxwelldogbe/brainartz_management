@@ -1,4 +1,5 @@
 // Sales Reports Type Definitions
+import { formatMoneyGHS } from '../utils/formatMoney';
 
 /**
  * @typedef {Object} DailySalesReport
@@ -104,10 +105,8 @@ export const getExpenseCategoryLabel = (category) => {
 };
 
 export const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(parseFloat(amount || 0));
+  // Use formatMoneyGHS for consistent GH₵ formatting
+  return formatMoneyGHS(parseFloat(amount || 0));
 };
 
 export const formatDate = (date) => {

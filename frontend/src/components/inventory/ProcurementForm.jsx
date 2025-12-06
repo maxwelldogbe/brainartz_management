@@ -9,7 +9,7 @@ import {
   Calendar,
   AlertTriangle,
   Package,
-  DollarSign,
+  Banknote,
   Hash,
   FileText
 } from 'lucide-react';
@@ -275,7 +275,6 @@ const ProcurementForm = ({
         onSuccess(result.data);
       }
     } catch (err) {
-      console.error('Form submission error:', err);
     }
   };
 
@@ -516,7 +515,7 @@ const ProcurementForm = ({
                     <div>
                       <label className="block text-xs text-gray-600 mb-1">Unit Cost</label>
                       <div className="relative">
-                        <DollarSign className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
+                        <Banknote className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
                         <input
                           type="number"
                           value={material.unitCost}

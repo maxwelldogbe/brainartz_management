@@ -22,7 +22,6 @@ export default function MarketingMessages() {
       setMessages(data);
     } catch (err) {
       showError('Failed to load marketing messages');
-      console.error('Error fetching messages:', err);
     } finally {
       setLoading(false);
     }
@@ -111,7 +110,6 @@ export default function MarketingMessages() {
       fetchMessages();
     } catch (err) {
       showError('Failed to save message template');
-      console.error('Error saving message:', err);
     } finally {
       setSaving(false);
     }
@@ -128,7 +126,6 @@ export default function MarketingMessages() {
       fetchMessages();
     } catch (err) {
       showError('Failed to delete message template');
-      console.error('Error deleting message:', err);
     }
   };
 
@@ -139,7 +136,6 @@ export default function MarketingMessages() {
       fetchMessages();
     } catch (err) {
       showError('Failed to update message status');
-      console.error('Error toggling active:', err);
     }
   };
 

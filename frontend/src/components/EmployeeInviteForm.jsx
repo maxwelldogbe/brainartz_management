@@ -64,7 +64,6 @@ export default function EmployeeInviteForm({ onSuccess, onError, onFallbackSugge
       // Reset form on success
       setForm({ phone: '', email: '' });
     } catch (error) {
-      console.error('Invite error:', error);
       
       // Check if it's a 404 (backend not implemented)
       if (error.response?.status === 404) {

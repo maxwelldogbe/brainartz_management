@@ -221,7 +221,7 @@ export default function WorkFilters({ filters, onFiltersChange, categories = [],
             
             {(filters.min_price || filters.max_price) && (
               <span className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
-                Price: ${filters.min_price || '0'} - ${filters.max_price || '∞'}
+                Price: GH₵{filters.min_price || '0'} - GH₵{filters.max_price || '∞'}
                 <button
                   onClick={() => {
                     handleFilterChange('min_price', '');

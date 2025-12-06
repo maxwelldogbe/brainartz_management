@@ -21,7 +21,6 @@ export default function Workers() {
       const data = await fetchWorkers();
       setWorkers(data);
     } catch (err) {
-      console.error('Failed to load workers', err);
       setWorkers([]);
       showNotification('Failed to load employees', 'error');
     } finally {
@@ -55,7 +54,6 @@ export default function Workers() {
       setWorkers(workers.filter(w => w.id !== id));
       showNotification(`${name} has been deleted`, 'success');
     } catch (err) {
-      console.error('Failed to delete user', err);
       showNotification('Failed to delete user', 'error');
     } finally {
       setWorkerActionLoading(id, false);
@@ -69,7 +67,6 @@ export default function Workers() {
       setWorkers(workers.map(w => w.id === id ? { ...w, is_active: !active } : w));
       showNotification(`${name} has been ${!active ? 'enabled' : 'disabled'}`, 'success');
     } catch (err) {
-      console.error('Failed to update user active state', err);
       showNotification('Failed to update user state', 'error');
     } finally {
       setWorkerActionLoading(id, false);
@@ -115,7 +112,6 @@ export default function Workers() {
         }
       }
     } catch (err) {
-      console.error('Failed to resend credentials', err);
       const errorMsg = err.response?.data?.error || 'Failed to process request';
       showNotification(errorMsg, 'error');
     } finally {

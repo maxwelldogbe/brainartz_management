@@ -35,7 +35,6 @@ export default function EnhancedWorkForm({
         setCategories(categoriesData);
         setWorkers(workersData.filter(worker => worker.is_worker || worker.is_admin));
       } catch (error) {
-        console.error('Failed to load dropdown options:', error);
         showError('Failed to load form options');
       }
     };
@@ -146,7 +145,6 @@ export default function EnhancedWorkForm({
       onSave(result);
       onClose();
     } catch (error) {
-      console.error('Failed to save work:', error);
       if (error.response?.data) {
         setErrors(error.response.data);
       } else {

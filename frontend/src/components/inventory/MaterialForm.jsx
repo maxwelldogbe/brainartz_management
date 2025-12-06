@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, X, Package, DollarSign, Hash, Tag, FileText, Users } from 'lucide-react';
+import { Save, X, Package, Banknote, Hash, Tag, FileText, Users } from 'lucide-react';
 import { useInventory } from '../../hooks/inventory/useInventory';
 import { validateInventoryForm } from '../../utils/inventoryValidation';
 
@@ -119,7 +119,6 @@ const MaterialForm = ({
         onSuccess(result.data);
       }
     } catch (err) {
-      console.error('Form submission error:', err);
     }
   };
 
@@ -258,7 +257,7 @@ const MaterialForm = ({
       {/* Pricing & Stock */}
       <div className="space-y-4">
         <h4 className="font-medium text-gray-900 flex items-center gap-2">
-          <DollarSign size={16} />
+          <Banknote size={16} />
           Pricing & Stock Information
         </h4>
 
@@ -269,7 +268,7 @@ const MaterialForm = ({
               Unit Cost ($) *
             </label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Banknote className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="number"
                 id="unitCost"

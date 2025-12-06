@@ -3,7 +3,7 @@ import {
   Clock, 
   ShoppingCart, 
   Calendar, 
-  DollarSign, 
+  Banknote, 
   AlertTriangle,
   CheckCircle,
   Eye,
@@ -252,7 +252,7 @@ const PendingProcurementsWidget = () => {
                           <div className="flex items-center gap-2 text-sm">
                             <DollarSign size={14} className="text-gray-400" />
                             <span className="text-gray-700">
-                              ${procurement.totalCost?.toFixed(2) || '0.00'}
+                              GH₵{procurement.totalCost?.toFixed(2) || '0.00'}
                             </span>
                           </div>
                           

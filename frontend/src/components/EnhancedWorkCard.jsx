@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pencil, CheckCircle, RotateCcw, FolderOpen, User, Calendar, DollarSign } from 'lucide-react';
+import { Pencil, CheckCircle, RotateCcw, FolderOpen, User, Calendar, Banknote, Check, Clock, ClipboardList } from 'lucide-react';
 
 export default function EnhancedWorkCard({ 
   work, 
@@ -19,9 +19,9 @@ export default function EnhancedWorkCard({
 
   const getStatusIcon = (status) => {
     const icons = {
-      'completed': '✅',
-      'in_progress': '⏳',
-      'pending': '📋'
+      'completed': <Check className="h-4 w-4" />,
+      'in_progress': <Clock className="h-4 w-4" />,
+      'pending': <ClipboardList className="h-4 w-4" />
     };
     return icons[status] || icons.pending;
   };
@@ -33,9 +33,9 @@ export default function EnhancedWorkCard({
   };
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-GH', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'GHS'
     }).format(price);
   };
 
@@ -60,11 +60,11 @@ export default function EnhancedWorkCard({
           
           <div className="ml-4">
             <span 
-              className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium text-white"
+              className="inline-flex items-center justify-center p-2 rounded-full text-white"
               style={{ backgroundColor: getStatusColor(status) }}
+              title={status.replace('_', ' ').toUpperCase()}
             >
-              {getStatusIcon(status)} 
-              {status.replace('_', ' ').toUpperCase()}
+              {getStatusIcon(status)}
             </span>
           </div>
         </div>
@@ -106,7 +106,7 @@ export default function EnhancedWorkCard({
         {/* Meta Information */}
         <div className="grid grid-cols-2 gap-4 mb-4 text-sm text-gray-600">
           <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
+            <Banknote className="h-4 w-4" />
             <span className="font-semibold text-gray-900">
               {formatPrice(work.price)}
             </span>
@@ -148,19 +148,19 @@ export default function EnhancedWorkCard({
           <div className="flex items-center gap-2">
             <button 
               onClick={() => onEdit(work)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              className="inline-flex items-center justify-center p-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              title="Edit"
             >
-              <Pencil className="h-3 w-3" />
-              Edit
+              <Pencil className="h-4 w-4" />
             </button>
             
             {work.files_count === 0 && (
               <button 
                 onClick={() => onViewFiles(work)}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+                className="inline-flex items-center justify-center p-2 text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+                title="Add Files"
               >
-                <FolderOpen className="h-3 w-3" />
-                Add Files
+                <FolderOpen className="h-4 w-4" />
               </button>
             )}
           </div>
@@ -168,29 +168,21 @@ export default function EnhancedWorkCard({
           <button 
             onClick={() => onToggleComplete(work)}
             disabled={isUpdating}
-            className={`inline-flex items-center gap-1 px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+            className={`inline-flex items-center justify-center p-2 rounded-md transition-colors ${
               isUpdating
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 : work.completed 
                 ? 'text-orange-700 bg-orange-50 hover:bg-orange-100' 
                 : 'text-green-700 bg-green-50 hover:bg-green-100'
             }`}
+            title={isUpdating ? 'Updating...' : work.completed ? 'Reopen' : 'Complete'}
           >
             {isUpdating ? (
-              <>
-                <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                Updating...
-              </>
+              <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
             ) : work.completed ? (
-              <>
-                <RotateCcw className="h-3 w-3" />
-                Reopen
-              </>
+              <RotateCcw className="h-4 w-4" />
             ) : (
-              <>
-                <CheckCircle className="h-3 w-3" />
-                Complete
-              </>
+              <CheckCircle className="h-4 w-4" />
             )}
           </button>
         </div>
@@ -288,7 +280,7 @@ export function WorkTable({
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="text-sm text-gray-700 font-medium">{new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(work.price)}</div>
+            <div className="text-sm text-gray-700 font-medium">{new Intl.NumberFormat('en-GH',{style:'currency',currency:'GHS'}).format(work.price)}</div>
             <div className="text-xs text-gray-500">{new Date(work.created_at).toLocaleDateString()}</div>
             <div>
               <button onClick={() => onEdit(work)} className="px-2 py-1 text-xs bg-gray-100 rounded">Edit</button>

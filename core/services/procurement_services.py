@@ -8,11 +8,8 @@ from django.utils import timezone
 from decimal import Decimal
 # from channels.layers import get_channel_layer  # Temporarily commented out
 # from asgiref.sync import async_to_sync  # Temporarily commented out
-import logging
 
 from .models import Material, Procurement, JobMaterial, StockMovement, MaterialUsage
-
-logger = logging.getLogger(__name__)
 
 
 class ProcurementService:
@@ -96,7 +93,6 @@ class ProcurementService:
             except Procurement.DoesNotExist:
                 raise ValueError("Procurement not found or not in pending status")
             except Exception as e:
-                logger.error(f"Error marking procurement {procurement_id} as delivered: {e}")
                 raise
     
     @staticmethod
@@ -196,7 +192,6 @@ class ProcurementService:
             except Material.DoesNotExist:
                 raise ValueError("Material not found or archived")
             except Exception as e:
-                logger.error(f"Error recording material usage for job {job_id}: {e}")
                 raise
     
     @staticmethod
@@ -268,7 +263,6 @@ class ProcurementService:
             except Material.DoesNotExist:
                 raise ValueError("Material not found or archived")
             except Exception as e:
-                logger.error(f"Error adjusting stock for material {material_id}: {e}")
                 raise
     
     # WebSocket notification methods (temporarily disabled)
@@ -276,7 +270,6 @@ class ProcurementService:
     def _emit_procurement_delivered(data):
         """Emit procurement delivered event via WebSocket"""
         # TODO: Re-enable when channels is installed
-        logger.info(f"Procurement delivered: {data}")
         pass
         # try:
         #     channel_layer = get_channel_layer()
@@ -296,7 +289,6 @@ class ProcurementService:
     def _emit_stock_updated(material):
         """Emit stock updated event via WebSocket"""
         # TODO: Re-enable when channels is installed
-        logger.info(f"Stock updated for material {material.name}: {material.current_stock}")
         pass
         # try:
         #     channel_layer = get_channel_layer()
@@ -320,7 +312,6 @@ class ProcurementService:
     def _emit_low_stock_alert(material):
         """Emit low stock alert via WebSocket"""
         # TODO: Re-enable when channels is installed
-        logger.info(f"Low stock alert for material {material.name}: {material.current_stock} <= {material.reorder_level}")
         pass
         # try:
         #     channel_layer = get_channel_layer()
@@ -428,8 +419,6 @@ class ProcurementService:
                     }
                 }
                 
-                logger.info(f"Material usage recorded: {taken_by.email} took {quantity_taken} {material.unit} of {material.name}")
-                
                 # Send WebSocket notification (when available)
                 # ProcurementService._emit_stock_updated(material)
                 # if material.is_low_stock():
@@ -440,5 +429,4 @@ class ProcurementService:
             except Material.DoesNotExist:
                 raise ValueError(f"Material with ID {material_id} not found or archived")
             except Exception as e:
-                logger.error(f"Error recording material usage: {str(e)}")
                 raise

@@ -37,7 +37,6 @@ export default function Payments() {
     try {
       setPayments(await fetchPayments());
     } catch (err) {
-      console.error("Failed to fetch payments:", err);
     }
   };
 
@@ -45,14 +44,10 @@ export default function Payments() {
     try {
       // Fetch only unpaid or partially paid works
       const worksData = await fetchUnpaidWorks();
-      console.log("Fetched works:", worksData);
-      console.log("Works count:", worksData.length);
       if (worksData.length > 0) {
-        console.log("First work sample:", worksData[0]);
       }
       setWorks(worksData);
     } catch (err) {
-      console.error("Failed to fetch unpaid works:", err);
     }
   };
 
@@ -112,7 +107,6 @@ export default function Payments() {
       await loadWorks(); // Reload works to update unpaid list
       handleCancel();
     } catch (err) {
-      console.error("Failed to save payment:", err);
     }
   };
 
@@ -121,7 +115,6 @@ export default function Payments() {
       await deletePayment(id);
       await loadPayments();
     } catch (err) {
-      console.error("Failed to delete payment:", err);
     }
   };
 
@@ -164,7 +157,7 @@ export default function Payments() {
                 } hover:bg-gray-100 transition`}
               >
                 <td className="p-3 font-medium text-gray-800">{p.id}</td>
-                <td className="p-3 font-semibold text-green-600">${p.amount}</td>
+                <td className="p-3 font-semibold text-green-600">₵{p.amount}</td>
                 <td className="p-3">{p.work_title || p.work_description}</td>
                 <td className="p-3">
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
@@ -247,7 +240,7 @@ export default function Payments() {
               </span>
             </div>
             <div className="text-lg font-semibold text-green-600">
-              ${p.amount}
+              ₵{p.amount}
             </div>
             <div className="text-sm text-gray-700">
               Work: {p.work_title || p.work_description}
@@ -427,7 +420,7 @@ export default function Payments() {
                     Amount
                   </label>
                   <p className="text-lg font-bold text-green-600">
-                    ${viewingPayment.amount}
+                    ₵{viewingPayment.amount}
                   </p>
                 </div>
               </div>

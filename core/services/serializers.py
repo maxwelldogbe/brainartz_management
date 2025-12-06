@@ -4,7 +4,7 @@ from .models import (
     Work, Payment, EmployeeProfile, JobCategory, WorkFile,
     DailySalesReport, DailySalesReportItem, SalesReportNote, DailyExpense,
     Material, Procurement, JobMaterial, StockMovement, MaterialUsage,
-    CustomerContact, MarketingMessage
+    CustomerContact, MarketingMessage, Notification
 )
 
 User = get_user_model()
@@ -603,3 +603,47 @@ class MarketingMessageSerializer(serializers.ModelSerializer):
     
     def get_full_message(self, obj):
         return obj.get_full_message()
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    """Serializer for user notifications"""
+    recipient_name = serializers.SerializerMethodField()
+    work_order_title = serializers.SerializerMethodField()
+    material_name = serializers.SerializerMethodField()
+    procurement_id = serializers.SerializerMethodField()
+    time_ago = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Notification
+        fields = [
+            'id', 'recipient', 'recipient_name', 'notification_type',
+            'title', 'message', 'work_order', 'work_order_title',
+            'material', 'material_name', 'procurement', 'procurement_id',
+            'is_read', 'read_at', 'created_at', 'time_ago'
+        ]
+        read_only_fields = ['recipient', 'created_at']
+    
+    def get_recipient_name(self, obj):
+        if obj.recipient:
+            return obj.recipient.get_full_name() or obj.recipient.username
+        return None
+    
+    def get_work_order_title(self, obj):
+        if obj.work_order:
+            return obj.work_order.title
+        return None
+    
+    def get_material_name(self, obj):
+        if obj.material:
+            return obj.material.name
+        return None
+    
+    def get_procurement_id(self, obj):
+        if obj.procurement:
+            return obj.procurement.id
+        return None
+    
+    def get_time_ago(self, obj):
+        """Return human-readable time difference"""
+        from django.utils.timesince import timesince
+        return timesince(obj.created_at)

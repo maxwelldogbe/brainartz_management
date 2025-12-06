@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loginUser } from '../utils/auth';
 import Alert from '../components/Alert';
+import logo from '../assets/BrainArtz-black.png';
 
 export default function Login() {
     const [form, setForm] = useState({ email: '', password: '' });
@@ -14,7 +15,6 @@ export default function Login() {
     // Only redirect if user is already fully authenticated
     useEffect(() => {
         if (isAuthenticated && user && !authLoading) {
-            console.log('User already authenticated, redirecting...');
             navigate('/portal', { replace: true });
         }
     }, [isAuthenticated, user, authLoading, navigate]);
@@ -37,19 +37,15 @@ export default function Login() {
         setError(null);
 
         try {
-            console.log('Attempting login with:', { email: form.email, password: '***' });
             
             // Step 1: Get tokens from backend
             const { access, refresh } = await loginUser(form.email, form.password);
-            console.log('Login API successful, tokens received');
             
             // Step 2: Set tokens and fetch user data
             const userData = await login(access, refresh);
-            console.log('User data loaded successfully:', userData);
             
             // Step 3: Navigate based on user role
             if (userData) {
-                console.log('Redirecting user after successful login');
                 // Let the ProtectedRoute handle the smart redirection
                 navigate('/portal', { replace: true });
             } else {
@@ -57,7 +53,6 @@ export default function Login() {
             }
             
         } catch (error) {
-            console.error('Login failed:', error);
             
             let errorMessage = 'Login failed. Please try again.';
             
@@ -101,7 +96,7 @@ export default function Login() {
             <div className="max-w-md w-full space-y-8">
                 <div>
                     <div className="text-center">
-                        <img className="mx-auto h-12 w-auto" src="src/assets/BrainArtz-black.png" alt="BrainArtz Logo" />
+                        <img className="mx-auto h-2 w-25" src={logo} alt="BrainArtz Logo" />
                         <h2 className="text-3xl font-extrabold text-gray-900">
                             Sign in to your account
                         </h2>

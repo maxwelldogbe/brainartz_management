@@ -93,7 +93,6 @@ export default function Register() {
       await refreshUser();
       navigate('/');
     } catch (err) {
-      console.error('Registration error:', err);
       const detail = err.response?.data?.error || 
                     err.response?.data?.detail || 
                     err.message ||
