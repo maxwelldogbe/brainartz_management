@@ -61,9 +61,10 @@ export const confirmPasswordReset = async (uid, token, new_password, re_new_pass
 
 // =============== CUSTOM REGISTRATION (Via your authentication app) ===============
 
-export const registerUserFromToken = async (token, username, password, re_password) => {
+export const registerUserFromToken = async (token, username, email, password, re_password) => {
   const res = await axios.post(`/api/authentication/register/${token}/`, { 
     username,
+    email,
     password,
     re_password,
   });

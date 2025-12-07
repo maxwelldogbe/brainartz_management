@@ -175,9 +175,10 @@ class GenerateInviteTokenView(generics.CreateAPIView):
         invite = serializer.save()
 
         token = invite.token
-        invite_link = request.build_absolute_uri(
-            reverse('accounts:register-from-invite', args=[token])
-        )
+        # Generate frontend registration URL instead of API endpoint
+        # This allows users to access the React registration page directly
+        base_url = request.build_absolute_uri('/').rstrip('/')
+        invite_link = f"{base_url}/portal/register/{token}"
 
         # Since phone is now required, always send SMS invitation
         sms_text = (
