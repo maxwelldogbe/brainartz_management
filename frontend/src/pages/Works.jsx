@@ -43,6 +43,7 @@ export default function Works() {
         
         await loadWorksData();
       } catch (err) {
+        console.error('Error loading page data:', err);
         setError("Failed to load page data");
       }
     };
@@ -61,6 +62,7 @@ export default function Works() {
       setWorks(data);
       setError(null);
     } catch (err) {
+      console.error('Error loading works:', err);
       setError("Failed to load works");
     } finally {
       setLoading(false);
@@ -72,6 +74,7 @@ export default function Works() {
       const files = await workFilesAPI.getByWork(workId);
       setWorkFiles(files);
     } catch (error) {
+      console.error('Error loading work files:', error);
       setWorkFiles([]);
     }
   };
@@ -123,10 +126,7 @@ export default function Works() {
       setWorks(prev => prev.map(w => w.id === work.id ? updatedWork : w));
       
     } catch (error) {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
+      console.error('Error toggling work completion:', error);
       
       // Show specific error messages
       if (error.response?.status === 404) {

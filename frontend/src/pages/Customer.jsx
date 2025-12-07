@@ -19,6 +19,7 @@ export default function Customers() {
       const data = await fetchCustomers();
       setCustomers(data);
     } catch (err) {
+      console.error('Error loading customers:', err);
     }
   };
 
@@ -52,6 +53,7 @@ export default function Customers() {
       await loadCustomers();
       handleCancel();
     } catch (err) {
+      console.error('Error submitting customer:', err);
     }
   };
 
@@ -60,6 +62,7 @@ export default function Customers() {
       await deleteCustomer(id);
       await loadCustomers();
     } catch (err) {
+      console.error('Error deleting customer:', err);
     }
   };
 

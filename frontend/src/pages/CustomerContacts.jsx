@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { customerContactsAPI, marketingMessagesAPI } from '../utils/services';
+import { useRoleAccess } from '../hooks/useRoleAccess';
 
 export default function CustomerContacts() {
   const navigate = useNavigate();
-  const { hasAdminAccess } = useAuth();
+  const { canAccessAdminFeatures } = useRoleAccess();
   const [contacts, setContacts] = useState([]);
   const [messageTemplates, setMessageTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +46,7 @@ export default function CustomerContacts() {
       setContacts(data);
       setError(null);
     } catch (err) {
+      console.error('Error loading contacts:', err);
       setError('Failed to load customer contacts');
     } finally {
       setLoading(false);
@@ -53,12 +54,18 @@ export default function CustomerContacts() {
   }, [searchTerm, filterOptedOut]);
 
   const fetchMessageTemplates = useCallback(async () => {
+    // Only fetch templates for admin users
+    if (!canAccessAdminFeatures) {
+      return;
+    }
+    
     try {
       const data = await marketingMessagesAPI.list({ is_active: 'true' });
       setMessageTemplates(data);
     } catch (err) {
+      console.error('Error loading message templates:', err);
     }
-  }, []);
+  }, [canAccessAdminFeatures]);
 
   useEffect(() => {
     fetchContacts();
@@ -145,6 +152,7 @@ export default function CustomerContacts() {
       setSelectedTemplate('');
       setSelectedContacts([]);
     } catch (err) {
+      console.error('Error sending bulk SMS:', err);
       showError('Failed to send SMS. Please try again.');
     } finally {
       setSendingBulkSMS(false);
@@ -184,6 +192,7 @@ export default function CustomerContacts() {
       });
       fetchContacts();
     } catch (err) {
+      console.error('Error adding customer:', err);
       showError('Failed to add customer. Please check the details and try again.');
     }
   };
@@ -216,12 +225,14 @@ export default function CustomerContacts() {
             >
               ➕ Add Customer
             </button>
-            <button
-              onClick={() => navigate('/marketing-messages')}
-              className="w-full sm:w-auto px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 justify-center"
-            >
-              📝 Manage Templates
-            </button>
+            {canAccessAdminFeatures && (
+              <button
+                onClick={() => navigate('/portal/marketing-messages')}
+                className="w-full sm:w-auto px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 justify-center"
+              >
+                📝 Manage Templates
+              </button>
+            )}
             {selectedContacts.length > 0 && (
               <button
                 onClick={() => setShowSMSModal(true)}
@@ -486,35 +497,37 @@ export default function CustomerContacts() {
                 Sending to {selectedContacts.length} customer(s)
               </p>
               
-              {/* Template Selector */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Use a Message Template (Optional)
-                </label>
-                <select
-                  value={selectedTemplate}
-                  onChange={handleTemplateSelect}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">-- Select a template or type manually --</option>
-                  {messageTemplates.map(template => (
-                    <option key={template.id} value={template.id}>
-                      {template.title} {template.link_url && '🔗'}
-                    </option>
-                  ))}
-                </select>
-                {messageTemplates.length === 0 && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    No templates available. Create one in{' '}
-                    <button
-                      onClick={() => navigate('/marketing-messages')}
-                      className="text-blue-600 hover:underline"
-                    >
-                      Marketing Messages
-                    </button>
-                  </p>
-                )}
-              </div>
+              {/* Template Selector - Admin Only */}
+              {canAccessAdminFeatures && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Use a Message Template (Optional)
+                  </label>
+                  <select
+                    value={selectedTemplate}
+                    onChange={handleTemplateSelect}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">-- Select a template or type manually --</option>
+                    {messageTemplates.map(template => (
+                      <option key={template.id} value={template.id}>
+                        {template.title} {template.link_url && '🔗'}
+                      </option>
+                    ))}
+                  </select>
+                  {messageTemplates.length === 0 && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      No templates available. Create one in{' '}
+                      <button
+                        onClick={() => navigate('/portal/marketing-messages')}
+                        className="text-blue-600 hover:underline"
+                      >
+                        Marketing Messages
+                      </button>
+                    </p>
+                  )}
+                </div>
+              )}
               
               <textarea
                 value={smsMessage}

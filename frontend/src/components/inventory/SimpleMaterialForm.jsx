@@ -112,6 +112,7 @@ const SimpleMaterialForm = ({
 
       onSave(response);
     } catch (error) {
+      console.error('Error saving material:', error);
       setErrors({ submit: 'Failed to save material. Please try again.' });
     } finally {
       setSaving(false);

@@ -47,10 +47,7 @@ const Procurements = () => {
       
       setProcurements(procurementsData);
     } catch (error) {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
+      console.error('Error fetching procurements:', error);
       
       if (error.response?.status === 401) {
         setError('Authentication required. Please log in again.');
@@ -83,6 +80,7 @@ const Procurements = () => {
         delivered: all.filter(p => p.status === 'delivered').length
       });
     } catch (error) {
+      console.error('Error loading stats:', error);
       setStats({ total: 0, pending: 0, delivered: 0 });
     }
   };
@@ -110,6 +108,7 @@ const Procurements = () => {
       loadProcurements();
       loadStats();
     } catch (error) {
+      console.error('Error marking procurement as delivered:', error);
       setError('Failed to mark procurement as delivered. Please try again.');
     }
   };

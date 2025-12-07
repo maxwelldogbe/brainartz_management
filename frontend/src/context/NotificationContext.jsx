@@ -3,14 +3,6 @@ import { useAuth } from './AuthContext';
 
 const NotificationContext = createContext();
 
-export const useNotifications = () => {
-  const context = useContext(NotificationContext);
-  if (!context) {
-    throw new Error('useNotifications must be used within NotificationProvider');
-  }
-  return context;
-};
-
 export const NotificationProvider = ({ children }) => {
   const { user, accessToken } = useAuth();
   const [notifications, setNotifications] = useState([]);
@@ -45,6 +37,7 @@ export const NotificationProvider = ({ children }) => {
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 0.5);
       } catch (error) {
+        console.error('Error playing notification sound:', error);
       }
     }
   }, [soundEnabled]);
@@ -53,16 +46,6 @@ export const NotificationProvider = ({ children }) => {
     
     if ('Notification' in window && Notification.permission === 'granted') {
       try {
-        // Get notification type icon/badge color
-        const getIcon = (type) => {
-          switch(type) {
-            case 'new_work': return '🆕';
-            case 'work_completed': return '✅';
-            case 'work_reopened': return '🔄';
-            default: return '🔔';
-          }
-        };
-        
         const browserNotif = new Notification(notification.title, {
           body: notification.message,
           icon: '/logo.png',
@@ -94,8 +77,8 @@ export const NotificationProvider = ({ children }) => {
         };
         
       } catch (error) {
+        console.error('Error showing browser notification:', error);
       }
-    } else {
     }
   }, []);
   
@@ -105,6 +88,7 @@ export const NotificationProvider = ({ children }) => {
         const permission = await Notification.requestPermission();
         return permission === 'granted';
       } catch (error) {
+        console.error('Error requesting notification permission:', error);
         return false;
       }
     }
@@ -150,7 +134,7 @@ export const NotificationProvider = ({ children }) => {
               setUnreadCount(data.unread_count || 0);
               break;
               
-            case 'notification':
+            case 'notification': {
               const newNotification = data.notification;
               setNotifications(prev => {
                 return [newNotification, ...prev];
@@ -162,6 +146,7 @@ export const NotificationProvider = ({ children }) => {
               playNotificationSound();
               showBrowserNotification(newNotification);
               break;
+            }
               
             case 'unread_count':
               setUnreadCount(data.count);
@@ -171,15 +156,18 @@ export const NotificationProvider = ({ children }) => {
               break;
               
             default:
+              break;
           }
         } catch (error) {
+          console.error('Error processing WebSocket message:', error);
         }
       };
       
       ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
       };
       
-      ws.onclose = (event) => {
+      ws.onclose = () => {
         setIsConnected(false);
         wsRef.current = null;
         
@@ -214,6 +202,7 @@ export const NotificationProvider = ({ children }) => {
       ws.pingInterval = pingInterval;
       
     } catch (error) {
+      console.error('Error connecting WebSocket:', error);
       setConnectionState('disconnected');
     }
   }, [user, accessToken, getWebSocketUrl, playNotificationSound, showBrowserNotification]);
@@ -290,6 +279,7 @@ export const NotificationProvider = ({ children }) => {
           setUnreadCount(data.count || 0);
         }
       } catch (error) {
+        console.error('Error fetching initial unread count:', error);
       }
     };
     
@@ -307,7 +297,7 @@ export const NotificationProvider = ({ children }) => {
     return () => {
       disconnectWebSocket();
     };
-  }, [user, accessToken]);
+  }, [user, accessToken, connectWebSocket, disconnectWebSocket]);
   
   // Cleanup on unmount
   useEffect(() => {
@@ -334,4 +324,13 @@ export const NotificationProvider = ({ children }) => {
       {children}
     </NotificationContext.Provider>
   );
+};
+
+// Export the hook at the end to fix react-refresh warning
+export const useNotifications = () => {
+  const context = useContext(NotificationContext);
+  if (!context) {
+    throw new Error('useNotifications must be used within NotificationProvider');
+  }
+  return context;
 };

@@ -275,6 +275,7 @@ const ProcurementForm = ({
         onSuccess(result.data);
       }
     } catch (err) {
+      console.error('Error in procurement form:', err);
     }
   };
 

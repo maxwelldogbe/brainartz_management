@@ -23,7 +23,7 @@ export default function WorkFileUpload({ workId, files = [], onFilesUpdate }) {
       }
       
       onFilesUpdate?.(); // Refresh files list
-    } catch (error) {
+    } catch {
       showError('Upload failed. Please try again.');
     } finally {
       setUploading(false);
@@ -65,6 +65,7 @@ export default function WorkFileUpload({ workId, files = [], onFilesUpdate }) {
       showSuccess('File deleted successfully');
       onFilesUpdate?.();
     } catch (error) {
+      console.error('Error deleting file:', error);
       showError('Failed to delete file');
     }
   };

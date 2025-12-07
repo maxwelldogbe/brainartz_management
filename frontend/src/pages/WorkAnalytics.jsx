@@ -23,6 +23,7 @@ export default function WorkAnalytics() {
       setAnalytics({ workStats, dailySummary });
       setError(null);
     } catch (error) {
+      console.error('Error loading analytics:', error);
       setError('Failed to load analytics data');
     } finally {
       setLoading(false);
@@ -240,7 +241,7 @@ export default function WorkAnalytics() {
             
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
-                GH₵{(analytics.dailySummary.total_revenue || 0).toLocaleString()}
+                GH₵{(analytics.dailySummary.revenue_today || 0).toLocaleString()}
               </div>
               <p className="text-sm text-gray-600">Revenue Today</p>
             </div>

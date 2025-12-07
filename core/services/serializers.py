@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from .models import (
     Work, Payment, EmployeeProfile, JobCategory, WorkFile,
     DailySalesReport, DailySalesReportItem, SalesReportNote, DailyExpense,
-    Material, Procurement, JobMaterial, StockMovement, MaterialUsage,
+    Material, PendingStockAdjustment, Procurement, JobMaterial, StockMovement, MaterialUsage,
     CustomerContact, MarketingMessage, Notification
 )
 
@@ -421,6 +421,34 @@ class MaterialSerializer(serializers.ModelSerializer):
         """Validate reorder level"""
         if value < 0:
             raise serializers.ValidationError("Reorder level cannot be negative")
+        return value
+
+
+class PendingStockAdjustmentSerializer(serializers.ModelSerializer):
+    """Serializer for pending stock adjustments"""
+    material_name = serializers.CharField(source='material.name', read_only=True)
+    material_unit = serializers.CharField(source='material.unit', read_only=True)
+    submitted_by_name = serializers.SerializerMethodField()
+    reviewed_by_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = PendingStockAdjustment
+        fields = [
+            'id', 'material', 'material_name', 'material_unit', 'quantity', 'reason',
+            'status', 'submitted_by', 'submitted_by_name', 'submitted_at',
+            'reviewed_by', 'reviewed_by_name', 'reviewed_at', 'rejection_reason'
+        ]
+        read_only_fields = ['status', 'submitted_by', 'submitted_at', 'reviewed_by', 'reviewed_at']
+    
+    def get_submitted_by_name(self, obj):
+        return obj.submitted_by.get_full_name() or obj.submitted_by.username if obj.submitted_by else 'Unknown'
+    
+    def get_reviewed_by_name(self, obj):
+        return obj.reviewed_by.get_full_name() or obj.reviewed_by.username if obj.reviewed_by else None
+    
+    def validate_quantity(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Quantity must be positive")
         return value
 
 

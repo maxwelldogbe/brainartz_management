@@ -24,7 +24,8 @@ const MaterialPickingModal = ({ onClose, onSave }) => {
       // Only show materials that have stock available
       const availableMaterials = materialsData.filter(material => (material.current_stock || 0) > 0);
       setMaterials(availableMaterials);
-    } catch (error) {
+    } catch {
+      console.error('Error loading materials:', error);
       setError('Failed to load materials. Please try again.');
     }
   };
@@ -94,7 +95,7 @@ const MaterialPickingModal = ({ onClose, onSave }) => {
       }
 
       onSave();
-    } catch (error) {
+    } catch {
       setError(error.response?.data?.detail || 'Failed to process request. Please try again.');
     } finally {
       setLoading(false);

@@ -11,6 +11,7 @@ export default function Summary() {
         setCustomerSummary(await fetchCustomerSummary());
         setDailySummary(await fetchDailySummary());
       } catch (err) {
+        console.error('Error loading summary data:', err);
       }
     };
     loadData();

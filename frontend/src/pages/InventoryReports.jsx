@@ -84,6 +84,7 @@ const InventoryReports = () => {
       });
 
     } catch (error) {
+      console.error('Error loading inventory reports:', error);
     } finally {
       setLoading(false);
     }

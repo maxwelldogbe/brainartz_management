@@ -131,6 +131,11 @@ def check_low_stock(sender, instance: Material, created, **kwargs):
     if instance.archived:
         return
     
+    # Refresh from DB if current_stock is an F() expression
+    from django.db.models import F, Expression
+    if isinstance(instance.current_stock, (F, Expression)):
+        instance.refresh_from_db()
+    
     if instance.is_low_stock():
         send_low_stock_notification(instance)
 

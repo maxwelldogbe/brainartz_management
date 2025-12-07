@@ -45,6 +45,7 @@ const ProcurementRequests = () => {
         lowStockItems: 0
       });
     } catch (error) {
+      console.error('Error loading requests:', error);
     } finally {
       setLoading(false);
     }
@@ -56,6 +57,7 @@ const ProcurementRequests = () => {
       const materialsData = Array.isArray(response) ? response : (response?.results || []);
       setStats(prev => ({ ...prev, lowStockItems: materialsData.length }));
     } catch (error) {
+      console.error('Error loading low stock materials:', error);
     }
   };
 

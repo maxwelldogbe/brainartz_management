@@ -359,6 +359,34 @@ class Material(models.Model):
         return self.reorder_level * 2
 
 
+class PendingStockAdjustment(models.Model):
+    """Staff-submitted stock additions pending admin approval"""
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    material = models.ForeignKey(Material, on_delete=models.CASCADE, related_name='pending_adjustments')
+    quantity = models.IntegerField(help_text='Quantity to add to stock')
+    reason = models.TextField(help_text='Reason for adding stock (e.g., unrecorded purchase, found inventory, etc.)')
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    submitted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='stock_adjustments_submitted')
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='stock_adjustments_reviewed')
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        ordering = ['-submitted_at']
+    
+    def __str__(self):
+        return f"{self.material.name} +{self.quantity} ({self.status})"
+
+
 class MaterialUsage(models.Model):
     """Track when employees pick materials from inventory"""
     

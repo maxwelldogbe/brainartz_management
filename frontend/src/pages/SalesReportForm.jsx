@@ -67,6 +67,7 @@ export default function SalesReportForm() {
       }
       setError(null);
     } catch (err) {
+      console.error('Error loading data:', err);
       setError('Failed to load data. Please try again.');
     } finally {
       setLoading(false);
@@ -107,6 +108,7 @@ export default function SalesReportForm() {
         }
       }
     } catch (err) {
+      console.error('Error saving report:', err);
       if (err.response?.data?.date) {
         setError('A report for this date already exists');
       } else {
@@ -128,6 +130,7 @@ export default function SalesReportForm() {
       await salesReportsAPI.generateFromWorks(report.id);
       await loadData(); // Reload to get updated data
     } catch (err) {
+      console.error('Error auto-generating from works:', err);
       alert('Failed to auto-generate from works. Please try again.');
     } finally {
       setSaving(false);
@@ -160,6 +163,7 @@ export default function SalesReportForm() {
       setEditingItem(null);
       await loadData();
     } catch (err) {
+      console.error('Error saving category item:', err);
       alert('Failed to save category item. Please try again.');
     }
   };
@@ -188,6 +192,7 @@ export default function SalesReportForm() {
       setEditingExpense(null);
       await loadData();
     } catch (err) {
+      console.error('Error saving expense:', err);
       alert('Failed to save expense. Please try again.');
     }
   };
@@ -208,6 +213,7 @@ export default function SalesReportForm() {
       setNoteForm({ note: '' });
       await loadData();
     } catch (err) {
+      console.error('Error saving note:', err);
       alert('Failed to save note. Please try again.');
     }
   };
@@ -219,6 +225,7 @@ export default function SalesReportForm() {
       await salesReportsAPI.deleteItem(itemId);
       await loadData();
     } catch (err) {
+      console.error('Error deleting item:', err);
       alert('Failed to delete item. Please try again.');
     }
   };
@@ -230,6 +237,7 @@ export default function SalesReportForm() {
       await salesReportsAPI.deleteExpense(expenseId);
       await loadData();
     } catch (err) {
+      console.error('Error deleting expense:', err);
       alert('Failed to delete expense. Please try again.');
     }
   };
@@ -241,6 +249,7 @@ export default function SalesReportForm() {
       await salesReportsAPI.deleteNote(noteId);
       await loadData();
     } catch (err) {
+      console.error('Error deleting note:', err);
       alert('Failed to delete note. Please try again.');
     }
   };

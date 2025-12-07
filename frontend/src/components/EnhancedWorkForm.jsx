@@ -34,7 +34,7 @@ export default function EnhancedWorkForm({
         
         setCategories(categoriesData);
         setWorkers(workersData.filter(worker => worker.is_worker || worker.is_admin));
-      } catch (error) {
+      } catch {
         showError('Failed to load form options');
       }
     };

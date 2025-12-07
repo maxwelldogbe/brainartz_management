@@ -9,11 +9,7 @@ export default function ProtectedRoute({ children }) {
 
     useEffect(() => {
         if (!loading && isAuthenticated && user) {
-                is_admin: user.is_admin,
-                is_worker: user.is_worker,
-                is_superuser: user.is_superuser,
-                hasAdminAccess: hasAdminAccess()
-            });
+            // User authenticated - role info available
 
             // Role-based redirection logic
             if (location.pathname === '/portal' || location.pathname === '/portal/') {

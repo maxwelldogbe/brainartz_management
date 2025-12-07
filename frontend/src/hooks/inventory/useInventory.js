@@ -440,6 +440,7 @@ export const useInventory = () => {
         updateState({ lowStockAlerts: result.data || [] });
       }
     } catch (error) {
+      console.error('Error fetching low stock alerts:', error);
     }
   }, [updateState]);
 
@@ -451,6 +452,7 @@ export const useInventory = () => {
         updateState({ pendingProcurements: result.data?.procurements || [] });
       }
     } catch (error) {
+      console.error('Error fetching pending procurements:', error);
     }
   }, [updateState]);
 
@@ -464,6 +466,7 @@ export const useInventory = () => {
         updateState({ suppliers: result.data || [] });
       }
     } catch (error) {
+      console.error('Error fetching suppliers:', error);
     }
   }, []);
 
@@ -475,6 +478,7 @@ export const useInventory = () => {
         updateState({ categories: result.data || [] });
       }
     } catch (error) {
+      console.error('Error fetching categories:', error);
     }
   }, []);
 
@@ -530,6 +534,7 @@ export const useInventory = () => {
           fetchCategories()
         ]);
       } catch (error) {
+        console.error('Error loading initial data:', error);
       }
     };
 

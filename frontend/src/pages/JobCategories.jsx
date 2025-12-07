@@ -21,6 +21,7 @@ export default function JobCategories() {
       setCategories(data);
       setError(null);
     } catch (err) {
+      console.error('Error loading categories:', err);
       setError('Failed to load categories');
     } finally {
       setLoading(false);
@@ -63,6 +64,7 @@ export default function JobCategories() {
       
       showSuccess(`Category ${category.is_active ? 'deactivated' : 'activated'}`);
     } catch (error) {
+      console.error('Error toggling category status:', error);
       showError('Failed to update category status');
     }
   };
@@ -77,6 +79,7 @@ export default function JobCategories() {
       setCategories(prev => prev.filter(cat => cat.id !== category.id));
       showSuccess('Category deleted successfully');
     } catch (error) {
+      console.error('Error deleting category:', error);
       showError('Failed to delete category. It may be in use by existing works.');
     }
   };
