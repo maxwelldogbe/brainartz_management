@@ -29,6 +29,7 @@ export default function SalesReports() {
       setSummary(summaryData);
       setError(null);
     } catch (err) {
+      console.error('Error loading sales reports:', err);
       setError('Failed to load sales reports. Please try again.');
     } finally {
       setLoading(false);
@@ -63,6 +64,7 @@ export default function SalesReports() {
       await salesReportsAPI.delete(reportId);
       loadReports(); // Reload data
     } catch (err) {
+      console.error('Error deleting report:', err);
       alert('Failed to delete report. Please try again.');
     }
   };

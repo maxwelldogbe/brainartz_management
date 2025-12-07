@@ -35,6 +35,7 @@ const StockMovements = () => {
       const movementsData = Array.isArray(response) ? response : (response?.results || response?.data || []);
       setMovements(movementsData);
     } catch (error) {
+      console.error('Error loading stock movements:', error);
       setError('Failed to load stock movements. Please try again.');
       setMovements([]);
     } finally {

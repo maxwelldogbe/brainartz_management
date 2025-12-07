@@ -56,6 +56,7 @@ const SimpleProcurementForm = ({
       const materialsData = Array.isArray(response) ? response : (response?.results || response?.data || []);
       setMaterials(materialsData);
     } catch (error) {
+      console.error('Error loading materials:', error);
       setMaterials([]);
     } finally {
       setLoading(false);

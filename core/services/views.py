@@ -4,6 +4,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.db.models import Sum, Count, Q, F
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -12,7 +13,7 @@ from decimal import Decimal
 from .models import (
     Work, Payment, EmployeeProfile, JobCategory, WorkFile,
     DailySalesReport, DailySalesReportItem, SalesReportNote, DailyExpense,
-    Material, Procurement, JobMaterial, StockMovement, MaterialUsage,
+    Material, PendingStockAdjustment, Procurement, JobMaterial, StockMovement, MaterialUsage,
     CustomerContact, MarketingMessage, Notification
 )
 from .serializers import (
@@ -21,7 +22,7 @@ from .serializers import (
     UserActivitySerializer, JobCategorySelectSerializer, WorkSelectSerializer,
     DailySalesReportSerializer, DailySalesReportCreateSerializer, DailySalesReportItemSerializer,
     SalesReportNoteSerializer, DailyExpenseSerializer,
-    MaterialSerializer, ProcurementSerializer, ProcurementDeliverySerializer,
+    MaterialSerializer, PendingStockAdjustmentSerializer, ProcurementSerializer, ProcurementDeliverySerializer,
     JobMaterialSerializer, JobMaterialCreateSerializer, StockMovementSerializer,
     StockAdjustmentSerializer, MaterialStatsSerializer, MaterialUsageSerializer,
     CustomerContactSerializer, MarketingMessageSerializer, NotificationSerializer
@@ -432,16 +433,39 @@ def daily_summary(request):
     total_works_done = Work.objects.filter(created_at__date=today, completed=True).count()
     incomplete_works = Work.objects.filter(completed=False).count()
     new_works_today = Work.objects.filter(created_at__date=today).count()
-    revenue_today = Payment.objects.filter(paid_at__date=today).aggregate(total=Sum('amount'))['total'] or 0
+    
+    # Revenue for works CREATED today only (not all payments made today)
+    works_created_today = Work.objects.filter(created_at__date=today)
+    revenue_today = Payment.objects.filter(work__in=works_created_today).aggregate(total=Sum('amount'))['total'] or 0
+    
     files_uploaded_today = WorkFile.objects.filter(uploaded_at__date=today).count()
+    
+    # Count unique customers with works today
+    customers_today = Work.objects.filter(created_at__date=today).values('customer_name').distinct().count()
+    
+    # Calculate total revenue (all-time) and monthly revenue
+    total_revenue_all_time = Payment.objects.aggregate(total=Sum('amount'))['total'] or 0
+    
+    # Calculate this month's revenue (for works CREATED this month, not payments made this month)
+    month_start = today.replace(day=1)
+    works_created_this_month = Work.objects.filter(
+        created_at__date__gte=month_start,
+        created_at__date__lte=today
+    )
+    revenue_this_month = Payment.objects.filter(work__in=works_created_this_month).aggregate(total=Sum('amount'))['total'] or 0
     
     return Response({
         'date': str(today),
         'total_works_done': total_works_done,
         'incomplete_works': incomplete_works,
         'new_works_today': new_works_today,
-        'revenue_today': revenue_today,
+        'revenue_today': float(revenue_today),
         'files_uploaded_today': files_uploaded_today,
+        # Additional fields for WorkAnalytics compatibility
+        'works_count': new_works_today,
+        'total_revenue': float(total_revenue_all_time),
+        'revenue_this_month': float(revenue_this_month),
+        'customers_count': customers_today,
     })
 
 
@@ -921,6 +945,76 @@ class MaterialViewSet(viewsets.ModelViewSet):
         }
         
         return Response(stats)
+
+
+class PendingStockAdjustmentViewSet(viewsets.ModelViewSet):
+    """ViewSet for staff stock addition requests pending admin approval"""
+    serializer_class = PendingStockAdjustmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        """Admins see all, staff see only their own"""
+        if self.request.user.is_admin:
+            return PendingStockAdjustment.objects.select_related('material', 'submitted_by', 'reviewed_by').all()
+        return PendingStockAdjustment.objects.filter(submitted_by=self.request.user).select_related('material')
+    
+    def perform_create(self, serializer):
+        """Set submitted_by to current user"""
+        serializer.save(submitted_by=self.request.user)
+    
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    def approve(self, request, pk=None):
+        """Admin approves and adds stock"""
+        adjustment = self.get_object()
+        
+        if adjustment.status != 'pending':
+            return Response({'error': 'Only pending adjustments can be approved'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            with transaction.atomic():
+                # Update stock using existing service
+                ProcurementService.adjust_material_stock(
+                    material_id=adjustment.material.id,
+                    adjustment_quantity=adjustment.quantity,
+                    note=f"Staff request approved: {adjustment.reason}",
+                    user=request.user
+                )
+                
+                # Update adjustment status
+                adjustment.status = 'approved'
+                adjustment.reviewed_by = request.user
+                adjustment.reviewed_at = timezone.now()
+                adjustment.save()
+                
+                return Response({
+                    'message': f'Added {adjustment.quantity} {adjustment.material.unit} of {adjustment.material.name} to stock',
+                    'adjustment': PendingStockAdjustmentSerializer(adjustment).data
+                })
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    def reject(self, request, pk=None):
+        """Admin rejects the adjustment"""
+        adjustment = self.get_object()
+        
+        if adjustment.status != 'pending':
+            return Response({'error': 'Only pending adjustments can be rejected'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        rejection_reason = request.data.get('rejection_reason', '')
+        if not rejection_reason:
+            return Response({'error': 'rejection_reason is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        adjustment.status = 'rejected'
+        adjustment.reviewed_by = request.user
+        adjustment.reviewed_at = timezone.now()
+        adjustment.rejection_reason = rejection_reason
+        adjustment.save()
+        
+        return Response({
+            'message': 'Adjustment request rejected',
+            'adjustment': PendingStockAdjustmentSerializer(adjustment).data
+        })
 
 
 class MaterialUsageViewSet(viewsets.ReadOnlyModelViewSet):

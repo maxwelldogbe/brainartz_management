@@ -21,6 +21,7 @@ export default function MarketingMessages() {
       const data = await marketingMessagesAPI.list();
       setMessages(data);
     } catch (err) {
+      console.error('Error loading marketing messages:', err);
       showError('Failed to load marketing messages');
     } finally {
       setLoading(false);
@@ -109,6 +110,7 @@ export default function MarketingMessages() {
       handleCloseModal();
       fetchMessages();
     } catch (err) {
+      console.error('Error saving message template:', err);
       showError('Failed to save message template');
     } finally {
       setSaving(false);
@@ -125,6 +127,7 @@ export default function MarketingMessages() {
       showSuccess('Message template deleted successfully');
       fetchMessages();
     } catch (err) {
+      console.error('Error deleting message template:', err);
       showError('Failed to delete message template');
     }
   };
@@ -135,6 +138,7 @@ export default function MarketingMessages() {
       showSuccess('Message status updated');
       fetchMessages();
     } catch (err) {
+      console.error('Error updating message status:', err);
       showError('Failed to update message status');
     }
   };

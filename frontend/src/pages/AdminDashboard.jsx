@@ -16,6 +16,7 @@ export default function AdminDashboard() {
       setData(res.data);
       setError(null);
     } catch (err) {
+      console.error('Error loading admin dashboard:', err);
       setError("Failed to load admin dashboard data");
     } finally {
       setLoading(false);

@@ -232,11 +232,11 @@ export default function Layout() {
 
               <div className="pt-4 pb-2 mt-4">
                 <span className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                  Customer Marketing
+                  Customer Management
                 </span>
               </div>
               
-                <NavLink
+              <NavLink
                 to="/portal/customer-contacts"
                 className={({ isActive }) =>
                   `flex items-center space-x-2 px-3 py-2 rounded ${

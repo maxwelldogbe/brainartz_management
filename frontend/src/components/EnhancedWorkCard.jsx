@@ -243,7 +243,6 @@ export function WorkTable({
   works,
   onEdit,
   onToggleComplete,
-  onViewFiles,
   loading = false,
   updatingWorks = new Set()
 }) {

@@ -4,7 +4,7 @@ import NotificationDropdown from './NotificationDropdown';
 import '../../styles/notifications.css';
 
 const NotificationBell = () => {
-  const { unreadCount, isConnected, connectionState } = useNotifications();
+  const { unreadCount, connectionState } = useNotifications();
   const [showDropdown, setShowDropdown] = useState(false);
   const bellRef = useRef(null);
   const dropdownRef = useRef(null);

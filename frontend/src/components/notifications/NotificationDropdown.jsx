@@ -8,18 +8,10 @@ const NotificationDropdown = ({ onClose }) => {
   const navigate = useNavigate();
   const { notifications, markAllAsRead, soundEnabled, toggleSound, setNotifications, requestNotificationPermission } = useNotifications();
   const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
   
   const recentNotifications = notifications.slice(0, 5);
   
-  useEffect(() => {
-    // Fetch initial notifications if empty
-    if (notifications.length === 0) {
-      fetchNotifications();
-    }
-  }, []);
-  
-  const fetchNotifications = async () => {
+  const fetchNotifications = React.useCallback(async () => {
     if (loading) return;
     
     setLoading(true);
@@ -28,18 +20,26 @@ const NotificationDropdown = ({ onClose }) => {
         params: { limit: 10, offset: 0 }
       });
       setNotifications(response.data.results || response.data);
-      setHasMore(response.data.next != null);
     } catch (error) {
+      console.error('Error fetching notifications:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [loading, setNotifications]);
+  
+  useEffect(() => {
+    // Fetch initial notifications if empty
+    if (notifications.length === 0) {
+      fetchNotifications();
+    }
+  }, [notifications.length, fetchNotifications]);
   
   const handleMarkAllRead = async () => {
     try {
       await api.post('/api/services/notifications/mark_all_read/');
       markAllAsRead();
     } catch (error) {
+      console.error('Error marking all as read:', error);
     }
   };
   

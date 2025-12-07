@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 /* eslint-disable react-hooks/exhaustive-deps */
 import { Link } from 'react-router-dom';
-import { Plus, Package, AlertTriangle, TrendingUp, ShoppingCart, Activity, Clock, Users } from 'lucide-react';
+import { Plus, Package, AlertTriangle, TrendingUp, ShoppingCart, Activity, Clock, Users, FileText } from 'lucide-react';
 import { materialsAPI, procurementsAPI, stockMovementsAPI, materialUsageAPI } from '../utils/services';
 
 const Inventory = () => {
@@ -37,6 +37,7 @@ const Inventory = () => {
         loadRecentUsages()
       ]);
     } catch (error) {
+      console.error('Error loading inventory data:', error);
     } finally {
       setLoading(false);
     }
@@ -49,6 +50,7 @@ const Inventory = () => {
       const materialsData = Array.isArray(response) ? response : (response?.results || response?.data || []);
       setMaterials(materialsData);
     } catch (error) {
+      console.error('Error loading materials:', error);
       setMaterials([]);
     }
   };
@@ -70,6 +72,7 @@ const Inventory = () => {
         }));
       }
     } catch (error) {
+      console.error('Error loading stats:', error);
     }
   };
 
@@ -83,6 +86,7 @@ const Inventory = () => {
       const pendingCount = procurementsData.filter(p => p.status === 'pending').length;
       setStats(prev => ({ ...prev, pendingProcurements: pendingCount }));
     } catch (error) {
+      console.error('Error loading recent procurements:', error);
     }
   };
 
@@ -92,6 +96,7 @@ const Inventory = () => {
       const movementsData = Array.isArray(response) ? response : (response?.results || []);
       setRecentMovements(movementsData);
     } catch (error) {
+      console.error('Error loading recent movements:', error);
     }
   };
 
@@ -101,6 +106,7 @@ const Inventory = () => {
       const usagesData = Array.isArray(response) ? response.slice(0, 5) : (response?.results?.slice(0, 5) || []);
       setRecentUsages(usagesData);
     } catch (error) {
+      console.error('Error loading recent usages:', error);
     }
   };
 
@@ -120,13 +126,6 @@ const Inventory = () => {
           <h1 className="text-2xl font-bold text-gray-900">Inventory Management</h1>
           <p className="text-gray-600">Manage materials, stock levels, and procurement</p>
         </div>
-        <Link
-          to="/portal/inventory/materials/new"
-          className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
-        >
-          <Plus size={20} />
-          Add Material
-        </Link>
       </div>
 
       {/* Enhanced Stats Cards */}
@@ -208,7 +207,7 @@ const Inventory = () => {
       </div>
 
       {/* Enhanced Quick Actions with Procurement Functions */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Link
           to="/portal/inventory/materials"
           className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow text-center"
@@ -225,15 +224,6 @@ const Inventory = () => {
           <ShoppingCart className="mx-auto mb-2 text-green-500" size={24} />
           <p className="font-semibold">Procurements</p>
           <p className="text-sm text-gray-600">Manage orders</p>
-        </Link>
-
-        <Link
-          to="/portal/inventory/procurement-requests"
-          className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow text-center"
-        >
-          <Plus className="mx-auto mb-2 text-orange-500" size={24} />
-          <p className="font-semibold">Request Materials</p>
-          <p className="text-sm text-gray-600">Request procurement</p>
         </Link>
 
         <Link
@@ -271,13 +261,9 @@ const Inventory = () => {
             <div className="text-center py-8">
               <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No materials yet</h3>
-              <p className="text-gray-600 mb-6">Get started by adding your first material.</p>
-              <Link
-                to="/portal/inventory/materials"
-                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
-              >
-                Add Material
-              </Link>
+              <p className="text-gray-600">
+                Go to <Link to="/portal/inventory/materials" className="text-blue-600 hover:underline">Materials page</Link> to get started.
+              </p>
             </div>
           ) : (
             <div className="p-6">

@@ -20,6 +20,7 @@ export default function SalesReportsSummary() {
       setSummary(summaryData);
       setError(null);
     } catch (err) {
+      console.error('Error loading sales reports summary:', err);
       setError('Failed to load sales reports summary');
     } finally {
       setLoading(false);

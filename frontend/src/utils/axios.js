@@ -6,6 +6,7 @@ import axios from 'axios';
 const isDev = import.meta.env.DEV;
 const baseURL = isDev ? '' : '';
 
+console.log('Axios config:', {
   isDev,
   hostname: window.location.hostname,
   baseURL: baseURL || 'Using relative paths (same origin)',
@@ -26,6 +27,7 @@ instance.interceptors.request.use(config => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  console.log('Axios request:', {
     method: config.method?.toUpperCase(),
     url: config.url,
     fullURL: baseURL ? `${baseURL}${config.url}` : `Proxy: ${window.location.origin}${config.url}`,
@@ -37,6 +39,7 @@ instance.interceptors.request.use(config => {
 
 instance.interceptors.response.use(
   (response) => {
+    console.log('Axios response:', {
       status: response.status,
       url: response.config.url,
       method: response.config.method?.toUpperCase(),
@@ -47,6 +50,7 @@ instance.interceptors.response.use(
     return response;
   },
   (error) => {
+    console.error('Axios error:', {
       status: error.response?.status,
       url: error.config?.url,
       method: error.config?.method?.toUpperCase(),

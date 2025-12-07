@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../context/NotificationContext';
 import NotificationItem from '../components/notifications/NotificationItem';
 import api from '../utils/axios';
@@ -7,7 +7,6 @@ import '../styles/notifications.css';
 
 const Notifications = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { notifications, setNotifications, markAllAsRead } = useNotifications();
   
   const [loading, setLoading] = useState(false);
@@ -45,6 +44,7 @@ const Notifications = () => {
       setHasMore(response.data.next != null);
       setTotalCount(response.data.count || newNotifications.length);
     } catch (error) {
+      console.error('Error fetching notifications:', error);
     } finally {
       setLoading(false);
     }
@@ -52,7 +52,7 @@ const Notifications = () => {
   
   useEffect(() => {
     fetchNotifications(1, filter);
-  }, [filter]);
+  }, [filter, fetchNotifications]);
   
   const handleFilterChange = (newFilter) => {
     setFilter(newFilter);
@@ -71,6 +71,7 @@ const Notifications = () => {
       markAllAsRead();
       fetchNotifications(1, filter);
     } catch (error) {
+      console.error('Error marking all as read:', error);
     }
   };
   
@@ -84,6 +85,7 @@ const Notifications = () => {
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
       setTotalCount(prev => prev - 1);
     } catch (error) {
+      console.error('Error deleting notification:', error);
     }
   };
   

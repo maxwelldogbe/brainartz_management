@@ -27,6 +27,7 @@ import SalesReportForm from './pages/SalesReportForm'
 import SalesReportView from './pages/SalesReportView'
 import Inventory from './pages/Inventory'
 import Materials from './pages/Materials'
+import PendingStockAdjustments from './pages/PendingStockAdjustments'
 import Procurements from './pages/Procurements'
 import ProcurementRequests from './pages/ProcurementRequests'
 import StockMovements from './pages/StockMovements'
@@ -129,6 +130,11 @@ function App() {
         <Route path='inventory/materials' element={
           <RoleGuard requireWorker={true}>
             <Materials />
+          </RoleGuard>
+        } />
+        <Route path='inventory/pending-adjustments' element={
+          <RoleGuard requireWorker={true}>
+            <PendingStockAdjustments />
           </RoleGuard>
         } />
         <Route path='inventory/procurements' element={

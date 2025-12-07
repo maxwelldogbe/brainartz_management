@@ -11,36 +11,13 @@ const NotificationItem = ({ notification, onClick }) => {
         await api.post(`/api/services/notifications/${notification.id}/mark_read/`);
         markAsRead(notification.id);
       } catch (error) {
+        console.error('Error marking notification as read:', error);
       }
     }
     
     if (onClick) {
       onClick(notification);
     }
-  };
-  
-  const getNavigationUrl = () => {
-    const type = notification.type || notification.notification_type;
-    
-    // Work notifications
-    if (notification.work_order_id) {
-      return `/portal/works?id=${notification.work_order_id}`;
-    }
-    
-    // Inventory notifications
-    if (type === 'low_stock' || type === 'material_pickup' || type === 'material_request') {
-      return '/portal/inventory/materials';
-    }
-    
-    if (type === 'procurement_created' || type === 'procurement_delivered') {
-      if (notification.procurement_id) {
-        return `/portal/inventory/procurements?id=${notification.procurement_id}`;
-      }
-      return '/portal/inventory/procurements';
-    }
-    
-    // Default
-    return '/portal/notifications';
   };
   
   const getNotificationIcon = () => {
@@ -139,10 +116,11 @@ const NotificationItem = ({ notification, onClick }) => {
       
       return date.toLocaleDateString();
     } catch (error) {
+      console.error('Error formatting time:', error);
       return '';
     }
   };
-  
+
   return (
     <div
       className={`notification-item ${notification.is_read ? 'read' : 'unread'}`}

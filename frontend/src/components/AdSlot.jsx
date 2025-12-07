@@ -7,7 +7,7 @@ import React from 'react';
 //   and include the official AdSense script once globally (usually in index.html).
 // - Keep the container classes so the layout reserves space and doesn't jump when ads load.
 
-export default function AdSlot({ id = 'ad-slot', variant = 'leaderboard', client, slot }) {
+export default function AdSlot({ id = 'ad-slot', variant = 'leaderboard' }) {
   // variant: 'leaderboard' | 'square' | 'small'
   const base = 'w-full flex items-center justify-center overflow-hidden rounded-md';
 

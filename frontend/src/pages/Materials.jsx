@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Plus, Search, Package, Edit, Minus, ClipboardList } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Plus, Search, Package, Edit, Minus, ClipboardList, FileText } from 'lucide-react';
 import SimpleMaterialForm from '../components/inventory/SimpleMaterialForm';
-import StockAdjustmentModal from '../components/inventory/StockAdjustmentModal';
 import MaterialPickingModal from '../components/inventory/MaterialPickingModal';
+import StaffStockAdditionForm from '../components/inventory/StaffStockAdditionForm';
 import { materialsAPI } from '../utils/services';
 import { useRoleAccess } from '../hooks/useRoleAccess';
 
@@ -13,10 +14,9 @@ const Materials = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [showStockModal, setShowStockModal] = useState(false);
   const [showPickingModal, setShowPickingModal] = useState(false);
+  const [showStaffAdditionForm, setShowStaffAdditionForm] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
-  const [adjustingMaterial, setAdjustingMaterial] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     category: '',
@@ -54,10 +54,7 @@ const Materials = () => {
       
       setMaterials(materialsData);
     } catch (error) {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
+      console.error('Error fetching materials:', error);
       
       // Don't set error for empty data - just show empty state
       if (error.response?.status === 401) {
@@ -67,6 +64,7 @@ const Materials = () => {
       } else if (error.response?.status >= 500) {
         setError('Server error. Please try again later.');
       } else {
+        console.error('Error loading materials:', error);
       }
       setMaterials([]);
     } finally {
@@ -84,28 +82,9 @@ const Materials = () => {
     setShowForm(true);
   };
 
-  const handleAdjustStock = (material) => {
-    // Convert material to match StockAdjustmentModal expected structure
-    const adjustmentMaterial = {
-      id: material.id,
-      name: material.name,
-      currentStock: material.current_stock || 0,
-      unit: material.unit || 'units',
-      reorderLevel: material.reorder_level || 0
-    };
-    setAdjustingMaterial(adjustmentMaterial);
-    setShowStockModal(true);
-  };
-
   const handleFormClose = () => {
     setShowForm(false);
     setEditingMaterial(null);
-    loadMaterials();
-  };
-
-  const handleStockModalClose = () => {
-    setShowStockModal(false);
-    setAdjustingMaterial(null);
     loadMaterials();
   };
 
@@ -120,23 +99,9 @@ const Materials = () => {
         await materialsAPI.delete(id);
         loadMaterials();
       } catch (error) {
+        console.error('Error deleting material:', error);
         setError('Failed to delete material. Please try again.');
       }
-    }
-  };
-
-  const handleQuickStockUpdate = async (materialId, newStock, currentStock) => {
-    try {
-      // Calculate the adjustment needed
-      const adjustment = newStock - currentStock;
-      
-      await materialsAPI.adjustStock(materialId, {
-        adjustment_quantity: adjustment,
-        note: 'Quick stock update'
-      });
-      loadMaterials();
-    } catch (error) {
-      setError('Failed to update stock. Please try again.');
     }
   };
 
@@ -160,13 +125,31 @@ const Materials = () => {
             <ClipboardList size={20} />
             Record Material Pickup
           </button>
-          {canAccessAdminFeatures && (
+          
+          {canAccessAdminFeatures ? (
+            <>
+              <Link
+                to="/portal/inventory/pending-adjustments"
+                className="flex items-center gap-2 bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600"
+              >
+                <FileText size={20} />
+                Approve Stock Requests
+              </Link>
+              <button
+                onClick={handleAddMaterial}
+                className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+              >
+                <Plus size={20} />
+                Add Material
+              </button>
+            </>
+          ) : (
             <button
-              onClick={handleAddMaterial}
-              className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+              onClick={() => setShowStaffAdditionForm(true)}
+              className="flex items-center gap-2 bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600"
             >
-              <Plus size={20} />
-              Add Material
+              <FileText size={20} />
+              Request Stock Addition
             </button>
           )}
         </div>
@@ -297,37 +280,8 @@ const Materials = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="number"
-                              defaultValue={material.current_stock || 0}
-                              onBlur={(e) => {
-                                const newStock = parseFloat(e.target.value) || 0;
-                                const currentStock = material.current_stock || 0;
-                                if (newStock !== currentStock) {
-                                  handleQuickStockUpdate(material.id, newStock, currentStock);
-                                }
-                              }}
-                              onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                  const newStock = parseFloat(e.target.value) || 0;
-                                  const currentStock = material.current_stock || 0;
-                                  if (newStock !== currentStock) {
-                                    handleQuickStockUpdate(material.id, newStock, currentStock);
-                                  }
-                                }
-                              }}
-                              className="w-20 text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                              min="0"
-                              step="0.01"
-                            />
-                            <button
-                              onClick={() => handleAdjustStock(material)}
-                              className="text-blue-600 hover:text-blue-800"
-                              title="Adjust Stock"
-                            >
-                              <Edit size={16} />
-                            </button>
+                          <div className="text-sm text-gray-900">
+                            {material.current_stock || 0}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -361,13 +315,6 @@ const Materials = () => {
                                 Edit
                               </button>
                               <button
-                                onClick={() => handleAdjustStock(material)}
-                                className="text-green-600 hover:text-green-900 mr-4"
-                                title="Stock Adjustment"
-                              >
-                                <Plus size={16} />
-                              </button>
-                              <button
                                 onClick={() => handleDeleteMaterial(material.id)}
                                 className="text-red-600 hover:text-red-900"
                               >
@@ -397,20 +344,22 @@ const Materials = () => {
         />
       )}
 
-      {/* Stock Adjustment Modal */}
-      {showStockModal && adjustingMaterial && (
-        <StockAdjustmentModal
-          material={adjustingMaterial}
-          onClose={handleStockModalClose}
-          onSave={handleStockModalClose}
-        />
-      )}
-
       {/* Material Picking Modal */}
       {showPickingModal && (
         <MaterialPickingModal
           onClose={handlePickingModalClose}
           onSave={handlePickingModalClose}
+        />
+      )}
+
+      {/* Staff Stock Addition Request Form */}
+      {showStaffAdditionForm && (
+        <StaffStockAdditionForm
+          onClose={() => setShowStaffAdditionForm(false)}
+          onSuccess={() => {
+            setShowStaffAdditionForm(false);
+            alert('Stock addition request submitted successfully! It will be reviewed by an admin.');
+          }}
         />
       )}
     </div>

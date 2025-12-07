@@ -37,7 +37,7 @@ if settings.DEBUG:
 react_index = os.path.join(settings.BASE_DIR.parent, 'frontend', 'dist', 'index.html')
 if os.path.exists(react_index):
     urlpatterns += [
-        re_path(r'^(?!api/|auth/|admin/|media/|static/|assets/).*$', 
+        re_path(r'^(?!api/|auth/|admin|media/|static/|assets/).*$', 
                 lambda request: serve(request, 'index.html', 
                                      document_root=os.path.join(settings.BASE_DIR.parent, 'frontend', 'dist')),
                 name='react-app'),

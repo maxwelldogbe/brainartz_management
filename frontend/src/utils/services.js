@@ -142,6 +142,15 @@ export const stockMovementsAPI = {
   getById: (id) => axios.get(`/api/services/stock-movements/${id}/`).then(res => res.data),
 };
 
+export const pendingStockAdjustmentsAPI = {
+  // Pending Stock Adjustments (Staff requests, Admin approves)
+  getAll: (params = {}) => axios.get('/api/services/pending-stock-adjustments/', { params }).then(res => res.data),
+  getById: (id) => axios.get(`/api/services/pending-stock-adjustments/${id}/`).then(res => res.data),
+  create: (data) => axios.post('/api/services/pending-stock-adjustments/', data).then(res => res.data),
+  approve: (id) => axios.post(`/api/services/pending-stock-adjustments/${id}/approve/`).then(res => res.data),
+  reject: (id, data) => axios.post(`/api/services/pending-stock-adjustments/${id}/reject/`, data).then(res => res.data),
+};
+
 /* ------------------ Sales Reports ------------------ */
 export const salesReportsAPI = {
   // Main reports

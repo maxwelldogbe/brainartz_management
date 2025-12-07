@@ -4,7 +4,7 @@ from .views import (
     WorkViewSet, PaymentViewSet, JobCategoryViewSet, WorkFileViewSet,
     EmployeeProfileViewSet, UserViewSet, WorkerViewSet,
     DailySalesReportViewSet, DailySalesReportItemViewSet, SalesReportNoteViewSet, DailyExpenseViewSet,
-    MaterialViewSet, ProcurementViewSet, JobMaterialViewSet, StockMovementViewSet, MaterialUsageViewSet,
+    MaterialViewSet, PendingStockAdjustmentViewSet, ProcurementViewSet, JobMaterialViewSet, StockMovementViewSet, MaterialUsageViewSet,
     CustomerContactViewSet, MarketingMessageViewSet, NotificationViewSet,
     daily_summary, work_statistics, sales_report_summary
 )
@@ -25,6 +25,7 @@ router.register(r'daily-expenses', DailyExpenseViewSet, basename='daily-expense'
 
 # Procurement & Inventory endpoints
 router.register(r'materials', MaterialViewSet, basename='material')
+router.register(r'pending-stock-adjustments', PendingStockAdjustmentViewSet, basename='pending-stock-adjustment')
 router.register(r'procurements', ProcurementViewSet, basename='procurement')
 router.register(r'job-materials', JobMaterialViewSet, basename='job-material')
 router.register(r'stock-movements', StockMovementViewSet, basename='stock-movement')

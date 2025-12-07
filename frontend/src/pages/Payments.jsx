@@ -37,6 +37,7 @@ export default function Payments() {
     try {
       setPayments(await fetchPayments());
     } catch (err) {
+      console.error('Error loading payments:', err);
     }
   };
 
@@ -44,10 +45,9 @@ export default function Payments() {
     try {
       // Fetch only unpaid or partially paid works
       const worksData = await fetchUnpaidWorks();
-      if (worksData.length > 0) {
-      }
       setWorks(worksData);
     } catch (err) {
+      console.error('Error loading works:', err);
     }
   };
 
@@ -107,6 +107,7 @@ export default function Payments() {
       await loadWorks(); // Reload works to update unpaid list
       handleCancel();
     } catch (err) {
+      console.error('Error saving payment:', err);
     }
   };
 
@@ -115,6 +116,7 @@ export default function Payments() {
       await deletePayment(id);
       await loadPayments();
     } catch (err) {
+      console.error('Error deleting payment:', err);
     }
   };
 

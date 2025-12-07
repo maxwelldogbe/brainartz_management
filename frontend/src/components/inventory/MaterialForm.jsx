@@ -119,6 +119,7 @@ const MaterialForm = ({
         onSuccess(result.data);
       }
     } catch (err) {
+      console.error('Error in material form:', err);
     }
   };
 

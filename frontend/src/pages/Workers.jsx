@@ -21,6 +21,7 @@ export default function Workers() {
       const data = await fetchWorkers();
       setWorkers(data);
     } catch (err) {
+      console.error('Error loading workers:', err);
       setWorkers([]);
       showNotification('Failed to load employees', 'error');
     } finally {
@@ -54,6 +55,7 @@ export default function Workers() {
       setWorkers(workers.filter(w => w.id !== id));
       showNotification(`${name} has been deleted`, 'success');
     } catch (err) {
+      console.error('Error deleting worker:', err);
       showNotification('Failed to delete user', 'error');
     } finally {
       setWorkerActionLoading(id, false);
@@ -67,6 +69,7 @@ export default function Workers() {
       setWorkers(workers.map(w => w.id === id ? { ...w, is_active: !active } : w));
       showNotification(`${name} has been ${!active ? 'enabled' : 'disabled'}`, 'success');
     } catch (err) {
+      console.error('Error toggling worker status:', err);
       showNotification('Failed to update user state', 'error');
     } finally {
       setWorkerActionLoading(id, false);

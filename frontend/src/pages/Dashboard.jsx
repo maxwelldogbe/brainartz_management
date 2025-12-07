@@ -28,6 +28,7 @@ export default function Dashboard() {
             const summaryRes = await axios.get('/api/services/summary/daily/');
             setSummary(summaryRes.data);
           } catch (err) {
+            console.error('Error loading summary:', err);
             setSummary(null);
           }
         }
@@ -45,9 +46,11 @@ export default function Dashboard() {
           setProfile(profileData);
           setAvatarPreview(profileRes.data.avatar); // URL for preview
         } catch (err) {
+          console.error('Error loading profile:', err);
           setProfile({ phone: '', bio: '', avatar: null });
         }
       } catch (err) {
+        console.error('Error loading dashboard:', err);
         setError('Failed to load dashboard data');
       } finally {
         setLoading(false);
@@ -118,6 +121,7 @@ export default function Dashboard() {
       
       alert('Profile updated successfully');
     } catch (err) {
+      console.error('Error saving profile:', err);
       alert('Failed to save profile changes');
     }
   };

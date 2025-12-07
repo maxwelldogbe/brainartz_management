@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { Phone, Mail, MapPin, Wrench, Twitter, Instagram, Facebook, Linkedin } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
@@ -11,34 +12,21 @@ import photographyImg from '../assets/Forfaits et Services de Photographie.jpeg'
 import softwareImg from '../assets/software.jpeg';
 import workshopImg from '../assets/workshop.jpeg';
 
-// Small typewriter animated title using framer-motion
+// Small typewriter animated title
 const Typewriter = ({ text = '', className = '' }) => {
   const letters = Array.from(text);
 
-  const container = {
-    hidden: { opacity: 1 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.04 },
-    },
-  };
-
-  const child = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { duration: 0.03 } },
-  };
-
   return (
-    <motion.span className={className} variants={container} initial="hidden" animate="visible">
+    <span className={className}>
       {letters.map((char, i) => (
-        <motion.span key={i} variants={child} className="inline-block">
+        <span key={i} className="inline-block">
           {char === ' ' ? '\u00A0' : char}
-        </motion.span>
+        </span>
       ))}
-      <motion.span className="inline-block ml-2" aria-hidden="true" animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}>
+      <span className="inline-block ml-2" aria-hidden="true">
         <span className="inline-block w-0.5 h-6 bg-gray-900 align-middle" />
-      </motion.span>
-    </motion.span>
+      </span>
+    </span>
   );
 };
 
@@ -100,6 +88,7 @@ const ServiceCard = ({ image, title, features = [] }) => (
   );
 
 // Sample works data and a small WorkCard component
+// eslint-disable-next-line no-unused-vars
 const works = [
   {
     id: 'work-1',
@@ -166,7 +155,6 @@ const SocialCard = ({ title = 'Social Media', description = '', links = [] }) =>
 const LandingPage = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [typewriterKey, setTypewriterKey] = useState(0);
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setShowPopup(true), 5000); // 5 seconds

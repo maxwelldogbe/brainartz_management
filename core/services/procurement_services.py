@@ -214,15 +214,18 @@ class ProcurementService:
                     id=material_id, archived=False
                 )
                 
+                # Get current stock value before F() expression
+                current_stock_value = material.current_stock
+                
                 # Prevent negative stock from manual adjustments
-                new_stock = material.current_stock + adjustment_quantity
+                new_stock = current_stock_value + adjustment_quantity
                 if new_stock < 0:
                     raise ValueError(
                         f"Adjustment would result in negative stock. "
-                        f"Current: {material.current_stock}, Adjustment: {adjustment_quantity}"
+                        f"Current: {current_stock_value}, Adjustment: {adjustment_quantity}"
                     )
                 
-                # Update stock
+                # Update stock using F() expression for atomic update
                 material.current_stock = models.F('current_stock') + adjustment_quantity
                 material.save(update_fields=['current_stock'])
                 material.refresh_from_db()
