@@ -53,6 +53,11 @@ export default function Register() {
       return;
     }
 
+    if (!form.email.trim()) {
+      setError('Email is required');
+      return;
+    }
+
     if (!form.password.trim()) {
       setError('Password is required');
       return;
@@ -60,8 +65,8 @@ export default function Register() {
 
     if (!isInvited) {
       // For regular registration, require additional fields
-      if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim()) {
-        setError('First name, last name, and email are required');
+      if (!form.firstName.trim() || !form.lastName.trim()) {
+        setError('First name and last name are required');
         return;
       }
     }
@@ -77,6 +82,7 @@ export default function Register() {
         data = await registerUserFromToken(
           token,
           form.username,
+          form.email,
           form.password,
           form.re_password
         );
@@ -190,6 +196,27 @@ export default function Register() {
               />
             </div>
 
+            {/* Email field - Required for login */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email Address *
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                placeholder="your.email@example.com"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+                disabled={loading}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                You'll use this email to log in to your account
+              </p>
+            </div>
+
             {/* Additional fields for non-invited users */}
             {!isInvited && (
               <>
@@ -227,23 +254,6 @@ export default function Register() {
                     />
                   </div>
                 </div>
-
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={form.email}
-                    onChange={handleChange}
-                    placeholder="john.doe@company.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required={!isInvited}
-                    disabled={loading}
-                  />
-                </div>
               </>
             )}
           </div>
@@ -279,9 +289,10 @@ export default function Register() {
                 <div className="text-sm text-blue-700">
                   <p className="font-medium mb-1">Registration Tips:</p>
                   <ul className="list-disc list-inside space-y-1">
-                    <li>Choose a memorable username (you'll use this to login)</li>
-                    <li>Create a strong password with at least 6 characters</li>
-                    <li>You can change your password after first login</li>
+                    <li>Enter your email address (you'll use this to log in)</li>
+                    <li>Choose a memorable username</li>
+                    <li>Create a strong password with at least 8 characters</li>
+                    <li>You can update your profile after first login</li>
                   </ul>
                 </div>
               </div>

@@ -166,19 +166,19 @@ const Notifications = () => {
             className={`filter-button ${filter === 'low_stock' ? 'active' : ''}`}
             onClick={() => handleFilterChange('low_stock')}
           >
-            📦 Low Stock
+             Low Stock
           </button>
           <button
             className={`filter-button ${filter === 'material_pickup' ? 'active' : ''}`}
             onClick={() => handleFilterChange('material_pickup')}
           >
-            📤 Pickups
+            Pickups
           </button>
           <button
             className={`filter-button ${filter === 'procurement_delivered' ? 'active' : ''}`}
             onClick={() => handleFilterChange('procurement_delivered')}
           >
-            🚚 Deliveries
+            Deliveries
           </button>
         </div>
       </div>
