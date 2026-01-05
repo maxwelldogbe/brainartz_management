@@ -22,8 +22,8 @@ const DeliveryModal = ({ procurement, onClose, onConfirm }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+    <div className="fixed inset-0 backdrop-blur-sm bg-gray-900/30 flex items-center justify-center z-50 transition-all duration-200">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl transform transition-all duration-200 scale-100">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold flex items-center gap-2">

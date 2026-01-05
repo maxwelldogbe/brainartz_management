@@ -350,7 +350,7 @@ export default function Layout() {
       {/* Overlay (mobile only when sidebar open) */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          className="fixed inset-0 backdrop-blur-sm bg-gray-900/30 z-30 md:hidden transition-all duration-200"
           onClick={() => setIsOpen(false)}
         />
       )}

@@ -36,10 +36,10 @@ export default function Modal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-gray-900/30 p-4 transition-all duration-200"
       onClick={handleBackdropClick}
     >
-      <div className={`bg-white rounded-lg shadow-xl w-full ${getSizeClasses()} max-h-[90vh] overflow-hidden`}>
+      <div className={`bg-white rounded-lg shadow-2xl w-full ${getSizeClasses()} max-h-[90vh] overflow-hidden transform transition-all duration-200 scale-100`}>
         {title && (
           <div className="flex justify-between items-center p-6 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
