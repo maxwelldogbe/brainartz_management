@@ -99,15 +99,8 @@ export default function EnhancedWorkForm({
       newErrors.price = 'Valid price is required';
     }
 
-    // Validate customer name (required)
-    if (!formData.customer_name.trim()) {
-      newErrors.customer_name = 'Customer name is required';
-    }
-
-    // Validate customer phone (always required for notifications)
-    if (!formData.customer_phone.trim()) {
-      newErrors.customer_phone = 'Customer phone is required';
-    } else if (formData.customer_phone.trim().length < 10) {
+    // Validate customer phone only if provided
+    if (formData.customer_phone.trim() && formData.customer_phone.trim().length < 10) {
       newErrors.customer_phone = 'Please enter a valid phone number (minimum 10 digits)';
     }
 
@@ -229,7 +222,7 @@ export default function EnhancedWorkForm({
           {/* Customer Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Customer Name *
+              Customer Name
             </label>
             <input
               type="text"
@@ -239,8 +232,7 @@ export default function EnhancedWorkForm({
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                 errors.customer_name ? 'border-red-300' : 'border-gray-300'
               }`}
-              placeholder="e.g., John Doe"
-              required
+              placeholder="e.g., John Doe (optional)"
               disabled={loading}
             />
             {errors.customer_name && (
@@ -251,7 +243,7 @@ export default function EnhancedWorkForm({
           {/* Customer Phone */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Customer Phone *
+              Customer Phone
             </label>
             <input
               type="tel"
@@ -261,15 +253,14 @@ export default function EnhancedWorkForm({
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                 errors.customer_phone ? 'border-red-300' : 'border-gray-300'
               }`}
-              placeholder="e.g., +233241234567"
-              required
+              placeholder="e.g., +233241234567 (optional)"
               disabled={loading}
             />
             {errors.customer_phone && (
               <p className="mt-1 text-sm text-red-600">{errors.customer_phone}</p>
             )}
             <p className="mt-1 text-xs text-gray-500">
-              Required for sending completion notifications
+              Optional - only needed for completion notifications
             </p>
           </div>
 

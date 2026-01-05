@@ -312,8 +312,8 @@ export default function MarketingMessages() {
 
       {/* Create/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 backdrop-blur-sm bg-gray-900/30 flex items-center justify-center z-50 p-4 transition-all duration-200">
+          <div className="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto transform transition-all duration-200 scale-100">
             <form onSubmit={handleSubmit} className="p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">
                 {editingMessage ? 'Edit Message Template' : 'Create Message Template'}

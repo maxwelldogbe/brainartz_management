@@ -63,8 +63,10 @@ export default function Payments() {
     const { name, value } = e.target;
     if (name === "work") {
       const selected = works.find((w) => String(w.id) === String(value));
-      if (selected && selected.price) {
-        setForm({ ...form, work: value, amount: selected.price });
+      if (selected) {
+        // Auto-fill with remaining balance instead of full price
+        const amountToFill = selected.remaining_balance || selected.price || 0;
+        setForm({ ...form, work: value, amount: amountToFill });
         return;
       }
     }
@@ -145,6 +147,7 @@ export default function Payments() {
               <th className="p-3">ID</th>
               <th className="p-3">Amount</th>
               <th className="p-3">Work</th>
+              <th className="p-3">Payment Status</th>
               <th className="p-3">Method</th>
               <th className="p-3">Processed By</th>
               <th className="p-3">Actions</th>
@@ -160,7 +163,27 @@ export default function Payments() {
               >
                 <td className="p-3 font-medium text-gray-800">{p.id}</td>
                 <td className="p-3 font-semibold text-green-600">₵{p.amount}</td>
-                <td className="p-3">{p.work_title || p.work_description}</td>
+                <td className="p-3">
+                  <div>
+                    <div className="font-medium text-gray-800">{p.work_title || p.work_description}</div>
+                    {p.work_balance !== undefined && parseFloat(p.work_balance) > 0 && (
+                      <div className="text-xs text-orange-600 mt-1">
+                        Balance: ₵{parseFloat(p.work_balance).toFixed(2)}
+                      </div>
+                    )}
+                  </div>
+                </td>
+                <td className="p-3">
+                  {p.is_full_payment ? (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      ✅ Paid in Full
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                      ⚠️ Partial
+                    </span>
+                  )}
+                </td>
                 <td className="p-3">
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                     p.method === 'cash' ? 'bg-green-100 text-green-800' :
@@ -245,7 +268,23 @@ export default function Payments() {
               ₵{p.amount}
             </div>
             <div className="text-sm text-gray-700">
-              Work: {p.work_title || p.work_description}
+              <div className="font-medium">Work: {p.work_title || p.work_description}</div>
+              {p.work_balance !== undefined && parseFloat(p.work_balance) > 0 && (
+                <div className="text-xs text-orange-600 mt-1">
+                  Balance Remaining: ₵{parseFloat(p.work_balance).toFixed(2)}
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {p.is_full_payment ? (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  ✅ Paid in Full
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                  ⚠️ Partial Payment
+                </span>
+              )}
             </div>
             <div className="text-sm text-gray-700">
               Processed By: {p.processed_by || "—"}
@@ -295,16 +334,50 @@ export default function Payments() {
           {/* Amount */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Amount
+              Amount Paying Now
             </label>
-            <input
-              type="number"
-              name="amount"
-              value={form.amount}
-              onChange={handleChange}
-              placeholder="Enter amount"
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 text-gray-500">₵</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                name="amount"
+                value={form.amount}
+                onChange={handleChange}
+                placeholder="Enter amount"
+                className="w-full border rounded-lg pl-8 pr-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            {form.work && works.find(w => String(w.id) === String(form.work)) && parseFloat(form.amount) > 0 && (
+              <div className="mt-2">
+                {(() => {
+                  const selectedWork = works.find(w => String(w.id) === String(form.work));
+                  const balance = parseFloat(selectedWork.remaining_balance || selectedWork.price) || 0;
+                  const paymentAmount = parseFloat(form.amount) || 0;
+                  const newBalance = balance - paymentAmount;
+                  
+                  return (
+                    <div className={`p-2 rounded-lg text-sm ${
+                      newBalance <= 0 ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200'
+                    }`}>
+                      {newBalance <= 0 ? (
+                        <p className="text-green-700 font-medium flex items-center gap-2">
+                          ✅ This will mark the work as <strong>PAID IN FULL</strong>
+                          {newBalance < 0 && (
+                            <span className="text-xs">(Overpayment: ₵{Math.abs(newBalance).toFixed(2)})</span>
+                          )}
+                        </p>
+                      ) : (
+                        <p className="text-yellow-700 font-medium">
+                          ⚠️ Partial Payment - Remaining balance after: <strong>₵{newBalance.toFixed(2)}</strong>
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
 
           {/* Work */}
@@ -322,10 +395,50 @@ export default function Payments() {
               <option value="" style={{ color: '#000000', backgroundColor: 'white' }}>Select Work ({works.length} available)</option>
               {works.map((w) => (
                 <option key={w.id} value={w.id} style={{ color: '#000000', backgroundColor: 'white', padding: '8px' }}>
-                  {w.description || w.title || `Work #${w.id}`}
+                  {w.title || w.description || `Work #${w.id}`} - Balance: ₵{w.remaining_balance || w.price} (Total: ₵{w.price})
                 </option>
               ))}
             </select>
+            {form.work && works.find(w => String(w.id) === String(form.work)) && (
+              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                {(() => {
+                  const selectedWork = works.find(w => String(w.id) === String(form.work));
+                  const totalPaid = parseFloat(selectedWork.total_payments) || 0;
+                  const balance = parseFloat(selectedWork.remaining_balance) || 0;
+                  const totalPrice = parseFloat(selectedWork.price) || 0;
+                  
+                  return (
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Total Price:</span>
+                        <span className="font-semibold text-gray-800">₵{totalPrice.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Already Paid:</span>
+                        <span className="font-semibold text-green-600">₵{totalPaid.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between border-t pt-1">
+                        <span className="text-gray-700 font-medium">Remaining Balance:</span>
+                        <span className="font-bold text-blue-600">₵{balance.toFixed(2)}</span>
+                      </div>
+                      {totalPaid > 0 && totalPrice > 0 && (
+                        <div className="pt-1">
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-green-600 h-2 rounded-full transition-all duration-300" 
+                              style={{ width: `${Math.min((totalPaid / totalPrice) * 100, 100)}%` }}
+                            ></div>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1 text-center">
+                            {((totalPaid / totalPrice) * 100).toFixed(1)}% paid
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
 
           {/* Method */}
@@ -432,16 +545,68 @@ export default function Payments() {
                 <label className="block text-sm font-medium text-gray-600 mb-1">
                   Work
                 </label>
-                <p className="text-gray-800 bg-gray-50 p-3 rounded-lg">
+                <div className="bg-gray-50 p-3 rounded-lg space-y-2">
                   {viewingPayment.work_title && (
-                    <span className="font-medium block mb-1">
+                    <span className="font-medium block">
                       {viewingPayment.work_title}
                     </span>
                   )}
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-600 block">
                     {viewingPayment.work_description}
                   </span>
-                </p>
+                  
+                  {/* Payment status information */}
+                  {viewingPayment.work_price && (
+                    <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Total Work Price:</span>
+                        <span className="font-semibold text-gray-800">₵{parseFloat(viewingPayment.work_price).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Total Paid:</span>
+                        <span className="font-semibold text-green-600">₵{parseFloat(viewingPayment.work_total_paid || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm border-t pt-2">
+                        <span className="text-gray-700 font-medium">Current Balance:</span>
+                        <span className={`font-bold ${
+                          parseFloat(viewingPayment.work_balance || 0) <= 0 ? 'text-green-600' : 'text-orange-600'
+                        }`}>
+                          ₵{parseFloat(viewingPayment.work_balance || 0).toFixed(2)}
+                        </span>
+                      </div>
+                      
+                      {/* Payment status badge */}
+                      <div className="pt-2">
+                        {viewingPayment.is_full_payment ? (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            ✅ Fully Paid
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+                            ⚠️ Partial Payment (Balance Remaining)
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Progress bar */}
+                      {parseFloat(viewingPayment.work_total_paid) > 0 && parseFloat(viewingPayment.work_price) > 0 && (
+                        <div className="mt-2">
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-green-600 h-2 rounded-full transition-all" 
+                              style={{ 
+                                width: `${Math.min((parseFloat(viewingPayment.work_total_paid) / parseFloat(viewingPayment.work_price)) * 100, 100)}%` 
+                              }}
+                            ></div>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1 text-center">
+                            {((parseFloat(viewingPayment.work_total_paid) / parseFloat(viewingPayment.work_price)) * 100).toFixed(1)}% paid
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Payment Method */}

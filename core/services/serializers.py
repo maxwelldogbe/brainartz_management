@@ -51,8 +51,8 @@ class WorkFileSerializer(serializers.ModelSerializer):
 class WorkSerializer(serializers.ModelSerializer):
     """Enhanced work serializer with title, category, and file support"""
     # Customer info is now directly on the Work model (optional)
-    customer_name = serializers.CharField(max_length=255, required=False, allow_blank=True)
-    customer_phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    customer_name = serializers.CharField(max_length=255, required=False, allow_blank=True, default='')
+    customer_phone = serializers.CharField(max_length=20, required=False, allow_blank=True, default='')
     
     # Category handling
     category = serializers.PrimaryKeyRelatedField(
@@ -199,13 +199,19 @@ class PaymentSerializer(serializers.ModelSerializer):
     work = serializers.PrimaryKeyRelatedField(queryset=Work.objects.all())
     work_description = serializers.SerializerMethodField(read_only=True)
     work_title = serializers.SerializerMethodField(read_only=True)
+    work_price = serializers.SerializerMethodField(read_only=True)
+    work_total_paid = serializers.SerializerMethodField(read_only=True)
+    work_balance = serializers.SerializerMethodField(read_only=True)
+    is_full_payment = serializers.SerializerMethodField(read_only=True)
     processed_by = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = Payment
         # processed_by will be set from request.user in the view; note is allowed
         fields = [
-            'id', 'work', 'work_description', 'work_title', 'amount', 'paid_at', 'method', 
+            'id', 'work', 'work_description', 'work_title', 'work_price', 
+            'work_total_paid', 'work_balance', 'is_full_payment',
+            'amount', 'paid_at', 'method', 
             'tracking_number', 'processed_by', 'note'
         ]
 
@@ -220,6 +226,30 @@ class PaymentSerializer(serializers.ModelSerializer):
             return obj.work.title
         except Exception:
             return None
+    
+    def get_work_price(self, obj):
+        try:
+            return obj.work.price
+        except Exception:
+            return None
+    
+    def get_work_total_paid(self, obj):
+        try:
+            return obj.work.get_total_payments()
+        except Exception:
+            return None
+    
+    def get_work_balance(self, obj):
+        try:
+            return obj.work.get_remaining_balance()
+        except Exception:
+            return None
+    
+    def get_is_full_payment(self, obj):
+        try:
+            return obj.work.is_fully_paid()
+        except Exception:
+            return False
 
 
 class EmployeeProfileSerializer(serializers.ModelSerializer):

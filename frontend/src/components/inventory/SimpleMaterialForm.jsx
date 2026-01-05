@@ -128,8 +128,8 @@ const SimpleMaterialForm = ({
   const isEditing = !!material;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 backdrop-blur-sm bg-gray-900/30 flex items-center justify-center p-4 z-50 transition-all duration-200">
+      <div className="bg-white rounded-lg shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto transform transition-all duration-200 scale-100">
         <form onSubmit={handleSubmit} className="p-6">
           {/* Form Header */}
           <div className="flex items-center justify-between pb-4 border-b border-gray-200">
