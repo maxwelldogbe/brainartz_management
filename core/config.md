@@ -3,7 +3,7 @@ pstream brainartzgh_api {
     server 127.0.0.1:8000;
 }
 
-server {
+<!-- server {
     listen 80;
     server_name brainartzgh.com www.brainartzgh.com;
 
@@ -29,4 +29,4 @@ server {
     location /static/ {
         alias /home/brainartz/brainartz_management/brainartz_management/core/st>
     }
-
+ -->

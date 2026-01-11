@@ -176,11 +176,11 @@ export default function Payments() {
                 <td className="p-3">
                   {p.is_full_payment ? (
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      ✅ Paid in Full
+                      Paid in Full
                     </span>
                   ) : (
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                      ⚠️ Partial
+                      Partial
                     </span>
                   )}
                 </td>
@@ -278,11 +278,11 @@ export default function Payments() {
             <div className="flex items-center gap-2">
               {p.is_full_payment ? (
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  ✅ Paid in Full
+                  Paid in Full
                 </span>
               ) : (
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                  ⚠️ Partial Payment
+                  Partial Payment
                 </span>
               )}
             </div>
@@ -363,14 +363,14 @@ export default function Payments() {
                     }`}>
                       {newBalance <= 0 ? (
                         <p className="text-green-700 font-medium flex items-center gap-2">
-                          ✅ This will mark the work as <strong>PAID IN FULL</strong>
+                          This will mark the work as <strong>PAID IN FULL</strong>
                           {newBalance < 0 && (
                             <span className="text-xs">(Overpayment: ₵{Math.abs(newBalance).toFixed(2)})</span>
                           )}
                         </p>
                       ) : (
                         <p className="text-yellow-700 font-medium">
-                          ⚠️ Partial Payment - Remaining balance after: <strong>₵{newBalance.toFixed(2)}</strong>
+                          Partial Payment - Remaining balance after: <strong>₵{newBalance.toFixed(2)}</strong>
                         </p>
                       )}
                     </div>
@@ -579,11 +579,11 @@ export default function Payments() {
                       <div className="pt-2">
                         {viewingPayment.is_full_payment ? (
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                            ✅ Fully Paid
+                            Fully Paid
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
-                            ⚠️ Partial Payment (Balance Remaining)
+                            Partial Payment (Balance Remaining)
                           </span>
                         )}
                       </div>

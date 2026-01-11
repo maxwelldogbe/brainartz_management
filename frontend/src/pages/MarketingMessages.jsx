@@ -153,11 +153,11 @@ export default function MarketingMessages() {
   };
 
   const showSuccess = (message) => {
-    alert('✅ ' + message);
+    alert( message);
   };
 
   const showError = (message) => {
-    alert('❌ ' + message);
+    alert(message);
   };
 
   if (loading) {
@@ -183,7 +183,7 @@ export default function MarketingMessages() {
             onClick={() => handleOpenModal()}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
           >
-            ➕ New Message
+            New Message
           </button>
         </div>
 
@@ -212,7 +212,7 @@ export default function MarketingMessages() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {messages.length === 0 ? (
           <div className="col-span-2 bg-white rounded-lg shadow p-12 text-center">
-            <div className="text-6xl mb-4">📝</div>
+            {/* <div className="text-6xl mb-4">📝</div> */}
             <h3 className="text-lg font-semibold text-gray-800 mb-2">
               No Message Templates Yet
             </h3>
@@ -268,7 +268,7 @@ export default function MarketingMessages() {
                 {/* Stats */}
                 <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
                   <div>
-                    📊 Used: <span className="font-semibold">{message.times_used} times</span>
+                    Used: <span className="font-semibold">{message.times_used} times</span>
                   </div>
                   {message.last_used && (
                     <div>
@@ -285,7 +285,7 @@ export default function MarketingMessages() {
                     onClick={() => handleOpenModal(message)}
                     className="flex-1 px-4 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
                   >
-                    ✏️ Edit
+                    Edit
                   </button>
                   <button
                     onClick={() => handleToggleActive(message.id)}
@@ -295,13 +295,13 @@ export default function MarketingMessages() {
                         : 'bg-green-50 text-green-700 hover:bg-green-100'
                     }`}
                   >
-                    {message.is_active ? '⏸️ Deactivate' : '▶️ Activate'}
+                    {message.is_active ? 'Deactivate' : 'Activate'}
                   </button>
                   <button
                     onClick={() => handleDelete(message.id)}
                     className="px-4 py-2 text-sm bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors"
                   >
-                    🗑️
+                    Delete
                   </button>
                 </div>
               </div>
