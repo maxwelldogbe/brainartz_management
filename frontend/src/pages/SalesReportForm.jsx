@@ -604,7 +604,7 @@ export default function SalesReportForm() {
                 onClick={() => setShowNoteModal(true)}
                 className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
               >
-                ➕ Add Note
+                Add Note
               </button>
             </div>
 
