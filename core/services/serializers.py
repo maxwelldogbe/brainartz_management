@@ -139,9 +139,21 @@ class WorkSerializer(serializers.ModelSerializer):
 class WorkCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating works - customer info is optional (only needed for notifications)"""
     
+    # Payment fields (optional - to mark work as paid immediately)
+    mark_as_paid = serializers.BooleanField(required=False, default=False, write_only=True)
+    payment_method = serializers.ChoiceField(
+        choices=[('cash', 'Cash'), ('mobile_money', 'Mobile Money'), ('card', 'Card'), ('bank_transfer', 'Bank Transfer')],
+        required=False, 
+        allow_blank=True,
+        write_only=True
+    )
+    payment_tracking_number = serializers.CharField(max_length=100, required=False, allow_blank=True, write_only=True)
+    payment_note = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    
     class Meta:
         model = Work
-        fields = ['customer_name', 'customer_phone', 'title', 'description', 'price', 'category', 'note', 'worker']
+        fields = ['customer_name', 'customer_phone', 'title', 'description', 'price', 'category', 'note', 'worker',
+                  'mark_as_paid', 'payment_method', 'payment_tracking_number', 'payment_note']
 
     def validate_title(self, value):
         if not value or len(value.strip()) < 3:
@@ -166,6 +178,14 @@ class WorkCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Phone number must be at least 10 digits")
             return value.strip()
         return value
+    
+    def validate(self, attrs):
+        # If mark_as_paid is True, payment_method is required
+        if attrs.get('mark_as_paid', False) and not attrs.get('payment_method'):
+            raise serializers.ValidationError({
+                'payment_method': 'Payment method is required when marking work as paid'
+            })
+        return attrs
 
 
 class WorkFileUploadSerializer(serializers.ModelSerializer):

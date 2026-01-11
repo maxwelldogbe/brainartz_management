@@ -81,10 +81,29 @@ class WorkViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # Set the worker to request.user if they are authenticated and marked as worker
         user = self.request.user if self.request and self.request.user and self.request.user.is_authenticated else None
+        
+        # Extract payment-related fields before saving
+        mark_as_paid = serializer.validated_data.pop('mark_as_paid', False)
+        payment_method = serializer.validated_data.pop('payment_method', None)
+        payment_tracking_number = serializer.validated_data.pop('payment_tracking_number', None)
+        payment_note = serializer.validated_data.pop('payment_note', None)
+        
+        # Save the work
         if user is not None:
-            serializer.save(worker=user)
+            work = serializer.save(worker=user)
         else:
-            serializer.save()
+            work = serializer.save()
+        
+        # Create payment if mark_as_paid is True
+        if mark_as_paid and payment_method:
+            Payment.objects.create(
+                work=work,
+                amount=work.price,
+                method=payment_method,
+                tracking_number=payment_tracking_number or '',
+                note=payment_note or 'Payment recorded at work creation',
+                processed_by=user
+            )
 
     @action(detail=False, methods=['get'])
     def select_options(self, request):

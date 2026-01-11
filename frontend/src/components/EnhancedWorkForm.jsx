@@ -16,7 +16,11 @@ export default function EnhancedWorkForm({
     customer_name: '',
     customer_phone: '',
     note: '',
-    worker: null
+    worker: null,
+    mark_as_paid: false,
+    payment_method: '',
+    payment_tracking_number: '',
+    payment_note: ''
   });
 
   const [categories, setCategories] = useState([]);
@@ -51,7 +55,11 @@ export default function EnhancedWorkForm({
           customer_name: editingWork.customer_name || '',
           customer_phone: editingWork.customer_phone || '',
           note: editingWork.note || '',
-          worker: editingWork.worker || null
+          worker: editingWork.worker || null,
+          mark_as_paid: false,
+          payment_method: '',
+          payment_tracking_number: '',
+          payment_note: ''
         });
       } else {
         setFormData({
@@ -62,7 +70,11 @@ export default function EnhancedWorkForm({
           customer_name: '',
           customer_phone: '',
           note: '',
-          worker: null
+          worker: null,
+          mark_as_paid: false,
+          payment_method: '',
+          payment_tracking_number: '',
+          payment_note: ''
         });
       }
       setErrors({});
@@ -70,10 +82,10 @@ export default function EnhancedWorkForm({
   }, [editingWork, isOpen]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value === '' ? null : value
+      [name]: type === 'checkbox' ? checked : (value === '' ? null : value)
     }));
     
     // Clear error for this field
@@ -104,6 +116,11 @@ export default function EnhancedWorkForm({
       newErrors.customer_phone = 'Please enter a valid phone number (minimum 10 digits)';
     }
 
+    // Validate payment fields if mark_as_paid is true
+    if (formData.mark_as_paid && !formData.payment_method) {
+      newErrors.payment_method = 'Payment method is required when marking as paid';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -130,11 +147,21 @@ export default function EnhancedWorkForm({
         worker: formData.worker
       };
 
+      // Add payment fields only when creating new work (not editing)
+      if (!editingWork) {
+        apiData.mark_as_paid = formData.mark_as_paid;
+        if (formData.mark_as_paid) {
+          apiData.payment_method = formData.payment_method;
+          apiData.payment_tracking_number = formData.payment_tracking_number.trim();
+          apiData.payment_note = formData.payment_note.trim();
+        }
+      }
+
       const result = editingWork 
         ? await updateWork(editingWork.id, apiData)
         : await createWork(apiData);
       
-      showSuccess(`Work ${editingWork ? 'updated' : 'created'} successfully`);
+      showSuccess(`Work ${editingWork ? 'updated' : 'created'} successfully${formData.mark_as_paid && !editingWork ? ' and marked as paid' : ''}`);
       onSave(result);
       onClose();
     } catch (error) {
@@ -353,6 +380,101 @@ export default function EnhancedWorkForm({
             disabled={loading}
           />
         </div>
+
+        {/* Payment Section (only show when creating new work) */}
+        {!editingWork && (
+          <div className="border-t pt-4 space-y-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="mark_as_paid"
+                  name="mark_as_paid"
+                  checked={formData.mark_as_paid}
+                  onChange={handleChange}
+                  className="mt-1 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                  disabled={loading}
+                />
+                <div className="flex-1">
+                  <label htmlFor="mark_as_paid" className="block text-sm font-medium text-green-900 cursor-pointer">
+                    💰 Mark as Paid (Customer paid immediately)
+                  </label>
+                  <p className="mt-1 text-xs text-green-700">
+                    Check this box if the customer has already paid for this work. This will automatically create a payment record for the full work price.
+                  </p>
+                </div>
+              </div>
+
+              {/* Payment Details (shown when mark_as_paid is checked) */}
+              {formData.mark_as_paid && (
+                <div className="mt-4 space-y-3 pl-7">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Payment Method */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Payment Method *
+                      </label>
+                      <select
+                        name="payment_method"
+                        value={formData.payment_method}
+                        onChange={handleChange}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+                          errors.payment_method ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                        required={formData.mark_as_paid}
+                        disabled={loading}
+                      >
+                        <option value="">Select Payment Method</option>
+                        <option value="cash">Cash</option>
+                        <option value="mobile_money">Mobile Money</option>
+                        <option value="card">Card</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                      </select>
+                      {errors.payment_method && (
+                        <p className="mt-1 text-sm text-red-600">{errors.payment_method}</p>
+                      )}
+                    </div>
+
+                    {/* Tracking Number */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Transaction/Reference Number
+                      </label>
+                      <input
+                        type="text"
+                        name="payment_tracking_number"
+                        value={formData.payment_tracking_number}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        placeholder="e.g., TXN123456 (optional)"
+                        disabled={loading}
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Optional - for mobile money or bank transfer reference
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Payment Note */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Payment Note
+                    </label>
+                    <textarea
+                      name="payment_note"
+                      value={formData.payment_note}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      rows="2"
+                      placeholder="Optional note about this payment..."
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Form Actions */}
         <div className="form-actions flex justify-end gap-3 pt-4 border-t">
