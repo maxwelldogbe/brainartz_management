@@ -1,7 +1,13 @@
 from django.contrib import admin
 from .models import *
-# Register your models here.
-admin.site.register(User)
+
+
+@admin.register(User)
+class UserAdmin(admin.ModelAdmin):
+	list_display = ('username', 'email', 'is_worker', 'worker_role', 'is_admin')
+	list_filter = ('is_worker', 'worker_role', 'is_admin')
+
+
 admin.site.register(InvitationToken)
 from .models import Profile
 

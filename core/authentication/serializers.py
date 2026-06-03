@@ -47,10 +47,15 @@ class ManualEmployeeCreateSerializer(serializers.ModelSerializer):
     """Serializer for manually creating employee accounts by admin"""
     phone = serializers.CharField(max_length=30, required=True, help_text="Employee phone number")
     password = serializers.CharField(write_only=True, required=False, help_text="Optional password (will generate if not provided)")
+    worker_roles = serializers.ListField(
+        child=serializers.ChoiceField(choices=User.WORKER_ROLE_CHOICES),
+        required=False,
+        allow_empty=False,
+    )
     
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'phone', 'password']
+        fields = ['username', 'email', 'first_name', 'last_name', 'phone', 'password', 'worker_roles']
         extra_kwargs = {
             'first_name': {'required': True},
             'last_name': {'required': True},
@@ -80,6 +85,11 @@ class ManualEmployeeCreateSerializer(serializers.ModelSerializer):
         if value and User.objects.filter(email=value).exists():
             raise serializers.ValidationError('Email already exists')
         return value
+
+    def validate_worker_roles(self, value):
+        if not value:
+            return [User.WORKER_ROLE_GENERALIST]
+        return list(dict.fromkeys(value))
     
     def create(self, validated_data):
         """Create employee account with automatic profile creation"""
@@ -100,11 +110,15 @@ class ManualEmployeeCreateSerializer(serializers.ModelSerializer):
             validated_data['email'] = f"{username}-{safe_phone[:6]}@company.local"
         
         # Create user account
+        worker_roles = validated_data.pop('worker_roles', [User.WORKER_ROLE_GENERALIST])
         user = User.objects.create_user(
             password=password,
             is_worker=True,
             **validated_data
         )
+        user.worker_roles = worker_roles
+        user.worker_role = worker_roles[0]
+        user.save(update_fields=['worker_roles', 'worker_role'])
         
         # Update or create profile with phone number
         if hasattr(user, 'profile'):
@@ -125,11 +139,18 @@ class UserSerializer(BaseUserSerializer):
     first_name = serializers.CharField(max_length=150)
     last_name = serializers.CharField(max_length=150)
     is_active = serializers.BooleanField()
+    worker_permissions = serializers.SerializerMethodField(read_only=True)
 
     class Meta(BaseUserSerializer.Meta):
         model = User
-        fields = ('id', 'email', 'username', 'first_name', 'last_name', 'is_worker', 'is_admin', 'is_active', 'profile')
+        fields = (
+            'id', 'email', 'username', 'first_name', 'last_name',
+            'is_worker', 'is_admin', 'is_active', 'worker_role', 'worker_roles', 'worker_permissions', 'profile'
+        )
         read_only_fields = ('email',)
+
+    def get_worker_permissions(self, obj):
+        return obj.get_worker_permissions()
 
 
 class PasswordChangeSerializer(serializers.Serializer):

@@ -62,7 +62,9 @@ class ManualEmployeeCreateView(generics.CreateAPIView):
                 'email': user.email,
                 'full_name': user.get_full_name(),
                 'phone': user.profile.phone if hasattr(user, 'profile') else None,
-                'is_worker': user.is_worker
+                'is_worker': user.is_worker,
+                'worker_role': user.worker_role,
+                'worker_roles': user.worker_roles,
             },
             'login_credentials': {
                 'username': user.username,

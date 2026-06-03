@@ -279,22 +279,69 @@ def send_procurement_delivered_notification(procurement):
 def cleanup_old_notifications(days=30):
     """
     Clean up old read notifications.
-    
+
     Args:
         days: Number of days to keep notifications (default 30)
-    
+
     Returns:
         Number of deleted notifications
     """
     from datetime import timedelta
-    
+
     cutoff_date = timezone.now() - timedelta(days=days)
     deleted_count, _ = Notification.objects.filter(
         is_read=True,
         read_at__lt=cutoff_date
     ).delete()
-    
+
     return deleted_count
+
+
+def send_stock_adjustment_approved_notification(adjustment, approver):
+    """
+    Send notification when a pending stock adjustment is approved.
+    Notifies the worker who submitted the request.
+    """
+    if not adjustment.submitted_by:
+        return None
+
+    material_name = adjustment.get_display_name()
+    approver_name = approver.get_full_name() or approver.username if approver else "Admin"
+
+    title = f"Stock Request Approved"
+    message = f"Your request to add {adjustment.quantity} {adjustment.material_unit if adjustment.adjustment_type == 'new_material' else (adjustment.material.unit if adjustment.material else '')} of {material_name} has been approved by {approver_name}."
+
+    return send_notification(
+        recipient=adjustment.submitted_by,
+        notification_type='stock_adjustment_approved',
+        title=title,
+        message=message,
+        material=adjustment.material if adjustment.adjustment_type == 'stock_addition' else None
+    )
+
+
+def send_stock_adjustment_rejected_notification(adjustment, approver):
+    """
+    Send notification when a pending stock adjustment is rejected.
+    Notifies the worker who submitted the request with the rejection reason.
+    """
+    if not adjustment.submitted_by:
+        return None
+
+    material_name = adjustment.get_display_name()
+    approver_name = approver.get_full_name() or approver.username if approver else "Admin"
+    rejection_reason = adjustment.rejection_reason or "No reason provided"
+
+    title = f"Stock Request Rejected"
+    message = f"Your request to add {adjustment.quantity} {adjustment.material_unit if adjustment.adjustment_type == 'new_material' else (adjustment.material.unit if adjustment.material else '')} of {material_name} was rejected by {approver_name}.\nReason: {rejection_reason}"
+
+    return send_notification(
+        recipient=adjustment.submitted_by,
+        notification_type='stock_adjustment_rejected',
+        title=title,
+        message=message,
+        material=adjustment.material if adjustment.adjustment_type == 'stock_addition' else None
+    )
 
 
 def mark_notification_read(notification_id, user):

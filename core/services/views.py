@@ -2,10 +2,12 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.views import APIView
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.db.models import Sum, Count, Q, F
+from django.db.models import Sum, Count, Q, F, Value, DecimalField
+from django.db.models.functions import Coalesce
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -36,6 +38,20 @@ from rest_framework import permissions as drf_permissions
 from .serializers import WorkerSerializer
 
 User = get_user_model()
+
+
+def is_admin_user(user):
+    return bool(user and user.is_authenticated and (user.is_staff or getattr(user, 'is_admin', False)))
+
+
+def enforce_worker_feature_access(request, feature):
+    user = request.user
+    if is_admin_user(user):
+        return
+    if not user or not user.is_authenticated or not getattr(user, 'is_worker', False):
+        raise PermissionDenied('You do not have permission to access this resource')
+    if not user.has_worker_permission(feature):
+        raise PermissionDenied(f'Your assigned role does not allow access to {feature}')
 
 
 class JobCategoryViewSet(viewsets.ModelViewSet):
@@ -73,6 +89,38 @@ class WorkViewSet(viewsets.ModelViewSet):
     serializer_class = WorkSerializer
     permission_classes = [IsOwnerOrAdminForUnsafeMethods]
 
+    def _is_admin_user(self):
+        user = self.request.user
+        return is_admin_user(user)
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        enforce_worker_feature_access(request, 'works')
+
+    def get_queryset(self):
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        queryset = super().get_queryset()
+        if not self._is_admin_user():
+            queryset = queryset.filter(worker=self.request.user)
+        
+        # Filter by type: daily or archive
+        work_type = self.request.query_params.get('type', 'daily')
+        today = timezone.now().date()
+        
+        if work_type == 'archive':
+            # Archive: only completed works
+            queryset = queryset.filter(completed=True).order_by('-completed_at')
+        elif work_type == 'daily':
+            # Daily: today's works + incomplete works from before today
+            queryset = queryset.filter(
+                Q(created_at__date=today) |  # Works created today
+                Q(created_at__date__lt=today, completed=False)  # Incomplete works from before today
+            ).order_by('-created_at')
+        
+        return queryset
+
     def get_serializer_class(self):
         if self.action == 'create':
             return WorkCreateSerializer
@@ -95,7 +143,7 @@ class WorkViewSet(viewsets.ModelViewSet):
             work = serializer.save()
         
         # Create payment if mark_as_paid is True
-        if mark_as_paid and payment_method:
+        if mark_as_paid and payment_method and not work.is_credit:
             Payment.objects.create(
                 work=work,
                 amount=work.price,
@@ -108,19 +156,22 @@ class WorkViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def select_options(self, request):
         """Lightweight endpoint for work dropdown options - excludes fully paid works by default"""
-        from django.db.models import Sum, Case, When, DecimalField, F
-        
         # Check if we should include fully paid works (admin use case)
         include_fully_paid = request.query_params.get('include_fully_paid', '').lower() in ['true', '1', 'yes']
         
         # Get all works with payment totals calculated
-        works = Work.objects.annotate(
-            total_payments=Case(
-                When(payments__isnull=True, then=0),
-                default=Sum('payments__amount'),
-                output_field=DecimalField()
+        works = Work.objects.filter(
+            Q(is_credit=False) | Q(credit_cleared=True)
+        ).annotate(
+            total_payments=Coalesce(
+                Sum('payments__amount'),
+                Value(0),
+                output_field=DecimalField(max_digits=10, decimal_places=2),
             )
         )
+
+        if not self._is_admin_user():
+            works = works.filter(worker=request.user)
         
         # Exclude fully paid works unless explicitly requested
         if not include_fully_paid:
@@ -133,10 +184,11 @@ class WorkViewSet(viewsets.ModelViewSet):
     def by_category(self, request):
         """Get works grouped by category"""
         category_id = request.query_params.get('category_id')
+        works = Work.objects.all()
+        if not self._is_admin_user():
+            works = works.filter(worker=request.user)
         if category_id:
-            works = Work.objects.filter(category_id=category_id)
-        else:
-            works = Work.objects.all()
+            works = works.filter(category_id=category_id)
         
         serializer = WorkSerializer(works, many=True, context={'request': request})
         return Response(serializer.data)
@@ -145,27 +197,78 @@ class WorkViewSet(viewsets.ModelViewSet):
     def pending(self, request):
         """Get all pending/incomplete works"""
         works = Work.objects.filter(completed=False).select_related('category', 'worker')
+        if not self._is_admin_user():
+            works = works.filter(worker=request.user)
         serializer = WorkSerializer(works, many=True, context={'request': request})
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'])
     def unpaid_works(self, request):
         """Get all works with outstanding payments for payment processing"""
-        from django.db.models import Sum, Case, When, DecimalField, F
-        
         # Get works where total payments < work price (or no payments at all)
-        works = Work.objects.select_related('category').annotate(
-            total_payments=Case(
-                When(payments__isnull=True, then=0),
-                default=Sum('payments__amount'),
-                output_field=DecimalField()
+        works = Work.objects.select_related('category').filter(
+            Q(is_credit=False) | Q(credit_cleared=True)
+        ).annotate(
+            total_payments=Coalesce(
+                Sum('payments__amount'),
+                Value(0),
+                output_field=DecimalField(max_digits=10, decimal_places=2),
             )
         ).filter(
             total_payments__lt=F('price')
         )
+
+        if not self._is_admin_user():
+            works = works.filter(worker=request.user)
         
         serializer = WorkSelectSerializer(works, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def credit_works(self, request):
+        """Get credit works with outstanding balances, with status filtering."""
+        status_filter = request.query_params.get('status', 'uncleared').lower()
+
+        queryset = Work.objects.select_related('category', 'worker').filter(
+            is_credit=True
+        ).annotate(
+            total_payments=Coalesce(
+                Sum('payments__amount'),
+                Value(0),
+                output_field=DecimalField(max_digits=10, decimal_places=2),
+            )
+        ).filter(
+            total_payments__lt=F('price')
+        )
+
+        if not self._is_admin_user():
+            queryset = queryset.filter(worker=request.user)
+
+        if status_filter == 'cleared':
+            queryset = queryset.filter(credit_cleared=True)
+        elif status_filter == 'all':
+            pass
+        else:
+            queryset = queryset.filter(credit_cleared=False)
+
+        serializer = WorkSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def clear_credit(self, request, pk=None):
+        """Mark a credit work as cleared so it can be paid through payments."""
+        work = self.get_object()
+
+        if not work.is_credit:
+            return Response({'error': 'Only credit works can be cleared'}, status=status.HTTP_400_BAD_REQUEST)
+        if work.credit_cleared:
+            return Response({'error': 'This credit work is already cleared'}, status=status.HTTP_400_BAD_REQUEST)
+
+        work.credit_cleared = True
+        work.credit_cleared_at = timezone.now()
+        work.save(update_fields=['credit_cleared', 'credit_cleared_at'])
+        serializer = WorkSerializer(work, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     def mark_completed(self, request, pk=None):
@@ -347,20 +450,26 @@ class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer
     permission_classes = [IsOwnerOrAdminForUnsafeMethods]
 
+    def _is_admin_user(self):
+        user = self.request.user
+        return is_admin_user(user)
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        enforce_worker_feature_access(request, 'payments')
+
+    def get_queryset(self):
+        queryset = super().get_queryset().order_by('-paid_at', '-id')
+        if self._is_admin_user():
+            return queryset
+        return queryset.filter(processed_by=self.request.user)
+
     def perform_create(self, serializer):
         # tie payment to the employee creating the record
         user = self.request.user if self.request and self.request.user and self.request.user.is_authenticated else None
-        # if amount not provided or falsy, try to default from work price
-        data = serializer.validated_data if hasattr(serializer, 'validated_data') else {}
-        amount = data.get('amount')
-        work = data.get('work')
-        if (not amount or float(amount) == 0) and work is not None:
-            try:
-                serializer.save(processed_by=user, amount=work.price)
-                return
-            except Exception:
-                pass
-
+        work = serializer.validated_data.get('work')
+        if not self._is_admin_user() and work and work.worker_id != user.id:
+            raise ValidationError({'work': 'Workers can only record payments for their own works'})
         serializer.save(processed_by=user)
 
 
@@ -369,11 +478,23 @@ class EmployeeProfileViewSet(viewsets.ModelViewSet):
     serializer_class = EmployeeProfileSerializer
 
 
-class WorkerViewSet(viewsets.ReadOnlyModelViewSet):
-    """Admin-only list of workers (users with is_worker=True)."""
+class WorkerViewSet(viewsets.ModelViewSet):
+    """Admin-only worker management (list and role updates)."""
     queryset = User.objects.filter(is_worker=True)
     serializer_class = WorkerSerializer
     permission_classes = [drf_permissions.IsAdminUser]
+    http_method_names = ['get', 'patch', 'delete', 'head', 'options']
+
+    @action(detail=False, methods=['get'])
+    def role_options(self, request):
+        options = [{'value': value, 'label': label} for value, label in User.WORKER_ROLE_CHOICES]
+        return Response(options)
+
+    def destroy(self, request, *args, **kwargs):
+        worker = self.get_object()
+        if worker == request.user:
+            raise ValidationError({'detail': 'You cannot delete your own account'})
+        return super().destroy(request, *args, **kwargs)
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
@@ -445,6 +566,7 @@ class AdminDashboardView(APIView):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def daily_summary(request):
+    enforce_worker_feature_access(request, 'works')
     # Enhanced daily summary implementation
     from django.utils import timezone
     today = timezone.localdate()
@@ -496,6 +618,7 @@ def daily_summary(request):
 @permission_classes([permissions.IsAuthenticated])
 def work_statistics(request):
     """Get work statistics by category and status"""
+    enforce_worker_feature_access(request, 'works')
     # Works by category
     category_stats = (
         JobCategory.objects.filter(is_active=True)
@@ -528,6 +651,10 @@ class DailySalesReportViewSet(viewsets.ModelViewSet):
     """ViewSet for managing daily sales reports"""
     serializer_class = DailySalesReportSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        enforce_worker_feature_access(request, 'sales_reports')
     
     def get_queryset(self):
         user = self.request.user
@@ -575,9 +702,9 @@ class DailySalesReportViewSet(viewsets.ModelViewSet):
         """Submit a sales report (locks it for editing by non-admins)"""
         report = self.get_object()
         
-        if report.is_submitted:
+        if report.approval_status != DailySalesReport.STATUS_DRAFT:
             return Response(
-                {'error': 'Report is already submitted'},
+                {'error': 'Only draft reports can be submitted'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -590,10 +717,31 @@ class DailySalesReportViewSet(viewsets.ModelViewSet):
         report.submit_report()
         serializer = self.get_serializer(report)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """Approve a submitted sales report."""
+        report = self.get_object()
+
+        if not request.user.is_admin:
+            return Response(
+                {'error': 'Only admins can approve reports'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if report.approval_status != DailySalesReport.STATUS_PENDING_APPROVAL:
+            return Response(
+                {'error': 'Only reports pending approval can be approved'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        report.approve_report(request.user)
+        serializer = self.get_serializer(report)
+        return Response(serializer.data)
     
     @action(detail=True, methods=['post'])
     def generate_from_works(self, request, pk=None):
-        """Automatically generate report items from works for the day"""
+        """Automatically generate report items from payments received for the day"""
         report = self.get_object()
         
         if not report.can_be_edited_by(request.user):
@@ -602,12 +750,14 @@ class DailySalesReportViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # Get all works for the report date
-        works_for_date = Work.objects.filter(created_at__date=report.date)
-        
-        # Group by category
+        # Build report strictly from payments received on the report date
+        payments_for_date = Payment.objects.filter(
+            paid_at__date=report.date
+        ).select_related('work__category')
+
         category_data = {}
-        for work in works_for_date:
+        for payment in payments_for_date:
+            work = payment.work
             category = work.category or JobCategory.objects.get_or_create(
                 name='Uncategorized', defaults={'description': 'Default category for uncategorized works'}
             )[0]
@@ -615,31 +765,25 @@ class DailySalesReportViewSet(viewsets.ModelViewSet):
             if category.id not in category_data:
                 category_data[category.id] = {
                     'category': category,
-                    'total_works': 0,
+                    'work_ids': set(),
                     'total_amount': 0,
                     'payments_received': 0
                 }
-            
-            category_data[category.id]['total_works'] += 1
-            category_data[category.id]['total_amount'] += work.price
-            
-            # Calculate payments received for this work
-            payments = Payment.objects.filter(
-                work=work, 
-                paid_at__date=report.date
-            ).aggregate(total=Sum('amount'))['total'] or 0
-            category_data[category.id]['payments_received'] += payments
-        
-        # Create or update report items
-        for category_id, data in category_data.items():
-            report_item, created = DailySalesReportItem.objects.update_or_create(
+
+            category_data[category.id]['work_ids'].add(work.id)
+            category_data[category.id]['total_amount'] += payment.amount
+            category_data[category.id]['payments_received'] += payment.amount
+
+        # Non-destructive sync: keep existing draft lines instead of clearing them.
+        for data in category_data.values():
+            DailySalesReportItem.objects.update_or_create(
                 report=report,
                 category=data['category'],
                 defaults={
-                    'total_works': data['total_works'],
+                    'total_works': len(data['work_ids']),
                     'total_amount': data['total_amount'],
-                    'payments_received': data['payments_received']
-                }
+                    'payments_received': data['payments_received'],
+                },
             )
         
         # Recalculate report totals
@@ -670,6 +814,10 @@ class DailySalesReportItemViewSet(viewsets.ModelViewSet):
     """ViewSet for managing sales report items (category breakdowns)"""
     serializer_class = DailySalesReportItemSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        enforce_worker_feature_access(request, 'sales_reports')
     
     def get_queryset(self):
         report_id = self.request.query_params.get('report_id')
@@ -711,11 +859,45 @@ class DailySalesReportItemViewSet(viewsets.ModelViewSet):
         
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    def update(self, request, *args, **kwargs):
+        report_item = self.get_object()
+        report = report_item.report
+        if not report.can_be_edited_by(request.user):
+            return Response({'error': 'You cannot edit this report'}, status=status.HTTP_403_FORBIDDEN)
+        response = super().update(request, *args, **kwargs)
+        report.calculate_totals()
+        report.save()
+        return response
+
+    def partial_update(self, request, *args, **kwargs):
+        report_item = self.get_object()
+        report = report_item.report
+        if not report.can_be_edited_by(request.user):
+            return Response({'error': 'You cannot edit this report'}, status=status.HTTP_403_FORBIDDEN)
+        response = super().partial_update(request, *args, **kwargs)
+        report.calculate_totals()
+        report.save()
+        return response
+
+    def destroy(self, request, *args, **kwargs):
+        report_item = self.get_object()
+        report = report_item.report
+        if not report.can_be_edited_by(request.user):
+            return Response({'error': 'You cannot edit this report'}, status=status.HTTP_403_FORBIDDEN)
+        response = super().destroy(request, *args, **kwargs)
+        report.calculate_totals()
+        report.save()
+        return response
+
 
 class SalesReportNoteViewSet(viewsets.ModelViewSet):
     """ViewSet for managing sales report notes"""
     serializer_class = SalesReportNoteSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        enforce_worker_feature_access(request, 'sales_reports')
     
     def get_queryset(self):
         report_id = self.request.query_params.get('report_id')
@@ -752,6 +934,10 @@ class DailyExpenseViewSet(viewsets.ModelViewSet):
     """ViewSet for managing daily expenses"""
     serializer_class = DailyExpenseSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        enforce_worker_feature_access(request, 'sales_reports')
     
     def get_queryset(self):
         report_id = self.request.query_params.get('report_id')
@@ -793,6 +979,36 @@ class DailyExpenseViewSet(viewsets.ModelViewSet):
         
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    def update(self, request, *args, **kwargs):
+        expense = self.get_object()
+        report = expense.report
+        if not report.can_be_edited_by(request.user):
+            return Response({'error': 'You cannot edit this report'}, status=status.HTTP_403_FORBIDDEN)
+        response = super().update(request, *args, **kwargs)
+        report.calculate_totals()
+        report.save()
+        return response
+
+    def partial_update(self, request, *args, **kwargs):
+        expense = self.get_object()
+        report = expense.report
+        if not report.can_be_edited_by(request.user):
+            return Response({'error': 'You cannot edit this report'}, status=status.HTTP_403_FORBIDDEN)
+        response = super().partial_update(request, *args, **kwargs)
+        report.calculate_totals()
+        report.save()
+        return response
+
+    def destroy(self, request, *args, **kwargs):
+        expense = self.get_object()
+        report = expense.report
+        if not report.can_be_edited_by(request.user):
+            return Response({'error': 'You cannot edit this report'}, status=status.HTTP_403_FORBIDDEN)
+        response = super().destroy(request, *args, **kwargs)
+        report.calculate_totals()
+        report.save()
+        return response
+
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
@@ -806,6 +1022,7 @@ def sales_report_summary(request):
     month_ago = today - timedelta(days=30)
     
     user = request.user
+    enforce_worker_feature_access(request, 'sales_reports')
     base_queryset = DailySalesReport.objects.all()
     
     if not user.is_admin:
@@ -813,8 +1030,12 @@ def sales_report_summary(request):
     
     # Calculate totals
     total_reports = base_queryset.count()
-    submitted_reports = base_queryset.filter(is_submitted=True).count()
-    draft_reports = total_reports - submitted_reports
+    pending_approval_reports = base_queryset.filter(
+        approval_status=DailySalesReport.STATUS_PENDING_APPROVAL
+    ).count()
+    approved_reports = base_queryset.filter(approval_status=DailySalesReport.STATUS_APPROVED).count()
+    draft_reports = base_queryset.filter(approval_status=DailySalesReport.STATUS_DRAFT).count()
+    submitted_reports = pending_approval_reports + approved_reports
     
     # Monthly totals
     monthly_reports = base_queryset.filter(date__gte=month_ago)
@@ -832,6 +1053,8 @@ def sales_report_summary(request):
         'total_reports': total_reports,
         'submitted_reports': submitted_reports,
         'draft_reports': draft_reports,
+        'pending_approval_reports': pending_approval_reports,
+        'approved_reports': approved_reports,
         'reports_this_week': base_queryset.filter(date__gte=week_ago).count(),
         'reports_this_month': monthly_reports.count(),
         'total_sales_this_month': total_sales_this_month,
@@ -843,6 +1066,9 @@ def sales_report_summary(request):
         'statistics': {
             'total_reports': total_reports,
             'submitted_reports': submitted_reports,
+            'pending_approval_reports': pending_approval_reports,
+            'approved_reports': approved_reports,
+            'draft_reports': draft_reports,
             'reports_this_week': base_queryset.filter(date__gte=week_ago).count(),
             'reports_this_month': monthly_reports.count(),
             'total_sales_this_month': total_sales_this_month,
@@ -860,6 +1086,10 @@ class MaterialViewSet(viewsets.ModelViewSet):
     queryset = Material.objects.all()
     serializer_class = MaterialSerializer
     permission_classes = [IsManagerOrStaffReadOnly]
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        enforce_worker_feature_access(request, 'inventory')
     
     def get_queryset(self):
         """Filter materials based on query parameters"""
@@ -970,76 +1200,127 @@ class PendingStockAdjustmentViewSet(viewsets.ModelViewSet):
     """ViewSet for staff stock addition requests pending admin approval"""
     serializer_class = PendingStockAdjustmentSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        enforce_worker_feature_access(request, 'inventory')
+
     def get_queryset(self):
         """Admins see all, staff see only their own"""
         if self.request.user.is_admin:
             return PendingStockAdjustment.objects.select_related('material', 'submitted_by', 'reviewed_by').all()
         return PendingStockAdjustment.objects.filter(submitted_by=self.request.user).select_related('material')
-    
+
     def perform_create(self, serializer):
         """Set submitted_by to current user"""
         serializer.save(submitted_by=self.request.user)
-    
+
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
     def approve(self, request, pk=None):
-        """Admin approves and adds stock"""
+        """Admin approves and adds stock (or creates new material)"""
+        from .notification_service import send_stock_adjustment_approved_notification
+
         adjustment = self.get_object()
-        
+
         if adjustment.status != 'pending':
             return Response({'error': 'Only pending adjustments can be approved'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         try:
             with transaction.atomic():
-                # Update stock using existing service
-                ProcurementService.adjust_material_stock(
-                    material_id=adjustment.material.id,
-                    adjustment_quantity=adjustment.quantity,
-                    note=f"Staff request approved: {adjustment.reason}",
-                    user=request.user
-                )
-                
-                # Update adjustment status
+                material = adjustment.material
+
+                if adjustment.adjustment_type == 'new_material':
+                    material = Material.objects.create(
+                        name=adjustment.material_name,
+                        category=adjustment.material_category,
+                        unit=adjustment.material_unit,
+                        reorder_level=adjustment.reorder_level,
+                        current_stock=adjustment.quantity
+                    )
+                    adjustment.material = material
+                    message = f"New material created: {adjustment.quantity} {adjustment.material_unit} of {adjustment.material_name}"
+                else:
+                    message = f"Staff request approved: {adjustment.reason}"
+
+                if adjustment.adjustment_type == 'stock_addition':
+                    ProcurementService.adjust_material_stock(
+                        material_id=material.id,
+                        adjustment_quantity=adjustment.quantity,
+                        note=message,
+                        user=request.user
+                    )
+                else:
+                    StockMovement.objects.create(
+                        material=material,
+                        movement_type='inflow',
+                        quantity=adjustment.quantity,
+                        reference_type='adjustment',
+                        reference_id=adjustment.id,
+                        note=message
+                    )
+
                 adjustment.status = 'approved'
                 adjustment.reviewed_by = request.user
                 adjustment.reviewed_at = timezone.now()
                 adjustment.save()
-                
+
+                send_stock_adjustment_approved_notification(adjustment, request.user)
+
+                display_name = adjustment.get_display_name()
+                display_unit = adjustment.material_unit if adjustment.adjustment_type == 'new_material' else material.unit
+
                 return Response({
-                    'message': f'Added {adjustment.quantity} {adjustment.material.unit} of {adjustment.material.name} to stock',
+                    'message': f'Added {adjustment.quantity} {display_unit} of {display_name} to stock',
                     'adjustment': PendingStockAdjustmentSerializer(adjustment).data
                 })
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
+
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
     def reject(self, request, pk=None):
         """Admin rejects the adjustment"""
+        from .notification_service import send_stock_adjustment_rejected_notification
+
         adjustment = self.get_object()
-        
+
         if adjustment.status != 'pending':
             return Response({'error': 'Only pending adjustments can be rejected'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         rejection_reason = request.data.get('rejection_reason', '')
         if not rejection_reason:
             return Response({'error': 'rejection_reason is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         adjustment.status = 'rejected'
         adjustment.reviewed_by = request.user
         adjustment.reviewed_at = timezone.now()
         adjustment.rejection_reason = rejection_reason
         adjustment.save()
-        
+
+        send_stock_adjustment_rejected_notification(adjustment, request.user)
+
         return Response({
             'message': 'Adjustment request rejected',
             'adjustment': PendingStockAdjustmentSerializer(adjustment).data
         })
+
+    @action(detail=False, methods=['get'])
+    def pending_count(self, request):
+        """Get count of pending approvals (admin only)"""
+        if not self.request.user.is_admin:
+            return Response({'error': 'Only admins can view this'}, status=status.HTTP_403_FORBIDDEN)
+
+        pending_count = PendingStockAdjustment.objects.filter(status='pending').count()
+        return Response({'pending_count': pending_count})
 
 
 class MaterialUsageViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for viewing material usage records"""
     serializer_class = MaterialUsageSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        enforce_worker_feature_access(request, 'inventory')
     
     def get_queryset(self):
         """Filter material usage based on query parameters"""
@@ -1105,6 +1386,10 @@ class ProcurementViewSet(viewsets.ModelViewSet):
     queryset = Procurement.objects.all()
     serializer_class = ProcurementSerializer
     permission_classes = [IsProcurementManager]
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        enforce_worker_feature_access(request, 'inventory')
     
     def get_queryset(self):
         """Filter procurements based on query parameters"""
@@ -1165,6 +1450,10 @@ class JobMaterialViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = JobMaterial.objects.all()
     serializer_class = JobMaterialSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        enforce_worker_feature_access(request, 'inventory')
     
     def get_queryset(self):
         """Filter job materials"""
@@ -1189,6 +1478,10 @@ class StockMovementViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = StockMovementSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = None  # Disable pagination to return all records
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        enforce_worker_feature_access(request, 'inventory')
     
     def get_queryset(self):
         """Filter stock movements"""
@@ -1241,6 +1534,10 @@ class CustomerContactViewSet(viewsets.ModelViewSet):
     queryset = CustomerContact.objects.all()
     serializer_class = CustomerContactSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        enforce_worker_feature_access(request, 'customers')
     
     def get_queryset(self):
         queryset = super().get_queryset()

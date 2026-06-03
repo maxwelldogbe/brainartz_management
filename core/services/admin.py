@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     Work, Payment, EmployeeProfile, JobCategory, WorkFile,
     DailySalesReport, DailySalesReportItem, SalesReportNote, DailyExpense,
-    Material, Procurement, JobMaterial, StockMovement, CustomerContact,
+    Material, PendingStockAdjustment, Procurement, JobMaterial, StockMovement, CustomerContact,
     MarketingMessage
 )
 
@@ -21,8 +21,8 @@ class JobCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Work)
 class WorkAdmin(admin.ModelAdmin):
-    list_display = ('title', 'customer_name', 'customer_phone', 'category', 'price', 'worker', 'completed', 'created_at')
-    list_filter = ('completed', 'category', 'created_at', 'worker')
+    list_display = ('title', 'customer_name', 'customer_phone', 'category', 'price', 'is_credit', 'credit_cleared', 'worker', 'completed', 'created_at')
+    list_filter = ('completed', 'is_credit', 'credit_cleared', 'category', 'created_at', 'worker')
     search_fields = ('title', 'description', 'customer_name', 'customer_phone')
     readonly_fields = ('created_at', 'completed_at')
     
@@ -32,6 +32,9 @@ class WorkAdmin(admin.ModelAdmin):
         }),
         ('Assignment & Pricing', {
             'fields': ('worker', 'price')
+        }),
+        ('Credit', {
+            'fields': ('is_credit', 'credit_cleared', 'credit_cleared_at')
         }),
         ('Status', {
             'fields': ('completed', 'completed_at', 'note')
@@ -91,15 +94,21 @@ class SalesReportNoteInline(admin.TabularInline):
 
 @admin.register(DailySalesReport)
 class DailySalesReportAdmin(admin.ModelAdmin):
-    list_display = ('date', 'generated_by', 'is_submitted', 'total_sales_amount', 'total_payments_received', 'net_total', 'created_at')
-    list_filter = ('is_submitted', 'date', 'generated_by', 'created_at')
+    list_display = (
+        'date', 'generated_by', 'approval_status', 'is_submitted', 'approved_by',
+        'total_sales_amount', 'total_payments_received', 'net_total', 'created_at'
+    )
+    list_filter = ('approval_status', 'is_submitted', 'date', 'generated_by', 'created_at')
     search_fields = ('generated_by__username', 'generated_by__email')
-    readonly_fields = ('created_at', 'updated_at', 'submitted_at', 'total_sales_amount', 'total_payments_received', 'total_outstanding', 'total_expenses', 'net_total')
+    readonly_fields = (
+        'created_at', 'updated_at', 'submitted_at', 'approved_at',
+        'total_sales_amount', 'total_payments_received', 'total_outstanding', 'total_expenses', 'net_total'
+    )
     inlines = [DailySalesReportItemInline, DailyExpenseInline, SalesReportNoteInline]
     
     fieldsets = (
         ('Report Information', {
-            'fields': ('date', 'generated_by', 'is_submitted', 'submitted_at')
+            'fields': ('date', 'generated_by', 'approval_status', 'is_submitted', 'submitted_at', 'approved_by', 'approved_at')
         }),
         ('Calculated Totals', {
             'fields': ('total_sales_amount', 'total_payments_received', 'total_outstanding', 'total_expenses', 'net_total'),
@@ -169,7 +178,7 @@ class MaterialAdmin(admin.ModelAdmin):
     search_fields = ('name', 'unit')
     readonly_fields = ('created_at', 'updated_at', 'is_low_stock')
     inlines = [StockMovementInline]
-    
+
     fieldsets = (
         ('Basic Information', {
             'fields': ('name', 'category', 'unit')
@@ -185,11 +194,43 @@ class MaterialAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         })
     )
-    
+
     def is_low_stock(self, obj):
         return obj.is_low_stock()
     is_low_stock.boolean = True
     is_low_stock.short_description = 'Low Stock'
+
+
+@admin.register(PendingStockAdjustment)
+class PendingStockAdjustmentAdmin(admin.ModelAdmin):
+    list_display = ('get_material_display', 'quantity', 'adjustment_type', 'status', 'submitted_by', 'submitted_at', 'reviewed_by', 'reviewed_at')
+    list_filter = ('status', 'adjustment_type', 'submitted_at', 'reviewed_at', 'submitted_by')
+    search_fields = ('material__name', 'material_name', 'reason', 'submitted_by__username', 'reviewed_by__username')
+    readonly_fields = ('submitted_by', 'reviewed_by', 'submitted_at', 'reviewed_at', 'get_material_display')
+
+    fieldsets = (
+        ('Request Information', {
+            'fields': ('adjustment_type', 'get_material_display', 'material', 'quantity', 'reason')
+        }),
+        ('New Material Details (if applicable)', {
+            'fields': ('material_name', 'material_category', 'material_unit', 'reorder_level'),
+            'classes': ('collapse',)
+        }),
+        ('Status', {
+            'fields': ('status', 'rejection_reason')
+        }),
+        ('Approval Details', {
+            'fields': ('submitted_by', 'submitted_at', 'reviewed_by', 'reviewed_at'),
+            'classes': ('collapse',)
+        })
+    )
+
+    def get_material_display(self, obj):
+        return obj.get_display_name()
+    get_material_display.short_description = 'Material'
+
+    def has_add_permission(self, request):
+        return False  # Staff should use API to submit, not admin
 
 
 @admin.register(Procurement)

@@ -1,0 +1,229 @@
+.pending-approval-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.pending-approval-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.pending-approval-card.status-pending {
+  border-left: 4px solid #f59e0b;
+}
+
+.pending-approval-card.status-approved {
+  border-left: 4px solid #10b981;
+  background: #f0fdf4;
+}
+
+.pending-approval-card.status-rejected {
+  border-left: 4px solid #ef4444;
+  background: #fef2f2;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.card-title h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.approved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.adjustment-type {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #dbeafe;
+  color: #1e40af;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.card-body {
+  padding: 16px;
+}
+
+.request-details {
+  margin-bottom: 16px;
+}
+
+.detail-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.detail-row .label {
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.detail-row .value {
+  color: #1f2937;
+}
+
+.detail-row .reason-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.rejection-box {
+  background: #fee2e2;
+  border-left: 3px solid #ef4444;
+  padding: 12px;
+  border-radius: 4px;
+  margin-top: 12px;
+  font-size: 14px;
+  color: #991b1b;
+}
+
+.rejection-box strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.action-section {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 12px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-approve,
+.btn-reject,
+.btn-reject-outline,
+.btn-cancel {
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.btn-approve {
+  background: #10b981;
+  color: white;
+  flex: 1;
+}
+
+.btn-approve:hover:not(:disabled) {
+  background: #059669;
+}
+
+.btn-reject-outline {
+  background: white;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+  flex: 1;
+}
+
+.btn-reject-outline:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+.btn-approve:disabled,
+.btn-reject-outline:disabled,
+.btn-reject:disabled,
+.btn-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.reject-form {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.reject-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  margin-bottom: 12px;
+}
+
+.reject-form textarea:focus {
+  outline: none;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.reject-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-reject {
+  background: #ef4444;
+  color: white;
+  flex: 1;
+}
+
+.btn-reject:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.btn-cancel {
+  background: #e5e7eb;
+  color: #374151;
+  flex: 1;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: #d1d5db;
+}

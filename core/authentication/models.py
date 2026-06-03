@@ -29,9 +29,41 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
+    WORKER_ROLE_GENERALIST = 'generalist'
+    WORKER_ROLE_OPERATIONS = 'operations'
+    WORKER_ROLE_CASHIER = 'cashier'
+    WORKER_ROLE_SALES = 'sales'
+    WORKER_ROLE_INVENTORY = 'inventory'
+    WORKER_ROLE_CUSTOMER = 'customer'
+
+    WORKER_ROLE_CHOICES = [
+        (WORKER_ROLE_GENERALIST, 'Generalist'),
+        (WORKER_ROLE_OPERATIONS, 'Operations (Works)'),
+        (WORKER_ROLE_CASHIER, 'Cashier (Payments)'),
+        (WORKER_ROLE_SALES, 'Sales Reporting'),
+        (WORKER_ROLE_INVENTORY, 'Inventory'),
+        (WORKER_ROLE_CUSTOMER, 'Customer Relations'),
+    ]
+
+    WORKER_ROLE_PERMISSION_MAP = {
+        WORKER_ROLE_GENERALIST: ['works', 'payments', 'sales_reports', 'inventory', 'customers'],
+        WORKER_ROLE_OPERATIONS: ['works'],
+        WORKER_ROLE_CASHIER: ['payments'],
+        WORKER_ROLE_SALES: ['sales_reports'],
+        WORKER_ROLE_INVENTORY: ['inventory'],
+        WORKER_ROLE_CUSTOMER: ['customers'],
+    }
+
     email = models.EmailField(unique=True)
     is_worker = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)  # Explicit admin privilege
+    worker_roles = models.JSONField(default=list, blank=True, help_text='List of worker roles for multi-role assignment')
+    worker_role = models.CharField(
+        max_length=32,
+        choices=WORKER_ROLE_CHOICES,
+        default=WORKER_ROLE_GENERALIST,
+        help_text='Role used to scope worker feature access',
+    )
 
     objects = UserManager()
 
@@ -50,6 +82,28 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+    def get_effective_worker_roles(self):
+        valid_roles = {value for value, _ in self.WORKER_ROLE_CHOICES}
+        roles = self.worker_roles if isinstance(self.worker_roles, list) else []
+        normalized_roles = [role for role in roles if role in valid_roles]
+        if not normalized_roles and self.worker_role in valid_roles:
+            normalized_roles = [self.worker_role]
+        return list(dict.fromkeys(normalized_roles))
+
+    def get_worker_permissions(self):
+        if self.is_admin:
+            return ['works', 'payments', 'sales_reports', 'inventory', 'customers', 'administration']
+        if not self.is_worker:
+            return []
+        roles = self.get_effective_worker_roles()
+        permissions = []
+        for role in roles:
+            permissions.extend(self.WORKER_ROLE_PERMISSION_MAP.get(role, []))
+        return list(dict.fromkeys(permissions))
+
+    def has_worker_permission(self, permission):
+        return permission in self.get_worker_permissions()
 
 
 class InvitationToken(models.Model):

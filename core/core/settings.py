@@ -1,16 +1,19 @@
 from pathlib import Path
 import os
 
-# Try to load environment variables from a .env file if python-dotenv is installed.
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except Exception:
-    # python-dotenv not installed in this environment; it's optional for runtime
-    pass
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from conventional project .env locations.
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
+
+if load_dotenv is not None:
+    for dotenv_path in (BASE_DIR / '.env', BASE_DIR.parent / '.env'):
+        if dotenv_path.exists():
+            load_dotenv(dotenv_path)
 
 
 # Quick-start development settings - unsuitable for production
@@ -20,7 +23,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Read SECRET_KEY from environment (.env)
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 if not SECRET_KEY:
-    raise ValueError("DJANGO_SECRET_KEY must be set in .env file")
+    raise ValueError(
+        f"DJANGO_SECRET_KEY must be set in environment or .env file "
+        f"(checked: {BASE_DIR / '.env'} and {BASE_DIR.parent / '.env'})"
+    )
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Allow DEBUG override from environment
@@ -37,6 +43,7 @@ DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('1', 'true', 'yes')
 
 INSTALLED_APPS = [
     'daphne',       # Must be first for Channels
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -60,6 +67,7 @@ MIDDLEWARE = [
     # requirements.txt; enabling the middleware here makes collectstatic
     # output available at STATIC_URL without a separate web server.
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -243,4 +251,17 @@ TELECONIC_SENDER_ID = os.getenv('TELECONIC_SENDER_ID')
 TELECONIC_API_URL = os.getenv('TELECONIC_API_URL')
 
 # Hosts - Allow both localhost and 127.0.0.1 for development and production
-ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if host.strip()]
+
+# CORS / CSRF origins for local dashboard development.
+default_origins = 'http://localhost:3031,http://127.0.0.1:3031,http://localhost:5173,http://127.0.0.1:5173'
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv('DJANGO_CORS_ALLOWED_ORIGINS', default_origins).split(',')
+    if origin.strip()
+]
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', default_origins).split(',')
+    if origin.strip()
+]

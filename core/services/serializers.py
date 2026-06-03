@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from decimal import Decimal
 from .models import (
     Work, Payment, EmployeeProfile, JobCategory, WorkFile,
     DailySalesReport, DailySalesReportItem, SalesReportNote, DailyExpense,
@@ -79,6 +80,10 @@ class WorkSerializer(serializers.ModelSerializer):
     
     # Status information
     status = serializers.SerializerMethodField(read_only=True)
+    
+    # Overdue information
+    days_outstanding = serializers.SerializerMethodField(read_only=True)
+    is_overdue = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Work
@@ -87,8 +92,10 @@ class WorkSerializer(serializers.ModelSerializer):
             'title', 'description', 'price', 
             'category', 'category_name', 'category_color', 'category_send_notification',
             'worker', 'worker_name',
-            'created_at', 'completed', 'completed_at', 'note', 'files', 'files_count', 
-            'total_payments', 'remaining_balance', 'is_fully_paid', 'status'
+            'created_at', 'completed', 'completed_at', 'note', 'is_credit', 'credit_cleared', 'credit_cleared_at',
+            'files', 'files_count', 
+            'total_payments', 'remaining_balance', 'is_fully_paid', 'status',
+            'days_outstanding', 'is_overdue'
         ]
 
     def get_category_name(self, obj):
@@ -135,6 +142,12 @@ class WorkSerializer(serializers.ModelSerializer):
         else:
             return 'pending'
 
+    def get_days_outstanding(self, obj):
+        return obj.get_days_outstanding()
+
+    def get_is_overdue(self, obj):
+        return obj.is_overdue(days_threshold=2)
+
 
 class WorkCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating works - customer info is optional (only needed for notifications)"""
@@ -153,7 +166,7 @@ class WorkCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Work
         fields = ['customer_name', 'customer_phone', 'title', 'description', 'price', 'category', 'note', 'worker',
-                  'mark_as_paid', 'payment_method', 'payment_tracking_number', 'payment_note']
+                  'is_credit', 'mark_as_paid', 'payment_method', 'payment_tracking_number', 'payment_note']
 
     def validate_title(self, value):
         if not value or len(value.strip()) < 3:
@@ -180,6 +193,11 @@ class WorkCreateSerializer(serializers.ModelSerializer):
         return value
     
     def validate(self, attrs):
+        if attrs.get('is_credit', False) and attrs.get('mark_as_paid', False):
+            raise serializers.ValidationError({
+                'mark_as_paid': 'Credit works cannot be marked as paid during creation'
+            })
+
         # If mark_as_paid is True, payment_method is required
         if attrs.get('mark_as_paid', False) and not attrs.get('payment_method'):
             raise serializers.ValidationError({
@@ -234,6 +252,30 @@ class PaymentSerializer(serializers.ModelSerializer):
             'amount', 'paid_at', 'method', 
             'tracking_number', 'processed_by', 'note'
         ]
+
+    def validate(self, attrs):
+        work = attrs.get('work')
+        amount = attrs.get('amount')
+
+        if work is None:
+            raise serializers.ValidationError({'work': 'Work is required'})
+        if amount is None:
+            raise serializers.ValidationError({'amount': 'Amount is required'})
+        if amount <= Decimal('0'):
+            raise serializers.ValidationError({'amount': 'Payment amount must be greater than zero'})
+
+        remaining_balance = work.get_remaining_balance()
+        if remaining_balance <= Decimal('0'):
+            raise serializers.ValidationError({
+                'work': 'This work is already fully paid'
+            })
+
+        if amount > remaining_balance:
+            raise serializers.ValidationError({
+                'amount': f'Amount exceeds remaining balance ({remaining_balance})'
+            })
+
+        return attrs
 
     def get_work_description(self, obj):
         try:
@@ -292,13 +334,41 @@ class UserActivitySerializer(serializers.ModelSerializer):
 
 class WorkerSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
+    worker_permissions = serializers.SerializerMethodField(read_only=True)
+    worker_roles = serializers.ListField(
+        child=serializers.ChoiceField(choices=User.WORKER_ROLE_CHOICES),
+        required=False,
+        allow_empty=False,
+    )
     
     class Meta:
         model = User
-        fields = ["id", "username", "email", "full_name"]
+        fields = ["id", "username", "email", "full_name", "is_active", "worker_role", "worker_roles", "worker_permissions"]
+        read_only_fields = ["id", "username", "email", "full_name", "worker_permissions"]
         
     def get_full_name(self, obj):
         return obj.get_full_name() or obj.username
+
+    def get_worker_permissions(self, obj):
+        return obj.get_worker_permissions()
+
+    def validate_worker_roles(self, value):
+        return list(dict.fromkeys(value))
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        if self.instance and request and request.user == self.instance and attrs.get('is_active') is False:
+            raise serializers.ValidationError({'is_active': 'You cannot restrict your own account access'})
+        return attrs
+
+    def update(self, instance, validated_data):
+        worker_roles = validated_data.pop('worker_roles', None)
+        instance = super().update(instance, validated_data)
+        if worker_roles is not None:
+            instance.worker_roles = worker_roles
+            instance.worker_role = worker_roles[0]
+            instance.save(update_fields=['worker_roles', 'worker_role'])
+        return instance
 
 
 # Simplified serializers for dropdowns/selections
@@ -315,10 +385,12 @@ class WorkSelectSerializer(serializers.ModelSerializer):
     total_payments = serializers.SerializerMethodField(read_only=True)
     remaining_balance = serializers.SerializerMethodField(read_only=True)
     is_fully_paid = serializers.SerializerMethodField(read_only=True)
+    is_credit = serializers.BooleanField(read_only=True)
+    credit_cleared = serializers.BooleanField(read_only=True)
     
     class Meta:
         model = Work
-        fields = ['id', 'title', 'customer_name', 'price', 'completed', 
+        fields = ['id', 'title', 'customer_name', 'price', 'completed', 'is_credit', 'credit_cleared',
                  'total_payments', 'remaining_balance', 'is_fully_paid']
 
     def get_total_payments(self, obj):
@@ -374,28 +446,42 @@ class DailySalesReportSerializer(serializers.ModelSerializer):
     """Serializer for daily sales reports"""
     generated_by = serializers.StringRelatedField(read_only=True)
     generated_by_name = serializers.SerializerMethodField(read_only=True)
+    approved_by_name = serializers.SerializerMethodField(read_only=True)
     report_items = DailySalesReportItemSerializer(many=True, read_only=True)
     expenses = DailyExpenseSerializer(many=True, read_only=True)
     notes = SalesReportNoteSerializer(many=True, read_only=True)
     can_edit = serializers.SerializerMethodField(read_only=True)
+    can_approve = serializers.SerializerMethodField(read_only=True)
     
     class Meta:
         model = DailySalesReport
         fields = [
             'id', 'date', 'generated_by', 'generated_by_name', 'is_submitted', 'submitted_at',
+            'approval_status', 'approved_by', 'approved_by_name', 'approved_at',
             'total_sales_amount', 'total_payments_received', 'total_outstanding',
             'total_expenses', 'net_total', 'created_at', 'updated_at',
-            'report_items', 'expenses', 'notes', 'can_edit'
+            'report_items', 'expenses', 'notes', 'can_edit', 'can_approve'
         ]
     
     def get_generated_by_name(self, obj):
         return obj.generated_by.get_full_name() or obj.generated_by.username
+
+    def get_approved_by_name(self, obj):
+        if not obj.approved_by:
+            return None
+        return obj.approved_by.get_full_name() or obj.approved_by.username
     
     def get_can_edit(self, obj):
         request = self.context.get('request')
         if request and hasattr(request, 'user'):
             return obj.can_be_edited_by(request.user)
         return False
+
+    def get_can_approve(self, obj):
+        request = self.context.get('request')
+        if not request or not hasattr(request, 'user'):
+            return False
+        return request.user.is_admin and obj.approval_status == DailySalesReport.STATUS_PENDING_APPROVAL
 
 
 class DailySalesReportCreateSerializer(serializers.ModelSerializer):
@@ -475,31 +561,60 @@ class MaterialSerializer(serializers.ModelSerializer):
 
 
 class PendingStockAdjustmentSerializer(serializers.ModelSerializer):
-    """Serializer for pending stock adjustments"""
-    material_name = serializers.CharField(source='material.name', read_only=True)
-    material_unit = serializers.CharField(source='material.unit', read_only=True)
+    """Serializer for pending stock adjustments and material additions"""
+    material_name_display = serializers.SerializerMethodField(read_only=True)
+    material_unit_display = serializers.SerializerMethodField(read_only=True)
     submitted_by_name = serializers.SerializerMethodField()
     reviewed_by_name = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = PendingStockAdjustment
         fields = [
-            'id', 'material', 'material_name', 'material_unit', 'quantity', 'reason',
-            'status', 'submitted_by', 'submitted_by_name', 'submitted_at',
+            'id', 'adjustment_type', 'material', 'material_name_display', 'material_unit_display',
+            'material_name', 'material_category', 'material_unit', 'reorder_level',
+            'quantity', 'reason', 'status', 'submitted_by', 'submitted_by_name', 'submitted_at',
             'reviewed_by', 'reviewed_by_name', 'reviewed_at', 'rejection_reason'
         ]
-        read_only_fields = ['status', 'submitted_by', 'submitted_at', 'reviewed_by', 'reviewed_at']
-    
+        read_only_fields = ['status', 'submitted_by', 'submitted_at', 'reviewed_by', 'reviewed_at', 'material_name_display', 'material_unit_display']
+
+    def get_material_name_display(self, obj):
+        """Get display name for material (from FK or new_material field)"""
+        if obj.adjustment_type == 'new_material':
+            return obj.material_name
+        return obj.material.name if obj.material else 'Unknown Material'
+
+    def get_material_unit_display(self, obj):
+        """Get display unit (from FK or new_material field)"""
+        if obj.adjustment_type == 'new_material':
+            return obj.material_unit
+        return obj.material.unit if obj.material else 'Unknown'
+
     def get_submitted_by_name(self, obj):
         return obj.submitted_by.get_full_name() or obj.submitted_by.username if obj.submitted_by else 'Unknown'
-    
+
     def get_reviewed_by_name(self, obj):
         return obj.reviewed_by.get_full_name() or obj.reviewed_by.username if obj.reviewed_by else None
-    
+
     def validate_quantity(self, value):
         if value <= 0:
             raise serializers.ValidationError("Quantity must be positive")
         return value
+
+    def validate(self, data):
+        adjustment_type = data.get('adjustment_type', self.instance.adjustment_type if self.instance else 'stock_addition')
+
+        if adjustment_type == 'stock_addition':
+            if not data.get('material'):
+                raise serializers.ValidationError({'material': 'Material is required for stock additions'})
+        elif adjustment_type == 'new_material':
+            if not data.get('material_name'):
+                raise serializers.ValidationError({'material_name': 'Material name is required for new materials'})
+            if not data.get('material_category'):
+                raise serializers.ValidationError({'material_category': 'Material category is required for new materials'})
+            if not data.get('material_unit'):
+                raise serializers.ValidationError({'material_unit': 'Material unit is required for new materials'})
+
+        return data
 
 
 class ProcurementSerializer(serializers.ModelSerializer):
