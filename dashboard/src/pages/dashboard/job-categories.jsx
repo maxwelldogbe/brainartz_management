@@ -19,6 +19,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import LoadingButton from '@mui/lab/LoadingButton';
+import MenuItem from '@mui/material/MenuItem';
 
 import axios, { endpoints } from 'src/utils/axios';
 import { extractErrorMessage } from 'src/utils/extract-error-message';
@@ -35,6 +36,9 @@ const defaultForm = {
   description: '',
   color: '#3B82F6',
   send_completion_notification: false,
+  default_material: '',
+  unit_rate: '0',
+  pricing_unit: 'flat',
 };
 
 export default function JobCategoriesPage() {
@@ -45,6 +49,7 @@ export default function JobCategoriesPage() {
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState(defaultForm);
   const [saving, setSaving] = useState(false);
+  const [materials, setMaterials] = useState([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -57,6 +62,10 @@ export default function JobCategoriesPage() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    axios.get(endpoints.services.materials).then((res) => setMaterials(normalizeListResponse(res.data))).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -76,6 +85,9 @@ export default function JobCategoriesPage() {
       description: row.description || '',
       color: row.color || '#3B82F6',
       send_completion_notification: !!row.send_completion_notification,
+      default_material: row.default_material || '',
+      unit_rate: row.unit_rate || '0',
+      pricing_unit: row.pricing_unit || 'flat',
     });
     setOpen(true);
   };
@@ -89,6 +101,10 @@ export default function JobCategoriesPage() {
         description: form.description,
         color: form.color,
         send_completion_notification: form.send_completion_notification,
+        default_material: form.default_material || null,
+        material: form.default_material || null,
+        unit_rate: Number(form.unit_rate),
+        pricing_unit: form.pricing_unit,
       };
       if (editId) {
         await axios.patch(endpoints.services.category(editId), payload);
@@ -139,6 +155,7 @@ export default function JobCategoriesPage() {
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
+                  <TableCell>Default material</TableCell>
                 <TableCell>Color</TableCell>
                 <TableCell align="right">Works</TableCell>
                 <TableCell>Active</TableCell>
@@ -148,7 +165,7 @@ export default function JobCategoriesPage() {
             <TableBody>
               {loading && (
                 <TableRow>
-                  <TableCell colSpan={5}>
+                  <TableCell colSpan={6}>
                     Loading…
                   </TableCell>
                 </TableRow>
@@ -157,6 +174,7 @@ export default function JobCategoriesPage() {
                 rows.map((r) => (
                   <TableRow key={r.id} hover>
                     <TableCell>{r.name}</TableCell>
+                    <TableCell>{r.default_material_name || 'Not configured'}</TableCell>
                     <TableCell>
                       <Stack direction="row" spacing={1} alignItems="center">
                         <BoxColor color={r.color} />
@@ -197,6 +215,40 @@ export default function JobCategoriesPage() {
                 multiline
                 minRows={2}
               />
+              <TextField
+                select
+                label="Default material"
+                value={form.default_material}
+                onChange={(e) => setForm((p) => ({ ...p, default_material: e.target.value }))}
+                fullWidth
+              >
+                <MenuItem value="">No material</MenuItem>
+                {materials.map((material) => (
+                  <MenuItem key={material.id} value={material.id}>
+                    {material.name} ({material.current_stock} {material.unit})
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                label="Unit rate"
+                type="number"
+                inputProps={{ min: 0, step: 0.01 }}
+                value={form.unit_rate}
+                onChange={(e) => setForm((p) => ({ ...p, unit_rate: e.target.value }))}
+                fullWidth
+              />
+              <TextField
+                select
+                label="Pricing unit"
+                value={form.pricing_unit}
+                onChange={(e) => setForm((p) => ({ ...p, pricing_unit: e.target.value }))}
+                fullWidth
+              >
+                <MenuItem value="pages">Pages</MenuItem>
+                <MenuItem value="pieces">Pieces</MenuItem>
+                <MenuItem value="sq_ft">Square feet</MenuItem>
+                <MenuItem value="flat">Flat rate</MenuItem>
+              </TextField>
               <TextField
                 label="Color (hex)"
                 value={form.color}

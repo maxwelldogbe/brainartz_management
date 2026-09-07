@@ -21,6 +21,19 @@ class JobCategory(models.Model):
     description = models.TextField(blank=True, null=True)
     color = models.CharField(max_length=7, default='#3B82F6', help_text='Hex color code for UI display')
     is_active = models.BooleanField(default=True)
+    PRICING_UNIT_CHOICES = [
+        ('pages', 'Pages'), ('pieces', 'Pieces'), ('sq_ft', 'Square feet'), ('flat', 'Flat rate')
+    ]
+    unit_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    pricing_unit = models.CharField(max_length=10, choices=PRICING_UNIT_CHOICES, default='flat')
+    material = models.ForeignKey(
+        'Material', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='categories', help_text='Material consumed by this category'
+    )
+    default_material = models.ForeignKey(
+        'Material', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='job_categories', help_text='Material automatically consumed for this category'
+    )
     send_completion_notification = models.BooleanField(
         default=False, 
         help_text='Send SMS notification to customer when work in this category is completed'
@@ -50,6 +63,22 @@ class Work(models.Model):
         JobCategory, on_delete=models.SET_NULL, null=True, blank=True, 
         related_name='works', help_text='Job category for better organization'
     )
+    material = models.ForeignKey(
+        'Material', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='works', help_text='Material consumed when this work is created'
+    )
+    material_quantity_used = models.FloatField(
+        null=True, blank=True, help_text='Quantity deducted from material stock for this work'
+    )
+    material_used = models.ForeignKey(
+        'Material', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='material_used_works'
+    )
+    material_quantity = models.FloatField(null=True, blank=True)
+    calculated_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    net_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    due_date = models.DateField(null=True, blank=True)
     worker = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name='works_done'
     )
@@ -377,14 +406,21 @@ class Material(models.Model):
     name = models.CharField(max_length=255, help_text='Human-readable name for the material')
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
     unit = models.CharField(max_length=50, help_text='Unit of measure (reams, liters, sheets, etc.)')
-    current_stock = models.IntegerField(
+    BASE_UNIT_CHOICES = [
+        ('sheets', 'Sheets'), ('sq_ft', 'Square feet'), ('pieces', 'Pieces'), ('liters', 'Liters')
+    ]
+    base_unit = models.CharField(max_length=10, choices=BASE_UNIT_CHOICES, default='pieces')
+    bulk_unit_name = models.CharField(max_length=100, blank=True, default='')
+    items_per_bulk_unit = models.FloatField(default=1)
+    current_stock = models.FloatField(
         default=0,
-        help_text='Current stock quantity'
+        help_text='Current stock quantity in base units'
     )
-    reorder_level = models.IntegerField(
+    reorder_threshold = models.FloatField(
         default=0,
-        help_text='Minimum stock level before reorder alert'
+        help_text='Minimum stock level in base units before reorder alert'
     )
+    reorder_level = models.FloatField(default=0, help_text='Legacy alias for reorder threshold')
     archived = models.BooleanField(default=False, help_text='Soft delete flag')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -397,11 +433,11 @@ class Material(models.Model):
     
     def is_low_stock(self):
         """Check if current stock is at or below reorder level"""
-        return self.current_stock <= self.reorder_level
+        return self.current_stock <= self.reorder_threshold
     
     def get_suggested_reorder_quantity(self):
         """Simple suggestion: reorder_level * 2"""
-        return self.reorder_level * 2
+        return self.reorder_threshold * 2
 
 
 class PendingStockAdjustment(models.Model):
@@ -546,7 +582,7 @@ class JobMaterial(models.Model):
     
     job = models.ForeignKey('Work', on_delete=models.CASCADE, related_name='job_materials')
     material = models.ForeignKey(Material, on_delete=models.CASCADE, related_name='job_usages')
-    quantity_used = models.IntegerField()
+    quantity_used = models.FloatField()
     
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='job_materials_recorded')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -575,7 +611,7 @@ class StockMovement(models.Model):
     
     material = models.ForeignKey(Material, on_delete=models.CASCADE, related_name='stock_movements')
     movement_type = models.CharField(max_length=10, choices=MOVEMENT_TYPE_CHOICES)
-    quantity = models.IntegerField()
+    quantity = models.FloatField()
     reference_type = models.CharField(max_length=20, choices=REFERENCE_TYPE_CHOICES)
     reference_id = models.PositiveIntegerField(help_text='ID of procurement, job, adjustment, or material usage record')
     note = models.TextField(blank=True, null=True)

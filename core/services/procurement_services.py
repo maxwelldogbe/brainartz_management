@@ -16,6 +16,45 @@ class ProcurementService:
     """Service class for managing procurement operations"""
     
     @staticmethod
+    def record_work_material_usage(work, user=None):
+        """Deduct the category-bound material as part of atomic work creation."""
+        if not work.material_id or not work.material_quantity_used:
+            raise ValueError("A material and positive material quantity are required")
+
+        material = Material.objects.select_for_update().get(id=work.material_id, archived=False)
+        quantity_used = work.material_quantity_used
+        if material.current_stock < quantity_used:
+            raise ValueError(
+                f"Insufficient stock for {material.name}. Available: {material.current_stock}, "
+                f"Required: {quantity_used}"
+            )
+
+        stock_before = material.current_stock
+        material.current_stock -= quantity_used
+        material.save(update_fields=['current_stock', 'updated_at'])
+
+        JobMaterial.objects.create(
+            job=work,
+            material=material,
+            quantity_used=quantity_used,
+            created_by=user
+        )
+        StockMovement.objects.create(
+            material=material,
+            movement_type='outflow',
+            quantity=quantity_used,
+            reference_type='job',
+            reference_id=work.id,
+            note=f"Material usage for work: {work.title}"
+        )
+
+        return {
+            'material': material,
+            'stock_before': stock_before,
+            'stock_after': material.current_stock,
+        }
+
+    @staticmethod
     def mark_procurement_delivered(procurement_id, delivery_date=None, user=None):
         """
         Mark a procurement as delivered and update material stock.

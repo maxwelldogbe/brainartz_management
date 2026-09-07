@@ -32,7 +32,7 @@ def save_customer_contact(sender, instance: Work, created, **kwargs):
         # Get or create customer contact
         customer, is_new = CustomerContact.objects.get_or_create(
             phone=phone,
-            defaults={'name': name}
+            defaults={'name': name, 'total_works': 1, 'total_spent': instance.price}
         )
         
         # Update customer information
@@ -40,10 +40,9 @@ def save_customer_contact(sender, instance: Work, created, **kwargs):
             # Update name if it's different (customer might have provided more details)
             if customer.name != name:
                 customer.name = name
-            
-            # Increment work count and update total spent
-            customer.total_works += 1
-            customer.total_spent += instance.price
+            if created:
+                customer.total_works += 1
+                customer.total_spent += instance.price
             customer.save()
     except Exception as e:
         # Error but don't fail work creation

@@ -15,10 +15,14 @@ class JobCategorySerializer(serializers.ModelSerializer):
     """Serializer for job categories"""
     created_by = serializers.StringRelatedField(read_only=True)
     works_count = serializers.SerializerMethodField(read_only=True)
+    default_material_name = serializers.CharField(source='default_material.name', read_only=True)
+    material_name = serializers.CharField(source='material.name', read_only=True)
 
     class Meta:
         model = JobCategory
-        fields = ['id', 'name', 'description', 'color', 'is_active', 'send_completion_notification', 'created_at', 'created_by', 'works_count']
+        fields = ['id', 'name', 'description', 'color', 'is_active', 'send_completion_notification',
+              'unit_rate', 'pricing_unit', 'material', 'material_name',
+              'default_material', 'default_material_name', 'created_at', 'created_by', 'works_count']
 
     def get_works_count(self, obj):
         return obj.works.count()
@@ -91,6 +95,8 @@ class WorkSerializer(serializers.ModelSerializer):
             'id', 'customer_name', 'customer_phone',
             'title', 'description', 'price', 
             'category', 'category_name', 'category_color', 'category_send_notification',
+            'material', 'material_quantity_used',
+            'material_used', 'material_quantity', 'calculated_amount', 'discount_amount', 'net_amount', 'due_date',
             'worker', 'worker_name',
             'created_at', 'completed', 'completed_at', 'note', 'is_credit', 'credit_cleared', 'credit_cleared_at',
             'files', 'files_count', 
@@ -154,19 +160,29 @@ class WorkCreateSerializer(serializers.ModelSerializer):
     
     # Payment fields (optional - to mark work as paid immediately)
     mark_as_paid = serializers.BooleanField(required=False, default=False, write_only=True)
+    amount_paid = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0, write_only=True)
+    discount_amount = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
+    due_date = serializers.DateField(required=False, allow_null=True)
     payment_method = serializers.ChoiceField(
-        choices=[('cash', 'Cash'), ('mobile_money', 'Mobile Money'), ('card', 'Card'), ('bank_transfer', 'Bank Transfer')],
+        choices=[('cash', 'Cash'), ('mobile_money', 'Mobile Money'), ('card', 'Card'), ('bank_transfer', 'Bank Transfer'), ('none', 'None')],
         required=False, 
         allow_blank=True,
         write_only=True
     )
     payment_tracking_number = serializers.CharField(max_length=100, required=False, allow_blank=True, write_only=True)
     payment_note = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    material_quantity_used = serializers.FloatField(min_value=0.000001, required=False, write_only=True)
+    material_quantity = serializers.FloatField(min_value=0.000001, required=True)
+    price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     
     class Meta:
         model = Work
-        fields = ['customer_name', 'customer_phone', 'title', 'description', 'price', 'category', 'note', 'worker',
-                  'is_credit', 'mark_as_paid', 'payment_method', 'payment_tracking_number', 'payment_note']
+        fields = ['customer_name', 'customer_phone', 'title', 'description', 'price', 'category', 'material_quantity_used',
+              'material_quantity', 'discount_amount', 'due_date', 'note', 'worker', 'is_credit', 'mark_as_paid',
+              'amount_paid', 'payment_method', 'payment_tracking_number', 'payment_note']
+        extra_kwargs = {
+            'category': {'required': True, 'allow_null': False},
+        }
 
     def validate_title(self, value):
         if not value or len(value.strip()) < 3:
@@ -193,15 +209,39 @@ class WorkCreateSerializer(serializers.ModelSerializer):
         return value
     
     def validate(self, attrs):
-        if attrs.get('is_credit', False) and attrs.get('mark_as_paid', False):
+        category = attrs.get('category')
+        if not category:
+            raise serializers.ValidationError({'category': 'Select a job category'})
+        material = category.material or category.default_material
+        if not material:
             raise serializers.ValidationError({
-                'mark_as_paid': 'Credit works cannot be marked as paid during creation'
+                'category': 'This category has no default material configured'
             })
+        quantity = attrs['material_quantity']
+        calculated_amount = (Decimal(str(quantity)) * category.unit_rate).quantize(Decimal('0.01'))
+        discount = attrs.get('discount_amount', Decimal('0'))
+        if discount < 0 or discount > calculated_amount:
+            raise serializers.ValidationError({'discount_amount': 'Discount must be between zero and the calculated amount'})
+        net_amount = calculated_amount - discount
+        amount_paid = attrs.get('amount_paid', Decimal('0'))
+        if amount_paid < 0 or amount_paid > net_amount:
+            raise serializers.ValidationError({'amount_paid': 'Amount paid must be between zero and the net amount'})
+        balance = net_amount - amount_paid
+        if balance > 0 and not attrs.get('due_date'):
+            raise serializers.ValidationError({'due_date': 'A due date is required for a remaining balance'})
+        if balance == 0:
+            attrs['due_date'] = None
+        attrs['material_used'] = material
+        attrs['material'] = material
+        attrs['material_quantity_used'] = quantity
+        attrs['calculated_amount'] = calculated_amount
+        attrs['net_amount'] = net_amount
+        attrs['price'] = net_amount
+        attrs['is_credit'] = balance > 0
 
-        # If mark_as_paid is True, payment_method is required
-        if attrs.get('mark_as_paid', False) and not attrs.get('payment_method'):
+        if amount_paid > 0 and attrs.get('payment_method') in (None, '', 'none'):
             raise serializers.ValidationError({
-                'payment_method': 'Payment method is required when marking work as paid'
+                'payment_method': 'Payment method is required when recording a payment'
             })
         return attrs
 
@@ -376,7 +416,14 @@ class JobCategorySelectSerializer(serializers.ModelSerializer):
     """Lightweight serializer for category dropdowns"""
     class Meta:
         model = JobCategory
-        fields = ['id', 'name', 'color']
+        fields = ['id', 'name', 'color', 'unit_rate', 'pricing_unit', 'material', 'material_name', 'material_stock',
+              'default_material', 'default_material_name', 'default_material_unit', 'default_material_stock']
+
+    default_material_name = serializers.CharField(source='default_material.name', read_only=True)
+    material_name = serializers.CharField(source='material.name', read_only=True)
+    material_stock = serializers.FloatField(source='material.current_stock', read_only=True)
+    default_material_unit = serializers.CharField(source='default_material.unit', read_only=True)
+    default_material_stock = serializers.IntegerField(source='default_material.current_stock', read_only=True)
 
 
 class WorkSelectSerializer(serializers.ModelSerializer):
@@ -533,7 +580,8 @@ class MaterialSerializer(serializers.ModelSerializer):
     class Meta:
         model = Material
         fields = [
-            'id', 'name', 'category', 'unit', 'current_stock', 'reorder_level',
+            'id', 'name', 'category', 'unit', 'base_unit', 'bulk_unit_name', 'items_per_bulk_unit',
+            'current_stock', 'reorder_level', 'reorder_threshold',
             'archived', 'created_at', 'updated_at', 'is_low_stock',
             'suggested_reorder_quantity', 'recent_movements'
         ]
@@ -557,6 +605,11 @@ class MaterialSerializer(serializers.ModelSerializer):
         """Validate reorder level"""
         if value < 0:
             raise serializers.ValidationError("Reorder level cannot be negative")
+        return value
+
+    def validate_items_per_bulk_unit(self, value):
+        if value <= 0:
+            raise serializers.ValidationError('Items per bulk unit must be greater than zero')
         return value
 
 

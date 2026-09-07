@@ -135,23 +135,27 @@ class WorkViewSet(viewsets.ModelViewSet):
         payment_method = serializer.validated_data.pop('payment_method', None)
         payment_tracking_number = serializer.validated_data.pop('payment_tracking_number', None)
         payment_note = serializer.validated_data.pop('payment_note', None)
+        amount_paid = serializer.validated_data.pop('amount_paid', Decimal('0'))
+        serializer.validated_data.pop('mark_as_paid', False)
         
-        # Save the work
-        if user is not None:
-            work = serializer.save(worker=user)
-        else:
-            work = serializer.save()
-        
-        # Create payment if mark_as_paid is True
-        if mark_as_paid and payment_method and not work.is_credit:
-            Payment.objects.create(
-                work=work,
-                amount=work.price,
-                method=payment_method,
-                tracking_number=payment_tracking_number or '',
-                note=payment_note or 'Payment recorded at work creation',
-                processed_by=user
-            )
+        with transaction.atomic():
+            if user is not None:
+                work = serializer.save(worker=user)
+            else:
+                work = serializer.save()
+
+            ProcurementService.record_work_material_usage(work, user=user)
+
+            # Payment is created in the same transaction as the work and stock deduction.
+            if amount_paid > 0:
+                Payment.objects.create(
+                    work=work,
+                    amount=amount_paid,
+                    method=payment_method,
+                    tracking_number=payment_tracking_number or '',
+                    note=payment_note or 'Payment recorded at work creation',
+                    processed_by=user
+                )
 
     @action(detail=False, methods=['get'])
     def select_options(self, request):
@@ -323,25 +327,10 @@ class WorkViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def record_material_usage(self, request, pk=None):
         """Record materials used for this job/work"""
-        work = self.get_object()
-        serializer = JobMaterialCreateSerializer(data=request.data)
-        
-        if serializer.is_valid():
-            try:
-                result = ProcurementService.record_job_material_usage(
-                    job_id=work.id,
-                    material_id=serializer.validated_data['material'].id,
-                    quantity_used=serializer.validated_data['quantity_used'],
-                    user=request.user
-                )
-                return Response(result, status=status.HTTP_201_CREATED)
-            except ValueError as e:
-                return Response(
-                    {'error': str(e)},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {'error': 'Manual material usage is deprecated. Material is deducted when the work is created.'},
+            status=status.HTTP_410_GONE
+        )
     
     @action(detail=True, methods=['get'])
     def materials(self, request, pk=None):

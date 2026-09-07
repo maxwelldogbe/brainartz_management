@@ -53,7 +53,6 @@ export const endpoints = {
     worksReopen: (id) => `/api/services/works/${id}/reopen_work/`,
     workClearCredit: (id) => `/api/services/works/${id}/clear_credit/`,
     worksMaterials: (id) => `/api/services/works/${id}/materials/`,
-    worksRecordJobMaterial: (id) => `/api/services/works/${id}/record_material_usage/`,
     payments: '/api/services/payments/',
     categories: '/api/services/job-categories/',
     category: (id) => `/api/services/job-categories/${id}/`,

@@ -30,7 +30,7 @@ if not SECRET_KEY:
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Allow DEBUG override from environment
-DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('1', 'true', 'yes')
+DEBUG = os.getenv('DJANGO_DEBUG', 'False').lower() in ('1', 'false', 'yes')
 
 # Remove duplicate - moved to bottom of file
 # ALLOWED_HOSTS = [
